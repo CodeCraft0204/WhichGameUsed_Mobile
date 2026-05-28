@@ -1,0 +1,566 @@
+/* Which Game Used — Advocacy Page */
+
+@font-face {
+  font-family: "Broadsheet Regular";
+  src:
+    local("Broadsheet Regular"),
+    local("Broadsheet"),
+    url("fonts/Broadsheet-Regular.woff2") format("woff2"),
+    url("fonts/Broadsheet-Regular.woff") format("woff"),
+    url("fonts/Broadsheet-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --cream: #f4f4f2;
+  --taupe: #a69b8f;
+  --grey: #5c5c5c;
+  --charcoal: #3f4042;
+  --ink: #1a1a1a;
+  --card-bg: #efeeea;
+  --track: #d8d6d0;
+  --border: #c8c4bc;
+  --shadow: 0 4px 14px rgba(63, 64, 66, 0.1);
+  --font-display: "Permanent Marker", cursive;
+  --font-editorial: "Broadsheet Regular", "Broadsheet", Georgia, "Times New Roman", serif;
+  --font-body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --page-max: 430px;
+  --nav-height: 78px;
+  /* Matches black matte in sketch PNG exports */
+  --asset-matte: #121212;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--cream);
+  color: var(--charcoal);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  z-index: 0;
+}
+
+.page {
+  position: relative;
+  z-index: 1;
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 18px 16px calc(var(--nav-height) + 24px);
+  min-height: 100vh;
+}
+
+/* Utility rail */
+.utility-rail {
+  position: fixed;
+  top: 18px;
+  right: max(8px, calc(50% - var(--page-max) / 2 + 8px));
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 10px;
+  background: rgba(244, 244, 242, 0.92);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+}
+
+.utility-rail button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--charcoal);
+  cursor: pointer;
+}
+
+.utility-rail svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Hero */
+.hero {
+  display: grid;
+  grid-template-columns: 1fr 118px;
+  gap: 8px 6px;
+  align-items: start;
+  margin-bottom: 18px;
+}
+
+.hero__title-block {
+  grid-column: 1;
+  padding-top: 4px;
+}
+
+.hero__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.35rem, 9vw, 2.75rem);
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  text-transform: uppercase;
+}
+
+/* Brown/taupe stroke on black matte — multiply hides black, keeps stroke color */
+.img-blend-taupe {
+  mix-blend-mode: multiply;
+}
+
+/* Sketch PNGs with black matte — show original warm/grayscale tones */
+.img-matte {
+  background: var(--asset-matte);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.hero__underline {
+  display: block;
+  width: min(220px, 88%);
+  height: auto;
+  margin: 6px 0 0;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.hero__art {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  align-self: start;
+  justify-self: end;
+  width: 118px;
+  margin-top: -4px;
+}
+
+.hero__art img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.hero__subtitle {
+  grid-column: 1 / -1;
+  margin: 10px 0 0;
+  font-family: var(--font-editorial);
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  line-height: 1.35;
+  text-transform: uppercase;
+  color: var(--charcoal);
+}
+
+.hero__body {
+  grid-column: 1 / -1;
+  margin: 10px 0 0;
+  max-width: 92%;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--grey);
+}
+
+/* Filters */
+.filters {
+  display: flex;
+  gap: 8px;
+  margin: 20px 0 0;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.filter-pill {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  font-family: var(--font-editorial);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--charcoal);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.filter-pill.is-active {
+  background: var(--charcoal);
+  border-color: var(--charcoal);
+  color: var(--cream);
+}
+
+.filter-pill:not(.is-active):hover {
+  border-color: var(--taupe);
+}
+
+/* Section header */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 18px 0 14px;
+}
+
+.section-head__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.section-head__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: none;
+  padding: 0;
+  font-family: var(--font-editorial);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--charcoal);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.section-head__link img {
+  width: 8px;
+  height: auto;
+}
+
+/* Petition cards */
+.petition-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.petition-card {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  gap: 10px 12px;
+  align-items: stretch;
+  padding: 14px 12px 14px 10px;
+  background: var(--card-bg);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+.petition-card__thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+}
+
+.petition-card__thumb img {
+  display: block;
+  width: 64px;
+  height: auto;
+  object-fit: contain;
+}
+
+.petition-card__main {
+  min-width: 0;
+  padding-right: 10px;
+  border-right: 1px solid var(--border);
+}
+
+.petition-card__title {
+  margin: 0 0 6px;
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+.petition-card__desc {
+  margin: 0 0 10px;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: var(--grey);
+}
+
+.progress {
+  margin: 0;
+}
+
+.progress__bar {
+  display: block;
+  width: 100%;
+  height: 7px;
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  appearance: none;
+  background: var(--track);
+}
+
+.progress__bar::-webkit-progress-bar {
+  background: var(--track);
+  border-radius: 999px;
+}
+
+.progress__bar::-webkit-progress-value {
+  background: var(--taupe);
+  border-radius: 999px;
+}
+
+.progress__bar::-moz-progress-bar {
+  background: var(--taupe);
+  border-radius: 999px;
+}
+
+.progress__goal {
+  display: block;
+  margin-top: 5px;
+  font-size: 0.68rem;
+  color: var(--grey);
+}
+
+.petition-card__action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 88px;
+  text-align: center;
+}
+
+.petition-card__count {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 1.55rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.petition-card__label {
+  margin: 0;
+  font-family: var(--font-editorial);
+  font-size: 0.52rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--grey);
+}
+
+.btn-sign {
+  margin-top: 4px;
+  padding: 9px 10px;
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  background: var(--charcoal);
+  color: var(--cream);
+  font-family: var(--font-editorial);
+  font-size: 0.52rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-sign:hover {
+  background: var(--ink);
+}
+
+/* CTA banner */
+.cta-banner {
+  display: grid;
+  grid-template-columns: 88px 1fr 28px;
+  gap: 10px;
+  align-items: center;
+  margin-top: 22px;
+  padding: 16px 14px;
+  background: var(--card-bg);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  text-decoration: none;
+  color: inherit;
+}
+
+.cta-banner__art img {
+  display: block;
+  width: 82px;
+  height: auto;
+}
+
+.cta-banner__copy {
+  min-width: 0;
+}
+
+.cta-banner__heading {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.cta-banner__text {
+  margin: 0;
+  font-size: 0.76rem;
+  line-height: 1.4;
+  color: var(--grey);
+}
+
+.cta-banner__arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cta-banner__arrow img {
+  width: 22px;
+  height: auto;
+}
+
+/* Bottom navigation */
+.bottom-nav {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  z-index: 30;
+  width: 100%;
+  max-width: var(--page-max);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 10px 10px 14px;
+  background: linear-gradient(to top, var(--cream) 72%, rgba(244, 244, 242, 0));
+  border-top: 1px solid rgba(200, 196, 188, 0.55);
+}
+
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--charcoal);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.nav-item__icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+}
+
+.nav-item__icon-wrap.img-matte {
+  border-radius: 4px;
+}
+
+.nav-item__icon {
+  display: block;
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.nav-item__ring {
+  display: block;
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+
+.nav-item__label {
+  font-family: var(--font-editorial);
+  font-size: 0.46rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.1;
+  text-align: center;
+  color: var(--charcoal);
+}
+
+.nav-item.is-active .nav-item__label {
+  color: var(--taupe);
+}
+
+.nav-item--advocacy .nav-item__icon-wrap {
+  width: 38px;
+  height: 38px;
+}
+
+.nav-item--advocacy .nav-item__ring {
+  width: 38px;
+  height: 38px;
+}
+
+/* Slightly wider on tablets — still phone-first */
+@media (min-width: 480px) {
+  .page {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .hero {
+    grid-template-columns: 1fr 132px;
+  }
+
+  .hero__art {
+    width: 132px;
+  }
+}
