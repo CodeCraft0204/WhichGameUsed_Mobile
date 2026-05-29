@@ -1,9 +1,9 @@
-﻿import { Link } from 'expo-router';
-import React, { useMemo } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-const DESIGN_WIDTH = 810;
+﻿import React, { useMemo } from 'react';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FigmaHubBottomNav } from '@/components/figma/FigmaHubBottomNav';
+import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
+import { FigmaScreen } from '@/components/figma/FigmaScreen';
+import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 
 const icons = {
   utilitySearch: require('@/assets/figma/advocacy/utility_search.png'),
@@ -15,12 +15,7 @@ const icons = {
   petitionTopps: require('@/assets/figma/advocacy/petition_topps.png'),
   petitionFanatics: require('@/assets/figma/advocacy/petition_fanatics.png'),
   ctaIcon: require('@/assets/figma/advocacy/cta_icon.png'),
-  ctaArrow: require('@/assets/figma/advocacy/section_chevron.png'),
-  navReturn: require('@/assets/figma/advocacy/nav_return.png'),
-  navEducation: require('@/assets/figma/advocacy/nav_education.png'),
-  navMostwanted: require('@/assets/figma/advocacy/nav_mostwanted.png'),
-  navLeaderboard: require('@/assets/figma/advocacy/nav_leaderboard.png'),
-  navAdvocacy: require('@/assets/figma/advocacy/nav_advocacy.png')
+  ctaArrow: require('@/assets/figma/advocacy/section_chevron.png')
 };
 
 const petitions = [
@@ -54,166 +49,88 @@ const petitions = [
 ];
 
 export default function AdvocacyScreen() {
-  const { width } = useWindowDimensions();
-  const layoutScale = Math.min(width / DESIGN_WIDTH, 0.65);
-  const textScale = Math.max(0.7, layoutScale);
-  const s = (value: number) => Math.round(value * layoutScale);
-  const t = (value: number) => Math.round(value * textScale);
-  const styles = useMemo(() => createStyles(s, t), [layoutScale, textScale]);
+  const { s, t } = useFigmaLayout();
+  const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
+  const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.headerSection}>
-          <Text style={styles.title}>ADVOCACY</Text>
-          <Image source={icons.titleBrush} style={styles.titleBrush} resizeMode="stretch" />
-          <Text style={styles.subtitle}>MORE TRANSPARENCY.{'\n'}MORE TRUST. BETTER HOBBY.</Text>
-          <Text style={styles.description}>
-            Sign petitions, raise your voice, and push the hobby toward transparency. Together, we can ask
-            manufacturers to share the records collectors deserve.
-          </Text>
+    <FigmaScreen
+      bottomNav={<FigmaHubBottomNav active="advocacy" s={s} t={t} />}
+      scrollProps={{ contentContainerStyle: page.scrollContent }}
+    >
+      <View style={page.headerSection}>
+        <Text style={page.title}>ADVOCACY</Text>
+        <Image source={icons.titleBrush} style={page.titleBrush} resizeMode="stretch" />
+        <Text style={page.subtitle}>MORE TRANSPARENCY.{'\n'}MORE TRUST. BETTER HOBBY.</Text>
+        <Text style={page.description}>
+          Sign petitions, raise your voice, and push the hobby toward transparency. Together, we can ask
+          manufacturers to share the records collectors deserve.
+        </Text>
 
-          <Image source={icons.hero} style={styles.heroImage} resizeMode="contain" />
+        <Image source={icons.hero} style={styles.heroImage} resizeMode="contain" />
 
-          <View style={styles.utilityBar}>
-            <Image source={icons.utilitySearch} style={styles.utilityIcon} resizeMode="contain" />
-            <Image source={icons.utilityProfile} style={styles.utilityIcon} resizeMode="contain" />
-            <Image source={icons.utilitySettings} style={styles.utilityIcon} resizeMode="contain" />
-          </View>
-
-          <View style={styles.tabRow}>
-            <Pressable style={[styles.tabButton, styles.tabButtonActive]}>
-              <Text style={[styles.tabText, styles.tabTextActive]}>ALL</Text>
-            </Pressable>
-            <Pressable style={styles.tabButton}>
-              <Text style={styles.tabText}>ACTIVE</Text>
-            </Pressable>
-            <Pressable style={styles.tabButton}>
-              <Text style={styles.tabText}>WINS</Text>
-            </Pressable>
-          </View>
+        <View style={styles.utilityBar}>
+          <Image source={icons.utilitySearch} style={styles.utilityIcon} resizeMode="contain" />
+          <Image source={icons.utilityProfile} style={styles.utilityIcon} resizeMode="contain" />
+          <Image source={icons.utilitySettings} style={styles.utilityIcon} resizeMode="contain" />
         </View>
 
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>ACTVE PETITONS</Text>
-          <View style={styles.viewAllRow}>
-            <Text style={styles.viewAllText}>VIEW ALL</Text>
-            <Image source={icons.ctaArrow} style={styles.sectionChevron} resizeMode="contain" />
-          </View>
+        <View style={page.tabRow}>
+          <Pressable style={[page.tabButton, page.tabButtonActive]}>
+            <Text style={[page.tabText, page.tabTextActive]}>ALL</Text>
+          </Pressable>
+          <Pressable style={page.tabButton}>
+            <Text style={page.tabText}>ACTIVE</Text>
+          </Pressable>
+          <Pressable style={page.tabButton}>
+            <Text style={page.tabText}>WINS</Text>
+          </Pressable>
         </View>
-
-        {petitions.map((petition) => (
-          <View key={petition.key} style={styles.card}>
-            <Image source={petition.image} style={styles.cardImage} resizeMode="contain" />
-            <View style={styles.cardCenter}>
-              <Text style={styles.cardTitle}>{petition.title}</Text>
-              <Text style={styles.cardDescription}>{petition.description}</Text>
-              <View style={styles.progressTrack}>
-                <View style={[styles.progressFill, { width: `${petition.progress * 100}%` }]} />
-              </View>
-              <Text style={styles.goalText}>{petition.goal}</Text>
-            </View>
-            <View style={styles.cardRight}>
-              <Text style={styles.signatureNumber}>{petition.signatures}</Text>
-              <Text style={styles.signatureLabel}>SIGNATURES</Text>
-              <Pressable style={styles.signButton}>
-                <Text style={styles.signButtonText}>SIGN PETITION</Text>
-              </Pressable>
-            </View>
-          </View>
-        ))}
-
-        <View style={styles.ctaCard}>
-          <Image source={icons.ctaIcon} style={styles.ctaIcon} resizeMode="contain" />
-          <View style={styles.ctaTextWrap}>
-            <Text style={styles.ctaTitle}>FULFILL YOUR CIVIC RESPONSIBILITY AND VOTE.</Text>
-            <Text style={styles.ctaBody}>Transparency starts when collectors speak together.</Text>
-          </View>
-          <Image source={icons.ctaArrow} style={styles.ctaArrow} resizeMode="contain" />
-        </View>
-      </ScrollView>
-
-      <View style={styles.bottomNav}>
-        <Link href="/database/database" asChild>
-          <Pressable style={styles.navItem}>
-            <Image source={icons.navReturn} style={styles.navIcon} resizeMode="contain" />
-            <Text style={styles.navText}>RETURN</Text>
-          </Pressable>
-        </Link>
-        <Link href="/education/education" asChild>
-          <Pressable style={styles.navItem}>
-            <Image source={icons.navEducation} style={styles.navIcon} resizeMode="contain" />
-            <Text style={styles.navText}>EDUCATION</Text>
-          </Pressable>
-        </Link>
-        <Link href="/mostwanted/mostwanted" asChild>
-          <Pressable style={styles.navItem}>
-            <Image source={icons.navMostwanted} style={styles.navIcon} resizeMode="contain" />
-            <Text style={styles.navText}>MOST WANTED</Text>
-          </Pressable>
-        </Link>
-        <Link href="/leaderboard/leaderboard" asChild>
-          <Pressable style={styles.navItem}>
-            <Image source={icons.navLeaderboard} style={styles.navIcon} resizeMode="contain" />
-            <Text style={styles.navText}>LEADERBOARD</Text>
-          </Pressable>
-        </Link>
-        <Pressable style={styles.navItem}>
-          <Image source={icons.navAdvocacy} style={styles.navIcon} resizeMode="contain" />
-          <Text style={[styles.navText, styles.navTextActive]}>ADVOCACY</Text>
-        </Pressable>
       </View>
-    </SafeAreaView>
+
+      <View style={page.sectionHeaderRow}>
+        <Text style={page.sectionTitle}>ACTVE PETITONS</Text>
+        <View style={page.viewAllRow}>
+          <Text style={page.viewAllText}>VIEW ALL</Text>
+          <Image source={icons.ctaArrow} style={page.sectionChevron} resizeMode="contain" />
+        </View>
+      </View>
+
+      {petitions.map((petition) => (
+        <View key={petition.key} style={styles.card}>
+          <Image source={petition.image} style={styles.cardImage} resizeMode="contain" />
+          <View style={styles.cardCenter}>
+            <Text style={styles.cardTitle}>{petition.title}</Text>
+            <Text style={styles.cardDescription}>{petition.description}</Text>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${petition.progress * 100}%` }]} />
+            </View>
+            <Text style={styles.goalText}>{petition.goal}</Text>
+          </View>
+          <View style={styles.cardRight}>
+            <Text style={styles.signatureNumber}>{petition.signatures}</Text>
+            <Text style={styles.signatureLabel}>SIGNATURES</Text>
+            <Pressable style={styles.signButton}>
+              <Text style={styles.signButtonText}>SIGN PETITION</Text>
+            </Pressable>
+          </View>
+        </View>
+      ))}
+
+      <View style={page.ctaCard}>
+        <Image source={icons.ctaIcon} style={page.ctaIcon} resizeMode="contain" />
+        <View style={page.ctaTextWrap}>
+          <Text style={page.ctaTitle}>FULFILL YOUR CIVIC RESPONSIBILITY AND VOTE.</Text>
+          <Text style={page.ctaBody}>Transparency starts when collectors speak together.</Text>
+        </View>
+        <Image source={icons.ctaArrow} style={page.ctaArrow} resizeMode="contain" />
+      </View>
+    </FigmaScreen>
   );
 }
 
-function createStyles(s: (n: number) => number, t: (n: number) => number) {
+function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: '#f6f4f0'
-    },
-    scrollContent: {
-      paddingHorizontal: s(20),
-      paddingTop: s(14),
-      paddingBottom: s(108)
-    },
-    headerSection: {
-      position: 'relative',
-      minHeight: s(420)
-    },
-    title: {
-      fontFamily: 'PermanentMarker_400Regular',
-      marginTop: s(16),
-      fontSize: t(50),
-      lineHeight: t(80),
-      color: '#35393d',
-      letterSpacing: 0.6,
-      transform: [{ rotate: '-4deg' }],
-      width: s(360)
-    },
-    titleBrush: {
-      width: s(338),
-      height: s(33),
-      marginTop: s(-14),
-      marginLeft: s(2)
-    },
-    subtitle: {
-      marginTop: s(26),
-      fontFamily: 'EBGaramond_700Bold',
-      fontSize: t(20),
-      lineHeight: t(26),
-      color: '#6d7074',
-      width: s(340)
-    },
-    description: {
-      marginTop: s(24),
-      fontFamily: 'EBGaramond_600SemiBold',
-      fontSize: t(20),
-      lineHeight: t(26),
-      color: '#898a8d',
-      width: s(380)
-    },
     heroImage: {
       position: 'absolute',
       right: s(84),
@@ -235,64 +152,6 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     utilityIcon: {
       width: s(44),
       height: s(44)
-    },
-    tabRow: {
-      marginTop: s(32),
-      flexDirection: 'row',
-      gap: s(18)
-    },
-    tabButton: {
-      minWidth: s(124),
-      height: s(42),
-      borderRadius: s(20),
-      borderWidth: 1,
-      borderColor: '#b3a499',
-      backgroundColor: '#fcf9f7',
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
-    tabButtonActive: {
-      backgroundColor: '#292c30',
-      borderColor: '#1a1b21'
-    },
-    tabText: {
-      fontFamily: 'EBGaramond_700Bold',
-      fontSize: t(16),
-      color: '#8c8e91'
-    },
-    tabTextActive: {
-      color: '#999b9e'
-    },
-    sectionHeaderRow: {
-      marginTop: s(14),
-      marginBottom: s(8),
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      borderTopWidth: 1,
-      borderTopColor: '#f1ece8',
-      paddingTop: s(10)
-    },
-    sectionTitle: {
-      fontFamily: 'PermanentMarker_400Regular',
-      marginVertical: s(16),
-      fontSize: t(26),
-      color: '#42454a'
-    },
-    viewAllRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: s(8)
-    },
-    viewAllText: {
-      fontFamily: 'EBGaramond_700Bold',
-      fontSize: t(18),
-      color: '#838588'
-    },
-    sectionChevron: {
-      marginLeft: s(12),
-      width: s(10),
-      height: s(17)
     },
     card: {
       backgroundColor: '#f6f4f1',
@@ -384,74 +243,6 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontFamily: 'EBGaramond_700Bold',
       fontSize: t(14),
       color: '#a1a3a5'
-    },
-    ctaCard: {
-      minHeight: s(116),
-      borderRadius: s(15),
-      borderWidth: 1,
-      borderColor: '#e6e2df',
-      backgroundColor: '#f3f0ec',
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: s(12),
-      marginBottom: s(10)
-    },
-    ctaIcon: {
-      width: s(164),
-      height: s(114)
-    },
-    ctaTextWrap: {
-      flex: 1,
-      paddingHorizontal: s(8)
-    },
-    ctaTitle: {
-      fontFamily: 'PermanentMarker_400Regular',
-      fontSize: t(18),
-      color: '#464a4e',
-      marginBottom: s(4)
-    },
-    ctaBody: {
-      fontFamily: 'EBGaramond_700Bold',
-      fontSize: t(21),
-      lineHeight: t(24),
-      color: '#848586'
-    },
-    ctaArrow: {
-      width: s(37),
-      height: s(27),
-      marginRight: s(6)
-    },
-    bottomNav: {
-      position: 'absolute',
-      marginBottom: s(16),
-      left: s(6),
-      right: s(6),
-      bottom: 0,
-      height: s(120),
-      backgroundColor: '#f7f5f3',
-      borderTopWidth: 1,
-      borderColor: '#f3f1ef',
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-around'
-    },
-    navItem: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: s(160),
-      gap: s(5)
-    },
-    navIcon: {
-      width: s(60),
-      height: s(60)
-    },
-    navText: {
-      fontFamily: 'Inter_700Bold',
-      fontSize: t(12),
-      color: '#7e8082'
-    },
-    navTextActive: {
-      color: '#b0927d'
     }
   });
 }
