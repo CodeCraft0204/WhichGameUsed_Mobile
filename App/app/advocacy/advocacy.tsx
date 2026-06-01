@@ -3,6 +3,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { FigmaHubBottomNav } from '@/components/figma/FigmaHubBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
+import { figmaColors } from '@/constants/figmaColors';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 
 const icons = {
@@ -55,7 +56,7 @@ export default function AdvocacyScreen() {
 
   return (
     <FigmaScreen
-      bottomNav={<FigmaHubBottomNav active="advocacy" s={s} t={t} />}
+      bottomNav={<FigmaHubBottomNav active="advocacy" />}
       scrollProps={{ contentContainerStyle: page.scrollContent }}
     >
       <View style={page.headerSection}>
@@ -145,7 +146,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       width: s(84),
       height: s(263),
       borderRadius: s(18),
-      backgroundColor: '#f2efea',
+      backgroundColor: figmaColors.utilityBar,
       alignItems: 'center',
       justifyContent: 'space-evenly'
     },
@@ -154,9 +155,9 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       height: s(44)
     },
     card: {
-      backgroundColor: '#f6f4f1',
+      backgroundColor: figmaColors.cream,
       borderWidth: 1,
-      borderColor: '#e9e6e2',
+      borderColor: figmaColors.borderLight,
       borderRadius: s(16),
       minHeight: s(224),
       marginBottom: s(10),
@@ -181,37 +182,37 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       fontFamily: 'EBGaramond_700Bold',
       fontSize: t(22),
       lineHeight: t(26),
-      color: '#626569'
+      color: figmaColors.charcoal
     },
     cardDescription: {
       marginTop: s(6),
       fontFamily: 'EBGaramond_400Regular',
       fontSize: t(17),
       lineHeight: t(21),
-      color: '#8f9092'
+      color: figmaColors.gray
     },
     progressTrack: {
       marginTop: s(10),
       width: '96%',
       height: s(10),
-      backgroundColor: '#d8d4d1',
+      backgroundColor: figmaColors.progressTrack,
       borderRadius: s(8)
     },
     progressFill: {
       height: '100%',
-      backgroundColor: '#9c8370',
+      backgroundColor: figmaColors.progressFill,
       borderRadius: s(8)
     },
     goalText: {
       marginTop: s(8),
       fontFamily: 'Inter_700Bold',
       fontSize: t(15),
-      color: '#7f8083'
+      color: figmaColors.gray
     },
     cardRight: {
       width: s(178),
       borderLeftWidth: 1,
-      borderLeftColor: '#ddd8d4',
+      borderLeftColor: figmaColors.borderLight,
       paddingLeft: s(14),
       justifyContent: 'center',
       alignItems: 'center',
@@ -221,12 +222,12 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       fontFamily: 'EBGaramond_600SemiBold',
       fontSize: t(32),
       lineHeight: t(46),
-      color: '#3d4145'
+      color: figmaColors.charcoal
     },
     signatureLabel: {
       fontFamily: 'EBGaramond_700Bold',
       fontSize: t(14),
-      color: '#818487',
+      color: figmaColors.gray,
       marginBottom: s(8)
     },
     signButton: {
@@ -234,15 +235,15 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       height: s(42),
       borderRadius: s(20),
       borderWidth: 1,
-      borderColor: '#4a4d50',
-      backgroundColor: '#292d31',
+      borderColor: figmaColors.charcoal,
+      backgroundColor: figmaColors.buttonPrimaryBg,
       alignItems: 'center',
       justifyContent: 'center'
     },
     signButtonText: {
       fontFamily: 'EBGaramond_700Bold',
       fontSize: t(14),
-      color: '#a1a3a5'
+      color: figmaColors.buttonPrimaryText
     }
   });
 }

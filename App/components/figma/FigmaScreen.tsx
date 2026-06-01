@@ -1,6 +1,7 @@
 import React from 'react';
 import { ScrollView, StyleSheet, View, type ScrollViewProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { figmaColors } from '@/constants/figmaColors';
 
 type FigmaScreenProps = {
   backgroundColor?: string;
@@ -10,7 +11,7 @@ type FigmaScreenProps = {
 };
 
 export function FigmaScreen({
-  backgroundColor = '#f6f4f0',
+  backgroundColor = figmaColors.background,
   scrollProps,
   bottomNav,
   children
@@ -49,6 +50,6 @@ const styles = StyleSheet.create({
     flexGrow: 1
   },
   bottomSafe: {
-    backgroundColor: '#f7f5f3'
+    backgroundColor: figmaColors.bottomNav
   }
 });

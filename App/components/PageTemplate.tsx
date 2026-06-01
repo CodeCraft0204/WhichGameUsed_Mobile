@@ -1,4 +1,4 @@
-﻿import { Link, type Href } from 'expo-router';
+﻿import { useRouter, type Href } from 'expo-router';
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -29,6 +29,8 @@ export function PageTemplate({
   bannerText,
   navItems
 }: PageTemplateProps) {
+  const router = useRouter();
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
@@ -93,11 +95,15 @@ export function PageTemplate({
         {navItems.map((item) => {
           const isActive = item.label.toUpperCase() === title.toUpperCase();
           return (
-            <Link asChild href={item.href} key={item.label}>
-              <Pressable style={styles.navItem}>
-                <Text style={[styles.navText, isActive && styles.navTextActive]}>{item.label}</Text>
-              </Pressable>
-            </Link>
+            <Pressable
+              key={item.label}
+              style={styles.navItem}
+              onPress={() => router.push(item.href)}
+            >
+              <Text style={StyleSheet.flatten([styles.navText, isActive && styles.navTextActive])}>
+                {item.label}
+              </Text>
+            </Pressable>
           );
         })}
       </View>

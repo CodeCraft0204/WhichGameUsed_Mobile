@@ -39,14 +39,21 @@ function Save-FigmaAsset($folder, $name, $url) {
   section_chevron = 'https://www.figma.com/api/mcp/asset/c903b69e-9d7d-4858-9eb5-39baf4a8a253'
 }.GetEnumerator() | ForEach-Object { Save-FigmaAsset 'leaderboard' $_.Key $_.Value }
 
-# Database
+# Database (node 1:251 — asset URLs from Figma MCP design context)
 @{
   hero_archive = 'https://www.figma.com/api/mcp/asset/f08e04cc-7f8b-44ec-91e9-7f8186986520'
   record_mantle = 'https://www.figma.com/api/mcp/asset/351907ef-0f3a-402b-9096-22ccfc7f20a7'
-  record_jordan = 'https://www.figma.com/api/mcp/asset/66d42f34-77f2-447e-9b2f-df543b24d9c6'
-  record_ruth = 'https://www.figma.com/api/mcp/asset/2bbf1b0c-575c-486b-a680-f7eca7fbcfff'
-  recent_kobe = 'https://www.figma.com/api/mcp/asset/a5caf774-4da4-48bd-8707-ae9273645bd8'
-  recent_gehrig = 'https://www.figma.com/api/mcp/asset/fbf583f9-3554-46e4-9de6-21ae3fecbd02'
+  record_jordan = 'https://www.figma.com/api/mcp/asset/452d621b-47a1-45e9-81a8-4265e021a7af'
+  record_ruth = 'https://www.figma.com/api/mcp/asset/46ed1a68-f827-4de5-86a7-e69510a44d97'
+  recent_kobe = 'https://www.figma.com/api/mcp/asset/aa7da043-0191-45ae-ad0d-f9bd333e371a'
+  recent_gehrig = 'https://www.figma.com/api/mcp/asset/fbeb40fd-f18d-4fe2-a17d-a10ea0c1f454'
+  meta_person = 'https://www.figma.com/api/mcp/asset/661501a5-4d26-4237-938b-575606bb0376'
+  meta_baseball = 'https://www.figma.com/api/mcp/asset/7442e9ad-c52d-4daa-9627-4efb9fa8394c'
+  meta_basketball = 'https://www.figma.com/api/mcp/asset/c532c248-b6d3-4228-bbd1-9f05f5f04ea9'
+  meta_calendar = 'https://www.figma.com/api/mcp/asset/c5e273de-61cd-4f76-a3b1-96c84448ab01'
+  meta_shield = 'https://www.figma.com/api/mcp/asset/499ce7fa-02f6-4626-837a-3ccd49c4766b'
+  card_chevron = 'https://www.figma.com/api/mcp/asset/27850346-353b-466f-a235-d861466532f1'
+  section_chevron = 'https://www.figma.com/api/mcp/asset/d1ad9afb-a4a3-4437-b597-fa539b2de443'
   cta_records = 'https://www.figma.com/api/mcp/asset/b410b784-97c3-440f-bfd9-f156ee3de0c3'
   cta_arrow = 'https://www.figma.com/api/mcp/asset/33655cff-0bb0-4aa5-babe-30189e1a6094'
   nav_database = 'https://www.figma.com/api/mcp/asset/2e0fe746-9267-434a-b129-553fdda077c9'
@@ -54,7 +61,9 @@ function Save-FigmaAsset($folder, $name, $url) {
   nav_create = 'https://www.figma.com/api/mcp/asset/bdf08651-0043-476f-a166-1682aa4d1935'
   nav_discussion = 'https://www.figma.com/api/mcp/asset/dc45bab4-0c04-4467-9dec-6fb97f079d07'
   nav_more = 'https://www.figma.com/api/mcp/asset/1767b6c9-431c-4d7d-ac8f-30df616c03a4'
-  card_chevron = 'https://www.figma.com/api/mcp/asset/499ce7fa-02f6-4626-837a-3ccd49c4766b'
 }.GetEnumerator() | ForEach-Object { Save-FigmaAsset 'database' $_.Key $_.Value }
+
+# Authenticate (node 1:96) — add MCP URLs when rate limit resets
+# hero, scan_button, cta_icon, cta_arrow, chevron already in assets/figma/authenticate/
 
 Write-Host 'Done.'

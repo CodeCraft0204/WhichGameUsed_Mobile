@@ -1,58 +1,88 @@
-﻿import { Link } from 'expo-router';
+﻿import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useWindowDimensions } from 'react-native';
-
-const CAMERA_DESIGN_WIDTH = 664;
-
-const icons = {
-  exit: require('@/assets/camera/exit.png'),
-  logo: require('@/assets/camera/logo.png'),
-  search: require('@/assets/camera/search.png'),
-  flash: require('@/assets/camera/flash.png'),
-  flashOff: require('@/assets/camera/flash_off.png'),
-  frame: require('@/assets/camera/frame.png'),
-  zoom: require('@/assets/camera/zoom.png'),
-  capture: require('@/assets/camera/capture.png'),
-  flip: require('@/assets/camera/flip.png')
-};
+import { CameraFrameOverlay } from '@/components/camera/CameraFrameOverlay';
+import { CameraModeToggle } from '@/components/camera/CameraModeToggle';
+import { cameraIcons, cameraLayout, type CameraMode } from '@/constants/cameraContent';
+import { figmaColors } from '@/constants/figmaColors';
+import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 
 export default function CameraScreen() {
-  const { width, height } = useWindowDimensions();
-  const layoutScale = Math.min(width / CAMERA_DESIGN_WIDTH, 1);
-  const s = (value: number) => Math.round(value * layoutScale);
-  const styles = useMemo(() => createStyles(s, height), [layoutScale, height]);
+  const router = useRouter();
+  const { s, t } = useFigmaLayout(1);
+  const styles = useMemo(() => createStyles(s, t), [s, t]);
   const [flashOn, setFlashOn] = useState(true);
+  const [mode, setMode] = useState<CameraMode>('front');
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom', 'left', 'right']}>
       <View style={styles.root}>
-        <View style={styles.topBar}>
-          <Link href="/database/database" asChild>
-            <Pressable style={styles.topIconBtn} hitSlop={12}>
-              <Image source={icons.exit} style={styles.exitIcon} resizeMode="contain" />
-            </Pressable>
-          </Link>
-          <Image source={icons.logo} style={styles.logo} resizeMode="contain" />
-          <Pressable style={styles.topIconBtn} onPress={() => setFlashOn((v) => !v)} hitSlop={12}>
-            <Image source={flashOn ? icons.flash : icons.flashOff} style={styles.flashIcon} resizeMode="contain" />
+        <View style={styles.header}>
+          <Pressable
+            style={styles.headerSide}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Exit camera"
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/database/database');
+              }
+            }}
+          >
+            <Image source={cameraIcons.exit} style={styles.exitIcon} resizeMode="contain" />
+          </Pressable>
+          <Image source={cameraIcons.logo} style={styles.logo} resizeMode="contain" />
+          <Pressable
+            style={styles.headerSide}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={flashOn ? 'Turn flash off' : 'Turn flash on'}
+            onPress={() => setFlashOn((value) => !value)}
+          >
+            <Image
+              source={flashOn ? cameraIcons.flash : cameraIcons.flashOff}
+              style={styles.flashIcon}
+              resizeMode="contain"
+            />
           </Pressable>
         </View>
+
+        {/* <Image source={cameraIcons.tornEdge} style={styles.tornEdgeTop} resizeMode="stretch" /> */}
 
         <View style={styles.previewArea}>
-          <Image source={icons.frame} style={styles.frame} resizeMode="contain" />
+          <View style={styles.cameraSection}>
+            <CameraFrameOverlay s={s} width={s(cameraLayout.frameWidth)} height={s(cameraLayout.frameHeight)} />
+
+            <Pressable
+              style={styles.gallerySlot}
+              accessibilityRole="button"
+              accessibilityLabel="Open photo library"
+            >
+              <Image source={cameraIcons.gallery} style={styles.galleryIcon} resizeMode="contain" />
+            </Pressable>
+
+            <View style={styles.modeSlot}>
+              <CameraModeToggle mode={mode} onChange={setMode} s={s} t={t} />
+            </View>
+          </View>
         </View>
 
-        <View style={styles.bottomBar}>
-          <Pressable style={styles.sideControl}>
-            <Image source={icons.zoom} style={styles.sideIcon} resizeMode="contain" />
+        {/* <Image source={cameraIcons.tornEdge} style={styles.tornEdgeBottom} resizeMode="stretch" /> */}
+
+        <View style={styles.footer}>
+          <Pressable style={styles.zoomButton} accessibilityRole="button" accessibilityLabel="Zoom 0.5x">
+            <Text style={styles.zoomText}>.5x</Text>
           </Pressable>
-          <Pressable style={styles.captureWrap}>
-            <Image source={icons.capture} style={styles.captureButton} resizeMode="contain" />
+
+          <Pressable style={styles.captureWrap} accessibilityRole="button" accessibilityLabel="Capture photo">
+            <Image source={cameraIcons.capture} style={styles.captureButton} resizeMode="contain" />
           </Pressable>
-          <Pressable style={styles.sideControl}>
-            <Image source={icons.flip} style={styles.sideIcon} resizeMode="contain" />
+
+          <Pressable style={styles.sideControl} accessibilityRole="button" accessibilityLabel="Search">
+            <Image source={cameraIcons.search} style={styles.searchIcon} resizeMode="contain" />
           </Pressable>
         </View>
       </View>
@@ -60,81 +90,133 @@ export default function CameraScreen() {
   );
 }
 
-function createStyles(s: (n: number) => number, screenHeight: number) {
+function createStyles(s: (n: number) => number, t: (n: number) => number) {
+  const gallerySize = s(cameraLayout.gallerySize * 1.5);
+  const galleryHalf = gallerySize / 1.5;
+  const frameHeight = s(cameraLayout.frameHeight);
+
   return StyleSheet.create({
     safe: {
       flex: 1,
-      backgroundColor: '#1a1b1d'
+      backgroundColor: figmaColors.background
     },
     root: {
       flex: 1,
-      paddingHorizontal: s(20),
-      paddingTop: s(8),
-      paddingBottom: s(12),
-      justifyContent: 'space-between'
+      backgroundColor: figmaColors.background
     },
-    topBar: {
+    header: {
+      minHeight: s(cameraLayout.headerMinHeight),
+      paddingHorizontal: s(20),
+      paddingVertical: s(10),
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      minHeight: s(56)
+      backgroundColor: figmaColors.background
     },
-    topIconBtn: {
+    headerSide: {
       width: s(48),
       height: s(48),
       alignItems: 'center',
       justifyContent: 'center'
     },
     exitIcon: {
-      width: s(40),
-      height: s(40)
+      marginTop: s(100),
+      width: s(90),
+      height: s(90)
     },
     logo: {
-      width: s(120),
-      height: s(36)
+      flex: 1,
+      marginTop: s(60),
+      width: s(cameraLayout.logoWidth * 2),
+      height: s(cameraLayout.logoHeight * 2),
+      maxWidth: s(cameraLayout.logoWidth * 2)
     },
     flashIcon: {
-      width: s(44),
-      height: s(44)
+      marginTop: s(105),
+      width: s(70),
+      height: s(70)
+    },
+    tornEdgeTop: {
+      width: '100%',
+      height: s(cameraLayout.tornEdgeHeight)
+    },
+    tornEdgeBottom: {
+      width: '100%',
+      height: s(cameraLayout.tornEdgeHeight),
+      transform: [{ scaleY: -1 }]
     },
     previewArea: {
       flex: 1,
+      backgroundColor: '#2f3134',
       alignItems: 'center',
       justifyContent: 'center',
-      minHeight: Math.min(screenHeight * 0.55, s(520))
+      paddingHorizontal: s(20),
+      paddingVertical: s(16)
     },
-    frame: {
-      width: s(580),
-      height: s(720),
-      maxWidth: '92%',
-      maxHeight: '70%'
+    cameraSection: {
+      width: '100%',
+      alignItems: 'center',
+      marginTop: s(110),
+      position: 'relative'
     },
-    bottomBar: {
+    gallerySlot: {
+      position: 'absolute',
+      left: '2%',
+      top: frameHeight / 2 - galleryHalf,
+    },
+    galleryIcon: {
+      width: gallerySize,
+      height: gallerySize
+    },
+    modeSlot: {
+      marginTop: s(-20),
+      width: '100%',
+      paddingHorizontal: s(10),
+      alignItems: 'center'
+    },
+    footer: {
+      minHeight: s(cameraLayout.footerMinHeight),
+      paddingHorizontal: s(80),
+      paddingTop: s(18),
+      paddingBottom: s(12),
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-evenly',
-      paddingTop: s(16),
-      minHeight: s(120)
+      justifyContent: 'space-between',
+      backgroundColor: figmaColors.background
     },
-    sideControl: {
-      width: s(72),
-      height: s(72),
+    zoomButton: {
+      width: s(cameraLayout.zoomSize * 1.5),
+      height: s(cameraLayout.zoomSize * 1.5),
+      borderRadius: s(cameraLayout.zoomSize),
+      backgroundColor: '#4a4a4a',
       alignItems: 'center',
       justifyContent: 'center'
     },
-    sideIcon: {
-      width: s(64),
-      height: s(64)
+    zoomText: {
+      fontFamily: 'PermanentMarker_400Regular',
+      fontSize: t(23),
+      lineHeight: t(20),
+      color: figmaColors.cream
+    },
+    sideControl: {
+      width: s(56),
+      height: s(56),
+      alignItems: 'center',
+      justifyContent: 'center'
     },
     captureWrap: {
-      width: s(108),
-      height: s(108),
+      width: s(cameraLayout.captureSize * 1.5),
+      height: s(cameraLayout.captureSize * 2.3),
       alignItems: 'center',
       justifyContent: 'center'
     },
     captureButton: {
-      width: s(108),
-      height: s(108)
+      width: s(cameraLayout.captureSize * 1.8),
+      height: s(cameraLayout.captureSize * 1.8)
+    },
+    searchIcon: {
+      width: s(cameraLayout.searchSize * 2),
+      height: s(cameraLayout.searchSize * 2),
     }
   });
 }

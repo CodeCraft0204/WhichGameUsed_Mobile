@@ -1,0 +1,301 @@
+import React from 'react';
+import { Image, StyleSheet, Text, View } from 'react-native';
+import {
+  authenticateIcons,
+  type AuthenticateDraftRecord,
+  type AuthenticateMetaIconKey,
+  type AuthenticateScannedRecord
+} from '@/constants/authenticateContent';
+import { figmaColors } from '@/constants/figmaColors';
+
+const metaIconSources: Record<AuthenticateMetaIconKey, number> = {
+  calendar: authenticateIcons.metaCalendar,
+  clock: authenticateIcons.metaClock,
+  scan: authenticateIcons.metaScan
+};
+
+type AuthenticateDraftCardProps = AuthenticateDraftRecord & {
+  s: (n: number) => number;
+  t: (n: number) => number;
+};
+
+export function AuthenticateDraftCard({
+  cardImage,
+  title,
+  description,
+  tags,
+  meta,
+  s,
+  t
+}: AuthenticateDraftCardProps) {
+  const styles = createDraftStyles(s, t);
+
+  return (
+    <View style={styles.card}>
+      <Image source={cardImage} style={styles.cardImage} resizeMode="contain" />
+
+      <View style={styles.body}>
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.description}>{description}</Text>
+        <View style={styles.tagRow}>
+          {tags.map((tag) => (
+            <View key={tag} style={styles.tag}>
+              <Text style={styles.tagText}>{tag}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.metaColumn}>
+        <View style={styles.metaDivider} />
+        <View style={styles.metaContent}>
+          {meta.map((item) => (
+            <View key={item.key} style={styles.metaRow}>
+              <Image source={metaIconSources[item.icon]} style={styles.metaIcon} resizeMode="contain" />
+              <Text style={[styles.metaText, item.accent && styles.metaTextAccent]}>{item.label}</Text>
+            </View>
+          ))}
+        </View>
+        <Image source={authenticateIcons.cardChevron} style={styles.cardChevron} resizeMode="contain" />
+      </View>
+    </View>
+  );
+}
+
+type AuthenticateScannedCardProps = AuthenticateScannedRecord & {
+  s: (n: number) => number;
+  t: (n: number) => number;
+};
+
+export function AuthenticateScannedCard({ cardImage, title, tags, scannedAt, s, t }: AuthenticateScannedCardProps) {
+  const styles = createScannedStyles(s, t);
+
+  return (
+    <View style={styles.card}>
+      <Image source={cardImage} style={styles.cardImage} resizeMode="contain" />
+
+      <View style={styles.body}>
+        <Text style={styles.title}>{title}</Text>
+        <View style={styles.tagRow}>
+          {tags.map((tag) => (
+            <View key={tag} style={styles.tag}>
+              <Text style={styles.tagText}>{tag}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.metaColumn}>
+        <View style={styles.metaDivider} />
+        <View style={styles.metaContent}>
+          <View style={styles.metaRow}>
+            <Image source={metaIconSources.scan} style={styles.metaIcon} resizeMode="contain" />
+            <Text style={styles.metaText}>{scannedAt}</Text>
+          </View>
+        </View>
+        <Image source={authenticateIcons.cardChevron} style={styles.cardChevron} resizeMode="contain" />
+      </View>
+    </View>
+  );
+}
+
+function createDraftStyles(s: (n: number) => number, t: (n: number) => number) {
+  return StyleSheet.create({
+    card: {
+      backgroundColor: '#f9f6f1',
+      borderWidth: 1,
+      borderColor: '#ebe7e3',
+      borderRadius: s(16),
+      minHeight: s(185),
+      marginBottom: s(10),
+      flexDirection: 'row',
+      alignItems: 'stretch',
+      paddingVertical: s(10),
+      paddingLeft: s(10),
+      paddingRight: s(8)
+    },
+    cardImage: {
+      width: s(151),
+      height: s(154),
+      alignSelf: 'center'
+    },
+    body: {
+      flex: 1,
+      paddingHorizontal: s(8),
+      justifyContent: 'center',
+      gap: s(6),
+      minWidth: 0
+    },
+    title: {
+      fontFamily: 'EBGaramond_700Bold',
+      fontSize: t(20),
+      lineHeight: t(27),
+      color: figmaColors.charcoal
+    },
+    description: {
+      fontFamily: 'EBGaramond_700Bold',
+      fontSize: t(15),
+      lineHeight: t(20),
+      color: figmaColors.gray
+    },
+    tagRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: s(6),
+      marginTop: s(2)
+    },
+    tag: {
+      backgroundColor: '#eee8df',
+      borderWidth: 1,
+      borderColor: '#f6f2ec',
+      borderRadius: s(7),
+      paddingHorizontal: s(8),
+      paddingVertical: s(4)
+    },
+    tagText: {
+      fontFamily: 'Inter_700Bold',
+      fontSize: t(10),
+      color: figmaColors.gray
+    },
+    metaColumn: {
+      width: s(148),
+      flexDirection: 'row',
+      alignItems: 'stretch',
+      position: 'relative'
+    },
+    metaDivider: {
+      width: 1,
+      backgroundColor: '#ddd8d4',
+      marginVertical: s(4),
+      marginRight: s(10)
+    },
+    metaContent: {
+      flex: 1,
+      justifyContent: 'center',
+      gap: s(10),
+      paddingRight: s(12)
+    },
+    metaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(6)
+    },
+    metaIcon: {
+      width: s(16),
+      height: s(16)
+    },
+    metaText: {
+      flex: 1,
+      fontFamily: 'EBGaramond_400Regular',
+      fontSize: t(14),
+      lineHeight: t(16),
+      color: figmaColors.gray
+    },
+    metaTextAccent: {
+      color: '#9c8370'
+    },
+    cardChevron: {
+      position: 'absolute',
+      right: 0,
+      top: '50%',
+      marginTop: s(-8),
+      width: s(9),
+      height: s(15)
+    }
+  });
+}
+
+function createScannedStyles(s: (n: number) => number, t: (n: number) => number) {
+  return StyleSheet.create({
+    card: {
+      backgroundColor: '#f9f5f0',
+      borderWidth: 1,
+      borderColor: '#ede9e5',
+      borderRadius: s(14),
+      minHeight: s(120),
+      marginBottom: s(10),
+      flexDirection: 'row',
+      alignItems: 'stretch',
+      paddingVertical: s(10),
+      paddingLeft: s(10),
+      paddingRight: s(8)
+    },
+    cardImage: {
+      width: s(120),
+      height: s(78),
+      alignSelf: 'center'
+    },
+    body: {
+      flex: 1,
+      paddingHorizontal: s(8),
+      justifyContent: 'center',
+      gap: s(8),
+      minWidth: 0
+    },
+    title: {
+      fontFamily: 'EBGaramond_700Bold',
+      fontSize: t(16),
+      lineHeight: t(22),
+      color: figmaColors.charcoal
+    },
+    tagRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: s(6)
+    },
+    tag: {
+      backgroundColor: '#eee8df',
+      borderWidth: 1,
+      borderColor: '#f6f2ec',
+      borderRadius: s(7),
+      paddingHorizontal: s(8),
+      paddingVertical: s(4)
+    },
+    tagText: {
+      fontFamily: 'Inter_700Bold',
+      fontSize: t(10),
+      color: figmaColors.gray
+    },
+    metaColumn: {
+      width: s(128),
+      flexDirection: 'row',
+      alignItems: 'stretch',
+      position: 'relative'
+    },
+    metaDivider: {
+      width: 1,
+      backgroundColor: '#ddd8d4',
+      marginVertical: s(4),
+      marginRight: s(10)
+    },
+    metaContent: {
+      flex: 1,
+      justifyContent: 'center',
+      paddingRight: s(12)
+    },
+    metaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(6)
+    },
+    metaIcon: {
+      width: s(16),
+      height: s(16)
+    },
+    metaText: {
+      flex: 1,
+      fontFamily: 'EBGaramond_400Regular',
+      fontSize: t(14),
+      lineHeight: t(16),
+      color: figmaColors.gray
+    },
+    cardChevron: {
+      position: 'absolute',
+      right: 0,
+      top: '50%',
+      marginTop: s(-8),
+      width: s(9),
+      height: s(15)
+    }
+  });
+}

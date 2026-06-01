@@ -1,5 +1,6 @@
 import React from 'react';
 import { Image, StyleSheet, View } from 'react-native';
+import { figmaColors } from '@/constants/figmaColors';
 import { figmaSharedIcons } from '@/constants/figmaShared';
 
 type FigmaUtilityBarProps = {
@@ -27,7 +28,7 @@ function createStyles(s: (n: number) => number) {
       width: s(84),
       height: s(263),
       borderRadius: s(18),
-      backgroundColor: '#f0ece6',
+      backgroundColor: figmaColors.utilityBar,
       alignItems: 'center',
       justifyContent: 'space-evenly'
     },

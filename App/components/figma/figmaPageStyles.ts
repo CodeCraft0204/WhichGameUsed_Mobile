@@ -1,4 +1,6 @@
 import { StyleSheet } from 'react-native';
+import { figmaColors } from '@/constants/figmaColors';
+import { figmaNavTheme } from '@/constants/figmaNavTheme';
 
 /** Typography and spacing aligned with the advocacy screen (810 design width). */
 export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) => number) {
@@ -17,7 +19,7 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
       marginTop: s(16),
       fontSize: t(50),
       lineHeight: t(80),
-      color: '#35393d',
+      color: figmaColors.charcoal,
       letterSpacing: 0.6,
       transform: [{ rotate: '-4deg' }],
       width: s(360)
@@ -33,7 +35,7 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
       fontFamily: 'EBGaramond_700Bold',
       fontSize: t(20),
       lineHeight: t(26),
-      color: '#6d7074',
+      color: figmaColors.gray,
       width: s(340)
     },
     description: {
@@ -41,7 +43,7 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
       fontFamily: 'EBGaramond_600SemiBold',
       fontSize: t(20),
       lineHeight: t(26),
-      color: '#898a8d',
+      color: figmaColors.gray,
       width: s(380)
     },
     tabRow: {
@@ -55,23 +57,23 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
       height: s(42),
       borderRadius: s(20),
       borderWidth: 1,
-      borderColor: '#b3a499',
-      backgroundColor: '#fcf9f7',
+      borderColor: figmaColors.tabInactiveBorder,
+      backgroundColor: figmaColors.tabInactiveBg,
       alignItems: 'center',
       justifyContent: 'center',
       paddingHorizontal: s(12)
     },
     tabButtonActive: {
-      backgroundColor: '#292c30',
-      borderColor: '#1a1b21'
+      backgroundColor: figmaColors.tabActiveBg,
+      borderColor: figmaColors.tabActiveBorder
     },
     tabText: {
       fontFamily: 'EBGaramond_700Bold',
       fontSize: t(16),
-      color: '#8c8e91'
+      color: figmaColors.tabText
     },
     tabTextActive: {
-      color: '#999b9e'
+      color: figmaColors.tabTextActive
     },
     sectionHeaderRow: {
       marginTop: s(14),
@@ -79,25 +81,24 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      borderTopWidth: 1,
-      borderTopColor: '#f1ece8',
+      borderTopColor: figmaColors.divider,
       paddingTop: s(10)
     },
     sectionTitle: {
       fontFamily: 'PermanentMarker_400Regular',
       marginVertical: s(16),
       fontSize: t(26),
-      color: '#42454a'
+      color: figmaColors.charcoal
+    },
+    viewAllText: {
+      fontFamily: 'EBGaramond_700Bold',
+      fontSize: t(18),
+      color: figmaColors.gray
     },
     viewAllRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: s(8)
-    },
-    viewAllText: {
-      fontFamily: 'EBGaramond_700Bold',
-      fontSize: t(18),
-      color: '#838588'
     },
     sectionChevron: {
       marginLeft: s(12),
@@ -108,8 +109,8 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
       minHeight: s(116),
       borderRadius: s(15),
       borderWidth: 1,
-      borderColor: '#e6e2df',
-      backgroundColor: '#f3f0ec',
+      borderColor: figmaColors.ctaBorder,
+      backgroundColor: figmaColors.ctaBackground,
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: s(12),
@@ -126,14 +127,14 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
     ctaTitle: {
       fontFamily: 'PermanentMarker_400Regular',
       fontSize: t(18),
-      color: '#464a4e',
+      color: figmaColors.charcoal,
       marginBottom: s(4)
     },
     ctaBody: {
       fontFamily: 'EBGaramond_700Bold',
       fontSize: t(21),
       lineHeight: t(24),
-      color: '#848586'
+      color: figmaColors.gray
     },
     ctaArrow: {
       width: s(37),
@@ -141,36 +142,47 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
       marginRight: s(6)
     },
     bottomNav: {
-      minHeight: s(120),
-      backgroundColor: '#f7f5f3',
+      minHeight: s(figmaNavTheme.barMinHeight),
+      backgroundColor: figmaNavTheme.barBackground,
       borderTopWidth: 1,
-      borderTopColor: '#f3f1ef',
+      borderTopColor: figmaNavTheme.barBorder,
       flexDirection: 'row',
-      alignItems: 'center',
-      paddingTop: s(8),
-      paddingBottom: s(4)
+      alignItems: 'stretch',
+      paddingTop: s(figmaNavTheme.barPaddingTop),
+      paddingBottom: s(figmaNavTheme.barPaddingBottom),
+      paddingHorizontal: s(figmaNavTheme.barPaddingHorizontal)
+    },
+    navSlot: {
+      flex: 1,
+      minWidth: 0
     },
     navItem: {
       flex: 1,
+      width: '100%',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: s(5),
-      minWidth: 0,
-      paddingHorizontal: s(2)
+      gap: s(figmaNavTheme.itemGap),
+      paddingVertical: s(6),
+      paddingHorizontal: s(2),
+      borderRadius: s(figmaNavTheme.itemRadius)
+    },
+    navItemActive: {
+      backgroundColor: figmaNavTheme.itemActiveBackground
     },
     navIcon: {
-      width: s(60),
-      height: s(60)
+      width: s(figmaNavTheme.iconSize),
+      height: s(figmaNavTheme.iconSize)
     },
     navText: {
       fontFamily: 'Inter_700Bold',
-      fontSize: t(11),
-      lineHeight: t(13),
-      color: '#7e8082',
-      textAlign: 'center'
+      fontSize: t(figmaNavTheme.labelFontSize),
+      lineHeight: t(figmaNavTheme.labelLineHeight),
+      color: figmaNavTheme.label,
+      textAlign: 'center',
+      width: '100%'
     },
     navTextActive: {
-      color: '#b0927d'
+      color: figmaNavTheme.label
     }
   });
 }
