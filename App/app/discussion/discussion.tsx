@@ -135,7 +135,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
     heroImage: {
       position: 'absolute',
       right: s(88),
-      top: s(60),
+      top: s(40),
       width: s(286),
       height: s(310)
     },

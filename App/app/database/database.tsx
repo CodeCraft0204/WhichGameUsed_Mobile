@@ -112,7 +112,7 @@ function createLocalStyles(s: (n: number) => number) {
     },
     heroImage: {
       position: 'absolute',
-      right: s(70),
+      right: s(90),
       top: s(28),
       width: s(279),
       height: s(268)

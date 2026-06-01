@@ -159,7 +159,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       position: 'absolute',
       right: s(88),
       top: s(65),
-      width: s(286),
+      width: s(300),
       height: s(310)
     },
     tabRow: {
