@@ -1,5 +1,7 @@
 /** Figma-base sizes for auth screens (810 design width, before scale). */
 export const authLayout = {
+  logoWidth: 340,
+  logoHeight: 76,
   heroHeight: 300,
   titleSize: 32,
   titleLineHeight: 58,

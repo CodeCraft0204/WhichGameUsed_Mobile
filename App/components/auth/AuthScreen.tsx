@@ -55,7 +55,13 @@ export function AuthScreen({
             <Image source={hero} style={styles.hero} resizeMode="contain" accessibilityIgnoresInvertColors />
           ) : null}
 
-          <Text style={styles.title}>{title}</Text>
+          <Image
+            source={authIcons.logo}
+            style={styles.logo}
+            resizeMode="contain"
+            accessibilityLabel="Which Game Used"
+          />
+          {/* <Text style={styles.title}>{title}</Text> */}
           <Image source={authIcons.titleBrush} style={styles.titleBrush} resizeMode="stretch" />
           <Text style={styles.subtitle}>{subtitle}</Text>
 
@@ -98,10 +104,14 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       paddingTop: s(8),
       paddingBottom: s(28)
     },
+    logo: {
+      width: s(authLayout.logoWidth * 1.5),
+      height: s(authLayout.logoHeight * 1.5),
+      alignSelf: 'center',
+    },
     hero: {
       width: '100%',
-      height: s(authLayout.heroHeight * 1.5),
-      marginBottom: s(12)
+      height: s(authLayout.heroHeight * 1.3),
     },
     title: {
       fontFamily: 'PermanentMarker_400Regular',
@@ -109,10 +119,11 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       lineHeight: t(authLayout.titleLineHeight),
       color: figmaColors.black,
       textAlign: 'center',
-      letterSpacing: 0.6
+      letterSpacing: 1.2,
+      textTransform: 'uppercase'
     },
     titleBrush: {
-      width: s(authLayout.titleBrushWidth),
+      width: s(authLayout.titleBrushWidth * 1.2),
       height: s(authLayout.titleBrushHeight),
       alignSelf: 'center',
       marginTop: s(8),

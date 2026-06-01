@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Text } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { StyleSheet, Text } from 'react-native';
 import { AuthCheckbox } from '@/components/auth/AuthCheckbox';
 import { AuthOrDivider } from '@/components/auth/AuthOrDivider';
 import { AuthPrimaryButton } from '@/components/auth/AuthPrimaryButton';
@@ -9,10 +9,14 @@ import { AuthSocialButtons } from '@/components/auth/AuthSocialButtons';
 import { AuthTextField } from '@/components/auth/AuthTextField';
 import { AuthTextLink } from '@/components/auth/AuthTextLink';
 import { authCopy, authIcons } from '@/constants/authContent';
+import { authLayout } from '@/constants/authLayout';
 import { figmaColors } from '@/constants/figmaColors';
+import { useAuthLayout } from '@/hooks/useAuthLayout';
 
 export default function SignUpScreen() {
   const router = useRouter();
+  const { t } = useAuthLayout();
+  const labelStyles = useMemo(() => createLabelStyles(t), [t]);
   const copy = authCopy.signUp;
 
   const [name, setName] = useState('');
@@ -93,11 +97,9 @@ export default function SignUpScreen() {
         checked={agreed}
         onToggle={() => setAgreed((v) => !v)}
         label={
-          <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 14, color: figmaColors.gray }}>
+          <Text style={labelStyles.agreeText}>
             {copy.agreePrefix}
-            <Text style={{ color: figmaColors.accent, fontFamily: 'EBGaramond_700Bold' }}>
-              {copy.communityStandards}
-            </Text>
+            <Text style={labelStyles.agreeLink}>{copy.communityStandards}</Text>
           </Text>
         }
       />
@@ -112,4 +114,25 @@ export default function SignUpScreen() {
       <AuthSocialButtons />
     </AuthScreen>
   );
+}
+
+function createLabelStyles(t: (n: number) => number) {
+  const fontSize = t(authLayout.fieldFontSize);
+  const lineHeight = t(24);
+
+  return StyleSheet.create({
+    agreeText: {
+      fontFamily: 'Inter_400Regular',
+      fontSize,
+      lineHeight,
+      color: figmaColors.gray
+    },
+    agreeLink: {
+      fontFamily: 'EBGaramond_700Bold',
+      fontSize,
+      lineHeight,
+      color: figmaColors.accent,
+      textDecorationLine: 'underline'
+    }
+  });
 }

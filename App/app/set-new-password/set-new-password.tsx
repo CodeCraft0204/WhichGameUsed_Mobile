@@ -35,9 +35,6 @@ export default function SetNewPasswordScreen() {
       hero={authIcons.heroSetPassword}
       title={copy.title}
       subtitle={copy.subtitle}
-      headerLeading={
-        <AuthBackButton label={copy.back} onPress={() => router.back()} />
-      }
       footerNote={copy.footerNote}
     >
       <AuthTextField

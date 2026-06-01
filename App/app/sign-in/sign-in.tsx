@@ -63,13 +63,15 @@ export default function SignInScreen() {
       />
 
       <View style={styles.optionsRow}>
-        <AuthCheckbox
-          checked={rememberMe}
-          onToggle={() => setRememberMe((v) => !v)}
-          label={copy.rememberMe}
-        />
+        <View style={styles.rememberWrap}>
+          <AuthCheckbox
+            checked={rememberMe}
+            onToggle={() => setRememberMe((v) => !v)}
+            label={copy.rememberMe}
+          />
+        </View>
         <Link href="/password-reset/password-reset" asChild>
-          <Pressable hitSlop={8}>
+          <Pressable hitSlop={8} style={styles.forgotPressable}>
             <Text style={styles.forgotText}>{copy.forgotPassword}</Text>
           </Pressable>
         </Link>
@@ -94,12 +96,20 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       alignItems: 'center',
       justifyContent: 'space-between',
       marginTop: s(4),
-      gap: s(8)
+      gap: s(12)
+    },
+    rememberWrap: {
+      flex: 1,
+      flexShrink: 1
+    },
+    forgotPressable: {
+      justifyContent: 'center',
+      alignSelf: 'center'
     },
     forgotText: {
       fontFamily: 'EBGaramond_700Bold',
-      fontSize: t(14),
-      lineHeight: t(18),
+      fontSize: t(16),
+      lineHeight: t(24),
       color: figmaColors.accent
     }
   });

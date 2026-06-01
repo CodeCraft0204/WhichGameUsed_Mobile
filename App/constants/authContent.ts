@@ -1,5 +1,6 @@
 /** Auth flow copy, assets, and password rules. */
 export const authIcons = {
+  logo: require('@/assets/auth/logo.png'),
   heroLogin: require('@/assets/auth/hero_login_crop.png'),
   heroSignup: require('@/assets/auth/hero_signup_crop.png'),
   heroReset: require('@/assets/auth/hero_reset_crop.png'),
