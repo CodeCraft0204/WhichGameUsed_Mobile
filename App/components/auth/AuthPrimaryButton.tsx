@@ -6,11 +6,12 @@ import { useAuthLayout } from '@/hooks/useAuthLayout';
 
 type AuthPrimaryButtonProps = {
   label: string;
-  onPress: () => void;
+  onPress: () => void | Promise<void>;
   disabled?: boolean;
+  loading?: boolean;
 };
 
-export function AuthPrimaryButton({ label, onPress, disabled }: AuthPrimaryButtonProps) {
+export function AuthPrimaryButton({ label, onPress, disabled, loading }: AuthPrimaryButtonProps) {
   const { s, t } = useAuthLayout();
   const styles = useMemo(() => createStyles(s, t), [s, t]);
 
@@ -22,11 +23,11 @@ export function AuthPrimaryButton({ label, onPress, disabled }: AuthPrimaryButto
         disabled && styles.buttonDisabled
       ]}
       accessibilityRole="button"
-      disabled={disabled}
-      onPress={onPress}
+      disabled={disabled || loading}
+      onPress={() => void onPress()}
     >
       <Text style={styles.label} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82}>
-        {label}
+        {loading ? 'PLEASE WAIT…' : label}
       </Text>
     </Pressable>
   );

@@ -1,0 +1,9 @@
+# Copy to .env and fill with your Supabase project values (same as portal).
+EXPO_PUBLIC_SUPABASE_URL
+EXPO_PUBLIC_SUPABASE_ANON_KEY
+
+# Add these redirect URLs in Supabase Dashboard → Authentication → URL Configuration:
+# - whichgameused://auth/callback
+# - whichgameused://set-new-password/set-new-password
+# - http://localhost:8081/auth/callback (Expo web dev)
+# - http://localhost:8081/set-new-password/set-new-password (Expo web dev)

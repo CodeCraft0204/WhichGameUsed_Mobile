@@ -2,28 +2,53 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { AuthErrorBanner } from '@/components/auth/AuthErrorBanner';
 import { AuthHelpBox } from '@/components/auth/AuthHelpBox';
+import { AuthInfoBanner } from '@/components/auth/AuthInfoBanner';
 import { AuthPrimaryButton } from '@/components/auth/AuthPrimaryButton';
 import { AuthScreen } from '@/components/auth/AuthScreen';
 import { AuthTextField } from '@/components/auth/AuthTextField';
 import { authCopy, authIcons } from '@/constants/authContent';
 import { figmaColors } from '@/constants/figmaColors';
+import { useAuth } from '@/context/AuthContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 
 export default function PasswordResetScreen() {
   const router = useRouter();
+  const { sendPasswordOtp } = useAuth();
   const { s, t } = useFigmaLayout(1);
   const styles = useMemo(() => createStyles(s, t), [s, t]);
   const copy = authCopy.passwordReset;
 
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const canSubmit = email.trim().length > 0;
+  const canSubmit = email.trim().length > 0 && !loading;
 
-  const handleSubmit = () => {
+  const handleSendCode = async () => {
+    setError(null);
+    setInfo(null);
+    setLoading(true);
+    const result = await sendPasswordOtp(email);
+    setLoading(false);
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
     setSent(true);
-    router.push('/set-new-password/set-new-password');
+    setInfo(copy.otpSent);
+  };
+
+  const goToSetPassword = () => {
+    router.push({
+      pathname: '/set-new-password/set-new-password',
+      params: { email: email.trim() }
+    });
   };
 
   return (
@@ -33,9 +58,17 @@ export default function PasswordResetScreen() {
       subtitle={copy.subtitle}
       footerNote={copy.footerNote}
     >
+      <AuthErrorBanner message={error} />
+      <AuthInfoBanner message={info} />
+
       {sent ? (
         <View style={styles.successBox}>
           <Text style={styles.successText}>{copy.success}</Text>
+          <AuthPrimaryButton
+            label={copy.continueToSetPassword}
+            disabled={loading}
+            onPress={goToSetPassword}
+          />
         </View>
       ) : (
         <>
@@ -49,9 +82,15 @@ export default function PasswordResetScreen() {
             autoComplete="email"
             textContentType="emailAddress"
             returnKeyType="done"
+            editable={!loading}
           />
 
-          <AuthPrimaryButton label={copy.submit} disabled={!canSubmit} onPress={handleSubmit} />
+          <AuthPrimaryButton
+            label={copy.submit}
+            disabled={!canSubmit}
+            loading={loading}
+            onPress={handleSendCode}
+          />
 
           <View style={styles.orRow}>
             <View style={styles.orLine} />
@@ -83,18 +122,19 @@ export default function PasswordResetScreen() {
 function createStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
     successBox: {
-      padding: s(16),
-      borderRadius: s(10),
-      borderWidth: 1,
-      borderColor: figmaColors.borderLight,
-      backgroundColor: '#FFFFFF'
+      gap: s(12)
     },
     successText: {
       fontFamily: 'EBGaramond_600SemiBold',
       fontSize: t(16),
       lineHeight: t(22),
       color: figmaColors.gray,
-      textAlign: 'center'
+      textAlign: 'center',
+      padding: s(16),
+      borderRadius: s(10),
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      backgroundColor: '#FFFFFF'
     },
     orRow: {
       flexDirection: 'row',

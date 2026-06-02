@@ -1,9 +1,10 @@
-﻿import { Redirect } from 'expo-router';
+import { Redirect } from 'expo-router';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useAuth } from '@/context/AuthContext';
 import { figmaColors } from '@/constants/figmaColors';
 
-export default function Index() {
+/** Handles email-confirmation deep links after sign up. */
+export default function AuthCallbackScreen() {
   const { session, loading } = useAuth();
 
   if (loading) {

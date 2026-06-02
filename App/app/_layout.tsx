@@ -12,6 +12,7 @@ import {
   EBGaramond_700Bold
 } from '@expo-google-fonts/eb-garamond';
 import { useFonts as usePmFonts, PermanentMarker_400Regular } from '@expo-google-fonts/permanent-marker';
+import { AuthProvider } from '@/context/AuthContext';
 
 export default function RootLayout() {
   const [interLoaded] = useInterFonts({ Inter_300Light, Inter_400Regular, Inter_700Bold });
@@ -22,5 +23,9 @@ export default function RootLayout() {
     return null;
   }
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <AuthProvider>
+      <Stack screenOptions={{ headerShown: false }} />
+    </AuthProvider>
+  );
 }

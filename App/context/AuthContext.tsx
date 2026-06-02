@@ -1,0 +1,249 @@
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode
+} from 'react';
+import type { Session, User } from '@supabase/supabase-js';
+import { formatAuthError } from '@/lib/auth-errors';
+import {
+  completeMobileSetNewPassword,
+  completeMobileSignUp,
+  requestSignInOtpAfterPassword,
+  sendMobileOtp,
+  setMobilePassword,
+  verifyMobileOtp
+} from '@/lib/mobile-auth';
+import { supabase } from '@/lib/supabase';
+import type { AppRole, Profile } from '@/types/profile';
+
+type AuthResult = { error: string | null };
+
+type AuthSessionResult = AuthResult & {
+  profile: Profile | null;
+  isAdmin: boolean;
+};
+
+type AuthState = {
+  session: Session | null;
+  user: User | null;
+  profile: Profile | null;
+  loading: boolean;
+  profileLoading: boolean;
+  isAdmin: boolean;
+  requestSignInOtp: (email: string, password: string) => Promise<AuthResult>;
+  verifySignIn: (email: string, otp: string) => Promise<AuthSessionResult>;
+  sendSignUpOtp: (email: string, displayName?: string) => Promise<AuthResult>;
+  completeSignUp: (email: string, otp: string, password?: string) => Promise<AuthSessionResult>;
+  sendPasswordOtp: (email: string) => Promise<AuthResult>;
+  completeSetNewPassword: (email: string, otp: string, password: string) => Promise<AuthSessionResult>;
+  resendOtp: (email: string, createUser: boolean, displayName?: string) => Promise<AuthResult>;
+  signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
+};
+
+const AuthContext = createContext<AuthState | null>(null);
+
+export function isAdminRole(role: AppRole | undefined): boolean {
+  return role === 'admin' || role === 'super_admin';
+}
+
+async function fetchProfile(userId: string): Promise<Profile | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, role, display_name, username, avatar_url, about, location_text')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Failed to load profile', error.message);
+    return null;
+  }
+  return data as Profile | null;
+}
+
+async function profileAfterSession(): Promise<AuthSessionResult> {
+  const { data } = await supabase.auth.getSession();
+  const userId = data.session?.user?.id;
+  if (!userId) {
+    return { error: null, profile: null, isAdmin: false };
+  }
+  const profile = await fetchProfile(userId);
+  return { error: null, profile, isAdmin: isAdminRole(profile?.role) };
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
+
+  const refreshProfile = useCallback(async () => {
+    if (!user) {
+      setProfile(null);
+      return;
+    }
+    setProfileLoading(true);
+    setProfile(await fetchProfile(user.id));
+    setProfileLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    void supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      setSession(data.session);
+      setUser(data.session?.user ?? null);
+      setLoading(false);
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+      setLoading(false);
+      if (!nextSession) {
+        setProfile(null);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setProfile(null);
+      setProfileLoading(false);
+      return;
+    }
+
+    let mounted = true;
+    setProfileLoading(true);
+    void fetchProfile(user.id).then((next) => {
+      if (mounted) {
+        setProfile(next);
+        setProfileLoading(false);
+      }
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, [user]);
+
+  const requestSignInOtp = useCallback(async (email: string, password: string): Promise<AuthResult> => {
+    const { passwordError, otpError } = await requestSignInOtpAfterPassword(email, password);
+    const error = passwordError ?? otpError;
+    return { error: error ? formatAuthError(error.message) : null };
+  }, []);
+
+  const verifySignIn = useCallback(async (email: string, otp: string): Promise<AuthSessionResult> => {
+    const { error } = await verifyMobileOtp(email, otp);
+    if (error) {
+      return { error: formatAuthError(error.message), profile: null, isAdmin: false };
+    }
+    return profileAfterSession();
+  }, []);
+
+  const sendSignUpOtp = useCallback(async (email: string, displayName?: string): Promise<AuthResult> => {
+    const { error } = await sendMobileOtp(email, { createUser: true, displayName });
+    return { error: error ? formatAuthError(error.message) : null };
+  }, []);
+
+  const completeSignUp = useCallback(
+    async (email: string, otp: string, password?: string): Promise<AuthSessionResult> => {
+      const { verify, password: pwdResult } = await completeMobileSignUp(email, otp, password);
+      if (verify.error) {
+        return { error: formatAuthError(verify.error.message), profile: null, isAdmin: false };
+      }
+      if (pwdResult?.error) {
+        return { error: formatAuthError(pwdResult.error.message), profile: null, isAdmin: false };
+      }
+      return profileAfterSession();
+    },
+    []
+  );
+
+  const sendPasswordOtp = useCallback(async (email: string): Promise<AuthResult> => {
+    const { error } = await sendMobileOtp(email, { createUser: false });
+    return { error: error ? formatAuthError(error.message) : null };
+  }, []);
+
+  const completeSetNewPassword = useCallback(
+    async (email: string, otp: string, password: string): Promise<AuthSessionResult> => {
+      const { verify, password: pwdResult } = await completeMobileSetNewPassword(email, otp, password);
+      if (verify.error) {
+        return { error: formatAuthError(verify.error.message), profile: null, isAdmin: false };
+      }
+      if (pwdResult?.error) {
+        return { error: formatAuthError(pwdResult.error.message), profile: null, isAdmin: false };
+      }
+      return profileAfterSession();
+    },
+    []
+  );
+
+  const resendOtp = useCallback(
+    async (email: string, createUser: boolean, displayName?: string): Promise<AuthResult> => {
+      const { error } = await sendMobileOtp(email, { createUser, displayName });
+      return { error: error ? formatAuthError(error.message) : null };
+    },
+    []
+  );
+
+  const signOut = useCallback(async () => {
+    await supabase.auth.signOut();
+    setProfile(null);
+  }, []);
+
+  const value = useMemo<AuthState>(
+    () => ({
+      session,
+      user,
+      profile,
+      loading,
+      profileLoading,
+      isAdmin: isAdminRole(profile?.role),
+      requestSignInOtp,
+      verifySignIn,
+      sendSignUpOtp,
+      completeSignUp,
+      sendPasswordOtp,
+      completeSetNewPassword,
+      resendOtp,
+      signOut,
+      refreshProfile
+    }),
+    [
+      session,
+      user,
+      profile,
+      loading,
+      profileLoading,
+      requestSignInOtp,
+      verifySignIn,
+      sendSignUpOtp,
+      completeSignUp,
+      sendPasswordOtp,
+      completeSetNewPassword,
+      resendOtp,
+      signOut,
+      refreshProfile
+    ]
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth(): AuthState {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
+}

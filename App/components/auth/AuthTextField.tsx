@@ -13,7 +13,7 @@ import { figmaColors } from '@/constants/figmaColors';
 import { authLayout } from '@/constants/authLayout';
 import { useAuthLayout } from '@/hooks/useAuthLayout';
 
-export type AuthFieldIcon = 'person' | 'mail' | 'lock';
+export type AuthFieldIcon = 'person' | 'mail' | 'lock' | 'otp';
 
 type AuthTextFieldProps = TextInputProps & {
   icon: AuthFieldIcon;
@@ -23,7 +23,8 @@ type AuthTextFieldProps = TextInputProps & {
 const iconMap: Record<AuthFieldIcon, keyof typeof Ionicons.glyphMap> = {
   person: 'person-outline',
   mail: 'mail-outline',
-  lock: 'lock-closed-outline'
+  lock: 'lock-closed-outline',
+  otp: 'keypad-outline'
 };
 
 export function AuthTextField({

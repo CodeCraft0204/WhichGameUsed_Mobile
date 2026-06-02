@@ -1,7 +1,9 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { AuthBackButton } from '@/components/auth/AuthBackButton';
+import { AuthErrorBanner } from '@/components/auth/AuthErrorBanner';
+import { AuthInfoBanner } from '@/components/auth/AuthInfoBanner';
+import { AuthOtpHelperRow } from '@/components/auth/AuthOtpHelperRow';
 import { AuthPasswordRequirements } from '@/components/auth/AuthPasswordRequirements';
 import { AuthPasswordStrength } from '@/components/auth/AuthPasswordStrength';
 import { AuthPrimaryButton } from '@/components/auth/AuthPrimaryButton';
@@ -14,21 +16,58 @@ import {
   passwordRequirements
 } from '@/constants/authContent';
 import { figmaColors } from '@/constants/figmaColors';
+import { useAuth } from '@/context/AuthContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
+import { MOBILE_OTP_LENGTH } from '@/lib/mobile-auth';
 
 export default function SetNewPasswordScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ email?: string }>();
+  const { completeSetNewPassword, sendPasswordOtp, resendOtp } = useAuth();
   const { s, t } = useFigmaLayout(1);
   const styles = useMemo(() => createStyles(s, t), [s, t]);
   const copy = authCopy.setNewPassword;
 
+  const [email, setEmail] = useState(typeof params.email === 'string' ? params.email : '');
+  const [otp, setOtp] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const strength = getPasswordStrength(password);
   const allRulesMet = passwordRequirements.every((rule) => rule.test(password));
   const passwordsMatch = password.length > 0 && password === confirmPassword;
-  const canSubmit = allRulesMet && passwordsMatch;
+  const canSubmit =
+    email.trim().length > 0 &&
+    otp.trim().length >= MOBILE_OTP_LENGTH &&
+    allRulesMet &&
+    passwordsMatch &&
+    !loading;
+
+  const handleUpdate = async () => {
+    setError(null);
+    setLoading(true);
+    const result = await completeSetNewPassword(email, otp, password);
+    setLoading(false);
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    router.replace('/database/database');
+  };
+
+  const handleResend = async () => {
+    setError(null);
+    setLoading(true);
+    const result = await sendPasswordOtp(email);
+    setLoading(false);
+    if (result.error) setError(result.error);
+    else setInfo(authCopy.passwordReset.otpSent);
+  };
 
   return (
     <AuthScreen
@@ -37,6 +76,42 @@ export default function SetNewPasswordScreen() {
       subtitle={copy.subtitle}
       footerNote={copy.footerNote}
     >
+      <AuthErrorBanner message={error} />
+      <AuthInfoBanner message={info} />
+
+      <AuthTextField
+        icon="mail"
+        placeholder={copy.emailPlaceholder}
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        autoComplete="email"
+        textContentType="emailAddress"
+        editable={!loading}
+      />
+
+      <AuthTextField
+        icon="otp"
+        placeholder={copy.otpPlaceholder}
+        value={otp}
+        onChangeText={setOtp}
+        keyboardType="number-pad"
+        autoComplete="one-time-code"
+        textContentType="oneTimeCode"
+        maxLength={MOBILE_OTP_LENGTH}
+        returnKeyType="next"
+        editable={!loading}
+      />
+
+      <AuthOtpHelperRow
+        resendLabel={copy.resendCode}
+        changeEmailLabel="Edit email"
+        onResend={handleResend}
+        onChangeEmail={() => router.replace('/password-reset/password-reset')}
+        disabled={loading}
+      />
+
       <AuthTextField
         icon="lock"
         placeholder={copy.newPasswordPlaceholder}
@@ -47,6 +122,7 @@ export default function SetNewPasswordScreen() {
         autoComplete="new-password"
         textContentType="newPassword"
         returnKeyType="next"
+        editable={!loading}
       />
 
       <AuthPasswordStrength
@@ -66,6 +142,7 @@ export default function SetNewPasswordScreen() {
         autoComplete="new-password"
         textContentType="newPassword"
         returnKeyType="done"
+        editable={!loading}
       />
 
       <AuthPasswordRequirements password={password} title={copy.requirementsTitle} />
@@ -73,7 +150,8 @@ export default function SetNewPasswordScreen() {
       <AuthPrimaryButton
         label={copy.submit}
         disabled={!canSubmit}
-        onPress={() => router.replace('/sign-in/sign-in')}
+        loading={loading}
+        onPress={handleUpdate}
       />
 
       <View style={styles.orRow}>
