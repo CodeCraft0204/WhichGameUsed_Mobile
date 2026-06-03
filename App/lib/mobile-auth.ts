@@ -7,34 +7,45 @@ export const MOBILE_OTP_LENGTH = 8;
 
 type SendOtpOptions = {
   createUser: boolean;
-  displayName?: string;
 };
 
 /**
  * Request a one-time code by email (Email OTP must be enabled in Supabase).
- * Do not pass user metadata when creating a user — Supabase may send a confirmation
- * link instead of a numeric OTP (see supabase/supabase#9285). Apply metadata after verify.
+ *
+ * Signup: call with `{ email }` only — do not pass an `options` object. With
+ * `enable_confirmations` on, passing `options` (even `{ shouldCreateUser: true }`)
+ * can make Supabase send a confirmation link instead of an OTP (supabase#9285).
+ *
+ * Sign-in / resend for existing users: pass `shouldCreateUser: false` and metadata.
  */
 export async function sendMobileOtp(email: string, options: SendOtpOptions) {
-  const otpOptions: {
-    shouldCreateUser: boolean;
-    data?: typeof MOBILE_META;
-  } = {
-    shouldCreateUser: options.createUser
-  };
+  const trimmed = email.trim();
 
-  if (!options.createUser) {
-    otpOptions.data = MOBILE_META;
+  if (options.createUser) {
+    return supabase.auth.signInWithOtp({ email: trimmed });
   }
 
   return supabase.auth.signInWithOtp({
-    email: email.trim(),
-    options: otpOptions
+    email: trimmed,
+    options: {
+      shouldCreateUser: false,
+      data: MOBILE_META
+    }
   });
 }
 
+async function resolveUserId(fallbackUserId?: string | null) {
+  if (fallbackUserId) return fallbackUserId;
+
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user?.id) {
+    return null;
+  }
+  return data.user.id;
+}
+
 async function syncMobileProfile(userId: string, displayName?: string) {
-  await supabase
+  return supabase
     .from('profiles')
     .update({
       auth_client: 'mobile',
@@ -68,11 +79,6 @@ export async function verifyMobileOtp(
   return { data: { user: null, session: null }, error: lastError };
 }
 
-/** Set password on the active session (after OTP verify). */
-export async function setMobilePassword(password: string) {
-  return supabase.auth.updateUser({ password });
-}
-
 /** Sign up: verify OTP → set metadata/password (call sendMobileOtp from UI first). */
 export async function completeMobileSignUp(
   email: string,
@@ -80,36 +86,39 @@ export async function completeMobileSignUp(
   password?: string,
   displayName?: string
 ) {
-  const verify = await verifyMobileOtp(email, otp, ['signup', 'email', 'magiclink']);
+  const verify = await verifyMobileOtp(email, otp, ['signup', 'email']);
   if (verify.error) {
-    return { verify, password: null, metaError: null };
+    return { verify, profileError: null };
   }
 
   const meta = {
     ...MOBILE_META,
     ...(displayName?.trim() ? { display_name: displayName.trim() } : {})
   };
-  const { error: metaError } = await supabase.auth.updateUser({ data: meta });
-  if (metaError) {
-    return { verify, password: null, metaError };
+
+  const { error: updateError } = await supabase.auth.updateUser({
+    ...(password ? { password } : {}),
+    data: meta
+  });
+  if (updateError) {
+    return { verify, profileError: updateError };
   }
 
-  const userId = verify.data.user?.id;
-  if (userId) {
-    await syncMobileProfile(userId, displayName);
+  const userId = await resolveUserId(verify.data.user?.id ?? verify.data.session?.user?.id);
+  if (!userId) {
+    return {
+      verify,
+      profileError: new Error('Could not resolve user after verification.')
+    };
   }
 
-  if (!password) {
-    return { verify, password: null, metaError: null };
-  }
-
-  const passwordResult = await setMobilePassword(password);
-  return { verify, password: passwordResult, metaError: null };
+  const { error: profileError } = await syncMobileProfile(userId, displayName);
+  return { verify, profileError };
 }
 
 /** Sign in: OTP only (send must be called first from UI). */
 export async function completeMobileSignIn(email: string, otp: string) {
-  return verifyMobileOtp(email, otp, ['email', 'magiclink']);
+  return verifyMobileOtp(email, otp, ['email']);
 }
 
 /** Sign in: verify password, then email an OTP (session opens only after verifyOtp). */
@@ -135,14 +144,14 @@ export async function completeMobileSetNewPassword(
   otp: string,
   newPassword: string
 ) {
-  const verify = await verifyMobileOtp(email, otp, ['email', 'magiclink']);
+  const verify = await verifyMobileOtp(email, otp, ['email']);
   if (verify.error) return { verify, password: null };
 
-  const password = await setMobilePassword(newPassword);
+  const password = await supabase.auth.updateUser({ password: newPassword });
   return { verify, password };
 }
 
 /** Resend OTP for the same email. */
-export async function resendMobileOtp(email: string, createUser: boolean, _displayName?: string) {
+export async function resendMobileOtp(email: string, createUser: boolean) {
   return sendMobileOtp(email, { createUser });
 }

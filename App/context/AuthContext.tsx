@@ -13,8 +13,8 @@ import {
   completeMobileSetNewPassword,
   completeMobileSignUp,
   requestSignInOtpAfterPassword,
+  resendMobileOtp,
   sendMobileOtp,
-  setMobilePassword,
   verifyMobileOtp
 } from '@/lib/mobile-auth';
 import { supabase } from '@/lib/supabase';
@@ -150,15 +150,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const verifySignIn = useCallback(async (email: string, otp: string): Promise<AuthSessionResult> => {
-    const { error } = await verifyMobileOtp(email, otp, ['email', 'magiclink']);
+    const { error } = await verifyMobileOtp(email, otp, ['email']);
     if (error) {
       return { error: formatAuthError(error.message), profile: null, isAdmin: false };
     }
     return profileAfterSession();
   }, []);
 
-  const sendSignUpOtp = useCallback(async (email: string, displayName?: string): Promise<AuthResult> => {
-    const { error } = await sendMobileOtp(email, { createUser: true, displayName });
+  const sendSignUpOtp = useCallback(async (email: string, _displayName?: string): Promise<AuthResult> => {
+    const { error } = await sendMobileOtp(email, { createUser: true });
     return { error: error ? formatAuthError(error.message) : null };
   }, []);
 
@@ -169,7 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password?: string,
       displayName?: string
     ): Promise<AuthSessionResult> => {
-      const { verify, password: pwdResult, metaError } = await completeMobileSignUp(
+      const { verify, profileError } = await completeMobileSignUp(
         email,
         otp,
         password,
@@ -178,11 +178,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (verify.error) {
         return { error: formatAuthError(verify.error.message), profile: null, isAdmin: false };
       }
-      if (metaError) {
-        return { error: formatAuthError(metaError.message), profile: null, isAdmin: false };
-      }
-      if (pwdResult?.error) {
-        return { error: formatAuthError(pwdResult.error.message), profile: null, isAdmin: false };
+      if (profileError) {
+        return { error: formatAuthError(profileError.message), profile: null, isAdmin: false };
       }
       return profileAfterSession();
     },
@@ -209,8 +206,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const resendOtp = useCallback(
-    async (email: string, createUser: boolean, displayName?: string): Promise<AuthResult> => {
-      const { error } = await sendMobileOtp(email, { createUser, displayName });
+    async (email: string, createUser: boolean, _displayName?: string): Promise<AuthResult> => {
+      const { error } = await resendMobileOtp(email, createUser);
       return { error: error ? formatAuthError(error.message) : null };
     },
     []
