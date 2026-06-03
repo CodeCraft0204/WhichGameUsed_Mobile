@@ -27,13 +27,10 @@ const iconMap: Record<AuthFieldIcon, keyof typeof Ionicons.glyphMap> = {
   otp: 'keypad-outline'
 };
 
-export function AuthTextField({
-  icon,
-  containerStyle,
-  secureTextEntry,
-  style,
-  ...inputProps
-}: AuthTextFieldProps) {
+export const AuthTextField = React.forwardRef<TextInput, AuthTextFieldProps>(function AuthTextField(
+  { icon, containerStyle, secureTextEntry, style, ...inputProps },
+  ref
+) {
   const { s, t } = useAuthLayout();
   const styles = useMemo(() => createStyles(s, t), [s, t]);
   const [hidden, setHidden] = useState(Boolean(secureTextEntry));
@@ -48,6 +45,7 @@ export function AuthTextField({
         style={styles.leadingIcon}
       />
       <TextInput
+        ref={ref}
         placeholderTextColor="#9A9A9A"
         secureTextEntry={isPassword && hidden}
         style={[styles.input, style]}
@@ -70,7 +68,7 @@ export function AuthTextField({
       ) : null}
     </View>
   );
-}
+});
 
 function createStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({

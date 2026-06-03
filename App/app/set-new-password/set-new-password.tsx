@@ -58,7 +58,15 @@ export default function SetNewPasswordScreen() {
       return;
     }
 
-    router.replace('/database/database');
+    if (!result.requiresReauth) {
+      return;
+    }
+
+    setInfo(copy.successRedirecting);
+    router.replace({
+      pathname: '/sign-in/sign-in',
+      params: { email: email.trim(), reauth: 'password-reset' }
+    });
   };
 
   const handleResend = async () => {

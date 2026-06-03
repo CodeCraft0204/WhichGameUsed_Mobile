@@ -27,6 +27,10 @@ type AuthSessionResult = AuthResult & {
   isAdmin: boolean;
 };
 
+type PasswordResetCompleteResult = AuthResult & {
+  requiresReauth: boolean;
+};
+
 type AuthState = {
   session: Session | null;
   user: User | null;
@@ -44,7 +48,11 @@ type AuthState = {
     displayName?: string
   ) => Promise<AuthSessionResult>;
   sendPasswordOtp: (email: string) => Promise<AuthResult>;
-  completeSetNewPassword: (email: string, otp: string, password: string) => Promise<AuthSessionResult>;
+  completeSetNewPassword: (
+    email: string,
+    otp: string,
+    password: string
+  ) => Promise<PasswordResetCompleteResult>;
   resendOtp: (email: string, createUser: boolean, displayName?: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -192,15 +200,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const completeSetNewPassword = useCallback(
-    async (email: string, otp: string, password: string): Promise<AuthSessionResult> => {
-      const { verify, password: pwdResult } = await completeMobileSetNewPassword(email, otp, password);
+    async (email: string, otp: string, password: string): Promise<PasswordResetCompleteResult> => {
+      const { verify, password: pwdResult, signOutError } = await completeMobileSetNewPassword(
+        email,
+        otp,
+        password
+      );
       if (verify.error) {
-        return { error: formatAuthError(verify.error.message), profile: null, isAdmin: false };
+        return { error: formatAuthError(verify.error.message), requiresReauth: false };
       }
       if (pwdResult?.error) {
-        return { error: formatAuthError(pwdResult.error.message), profile: null, isAdmin: false };
+        return { error: formatAuthError(pwdResult.error.message), requiresReauth: false };
       }
-      return profileAfterSession();
+      if (signOutError) {
+        await supabase.auth.signOut();
+      }
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      return { error: null, requiresReauth: true };
     },
     []
   );

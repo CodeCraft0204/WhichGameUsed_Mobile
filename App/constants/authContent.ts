@@ -27,6 +27,10 @@ export const authCopy = {
     otpModalTitle: 'VERIFY EMAIL',
     confirmOtp: 'CONFIRM',
     submit: 'SIGN IN',
+    passwordResetReauth:
+      'Your password was updated. For your security, sign in again with your new password. Other devices were signed out.',
+    passwordResetReauthHint:
+      'Use your saved password or Face ID / Touch ID when your device offers it.',
     orContinue: 'or continue with',
     footerPrefix: 'New Collector?',
     footerLink: 'Create Account →'
@@ -83,6 +87,7 @@ export const authCopy = {
     strengthStrong: 'Strong',
     requirementsTitle: 'Password must contain:',
     submit: 'UPDATE PASSWORD',
+    successRedirecting: 'Password updated. Taking you to sign in…',
     or: 'or',
     backToSignIn: 'Back to Sign In →',
     footerNote: 'We never share your information. Your security is our priority.'

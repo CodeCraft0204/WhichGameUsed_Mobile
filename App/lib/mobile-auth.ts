@@ -1,7 +1,11 @@
 import type { EmailOtpType } from '@supabase/supabase-js';
+import { authRedirectPath } from '@/lib/auth-redirect';
 import { supabase } from '@/lib/supabase';
 
 export const MOBILE_META = { auth_client: 'mobile' as const };
+
+/** Deep link passed on OTP sends so auth hooks do not treat mobile as portal reset. */
+export const MOBILE_OTP_REDIRECT = authRedirectPath('auth/mobile-otp');
 
 export const MOBILE_OTP_LENGTH = 8;
 
@@ -29,7 +33,8 @@ export async function sendMobileOtp(email: string, options: SendOtpOptions) {
     email: trimmed,
     options: {
       shouldCreateUser: false,
-      data: MOBILE_META
+      data: MOBILE_META,
+      emailRedirectTo: MOBILE_OTP_REDIRECT
     }
   });
 }
@@ -138,17 +143,29 @@ export async function requestSignInOtpAfterPassword(email: string, password: str
   return { passwordError: null, otpError };
 }
 
-/** Set new password: verify OTP then updateUser (no resetPasswordForEmail). */
+/** Set new password: verify OTP → update password → revoke all sessions (force re-sign-in). */
 export async function completeMobileSetNewPassword(
   email: string,
   otp: string,
   newPassword: string
 ) {
   const verify = await verifyMobileOtp(email, otp, ['email']);
-  if (verify.error) return { verify, password: null };
+  if (verify.error) {
+    return { verify, password: null, signOutError: null };
+  }
 
   const password = await supabase.auth.updateUser({ password: newPassword });
-  return { verify, password };
+  if (password.error) {
+    return { verify, password, signOutError: null };
+  }
+
+  const { error: signOutError } = await supabase.auth.signOut({ scope: 'global' });
+  return { verify, password: { error: null }, signOutError };
+}
+
+/** End every session for the current user (other devices and browsers). */
+export async function revokeAllSessions() {
+  return supabase.auth.signOut({ scope: 'global' });
 }
 
 /** Resend OTP for the same email. */

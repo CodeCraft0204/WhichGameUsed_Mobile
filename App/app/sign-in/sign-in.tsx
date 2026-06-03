@@ -1,7 +1,8 @@
-import { Link, useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { AuthErrorBanner } from '@/components/auth/AuthErrorBanner';
+import { AuthInfoBanner } from '@/components/auth/AuthInfoBanner';
 import { AuthOrDivider } from '@/components/auth/AuthOrDivider';
 import { AuthOtpModal } from '@/components/auth/AuthOtpModal';
 import { AuthPrimaryButton } from '@/components/auth/AuthPrimaryButton';
@@ -16,19 +17,33 @@ import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 
 export default function SignInScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ email?: string; reauth?: string }>();
   const { requestSignInOtp, verifySignIn, resendOtp } = useAuth();
   const { s, t } = useFigmaLayout(1);
   const styles = useMemo(() => createStyles(s, t), [s, t]);
   const copy = authCopy.signIn;
+  const passwordFieldRef = useRef<TextInput>(null);
 
-  const [email, setEmail] = useState('');
+  const initialEmail = typeof params.email === 'string' ? params.email : '';
+  const showPasswordResetMessage = params.reauth === 'password-reset';
+
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
+  const [info, setInfo] = useState<string | null>(
+    showPasswordResetMessage ? copy.passwordResetReauth : null
+  );
   const [otp, setOtp] = useState('');
   const [otpModalVisible, setOtpModalVisible] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
+
+  useEffect(() => {
+    if (!showPasswordResetMessage) return;
+    const timer = setTimeout(() => passwordFieldRef.current?.focus(), 400);
+    return () => clearTimeout(timer);
+  }, [showPasswordResetMessage]);
 
   const canSignIn = email.trim().length > 0 && password.length > 0 && !loading && !modalLoading;
 
@@ -88,6 +103,10 @@ export default function SignInScreen() {
         }
       >
         <AuthErrorBanner message={error} />
+        <AuthInfoBanner message={info} />
+        {showPasswordResetMessage ? (
+          <Text style={styles.reauthHint}>{copy.passwordResetReauthHint}</Text>
+        ) : null}
 
         <AuthTextField
           icon="mail"
@@ -96,13 +115,15 @@ export default function SignInScreen() {
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
-          autoComplete="email"
-          textContentType="emailAddress"
+          autoComplete="username"
+          textContentType="username"
+          importantForAutofill="yes"
           returnKeyType="next"
           editable={!loading && !modalLoading}
         />
 
         <AuthTextField
+          ref={passwordFieldRef}
           icon="lock"
           placeholder={copy.passwordPlaceholder}
           value={password}
@@ -110,6 +131,7 @@ export default function SignInScreen() {
           secureTextEntry
           autoComplete="password"
           textContentType="password"
+          importantForAutofill="yes"
           returnKeyType="done"
           editable={!loading && !modalLoading}
           onSubmitEditing={() => canSignIn && void handleSignIn()}
@@ -169,6 +191,14 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: t(16),
       lineHeight: t(24),
       color: figmaColors.accent
+    },
+    reauthHint: {
+      fontFamily: 'Inter_400Regular',
+      fontSize: t(14),
+      lineHeight: t(20),
+      color: figmaColors.gray,
+      textAlign: 'center',
+      marginBottom: s(8)
     }
   });
 }
