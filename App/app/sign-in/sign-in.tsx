@@ -138,7 +138,6 @@ export default function SignInScreen() {
         visible={otpModalVisible}
         title={copy.otpModalTitle}
         message={copy.otpSent}
-        otpPlaceholder={copy.otpPlaceholder}
         confirmLabel={copy.confirmOtp}
         resendLabel={copy.resendCode}
         changeEmailLabel={copy.changeEmail}

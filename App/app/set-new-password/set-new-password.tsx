@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AuthErrorBanner } from '@/components/auth/AuthErrorBanner';
 import { AuthInfoBanner } from '@/components/auth/AuthInfoBanner';
 import { AuthOtpHelperRow } from '@/components/auth/AuthOtpHelperRow';
+import { AuthOtpInput } from '@/components/auth/AuthOtpInput';
 import { AuthPasswordRequirements } from '@/components/auth/AuthPasswordRequirements';
 import { AuthPasswordStrength } from '@/components/auth/AuthPasswordStrength';
 import { AuthPrimaryButton } from '@/components/auth/AuthPrimaryButton';
@@ -91,18 +92,7 @@ export default function SetNewPasswordScreen() {
         editable={!loading}
       />
 
-      <AuthTextField
-        icon="otp"
-        placeholder={copy.otpPlaceholder}
-        value={otp}
-        onChangeText={setOtp}
-        keyboardType="number-pad"
-        autoComplete="one-time-code"
-        textContentType="oneTimeCode"
-        maxLength={MOBILE_OTP_LENGTH}
-        returnKeyType="next"
-        editable={!loading}
-      />
+      <AuthOtpInput value={otp} onChangeValue={setOtp} editable={!loading} autoFocus />
 
       <AuthOtpHelperRow
         resendLabel={copy.resendCode}

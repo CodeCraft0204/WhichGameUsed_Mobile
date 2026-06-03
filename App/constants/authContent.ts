@@ -44,6 +44,8 @@ export const authCopy = {
     sendCode: 'SEND CODE',
     otpPlaceholder: '8-digit code',
     otpSent: 'Enter the code we sent to your email.',
+    otpModalTitle: 'VERIFY EMAIL',
+    confirmOtp: 'CREATE ACCOUNT',
     resendCode: 'Resend code',
     changeEmail: 'Use a different email',
     submit: 'CREATE ACCOUNT',

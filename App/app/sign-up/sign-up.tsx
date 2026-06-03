@@ -3,9 +3,8 @@ import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text } from 'react-native';
 import { AuthCheckbox } from '@/components/auth/AuthCheckbox';
 import { AuthErrorBanner } from '@/components/auth/AuthErrorBanner';
-import { AuthInfoBanner } from '@/components/auth/AuthInfoBanner';
 import { AuthOrDivider } from '@/components/auth/AuthOrDivider';
-import { AuthOtpHelperRow } from '@/components/auth/AuthOtpHelperRow';
+import { AuthOtpModal } from '@/components/auth/AuthOtpModal';
 import { AuthPrimaryButton } from '@/components/auth/AuthPrimaryButton';
 import { AuthScreen } from '@/components/auth/AuthScreen';
 import { AuthSocialButtons } from '@/components/auth/AuthSocialButtons';
@@ -16,9 +15,6 @@ import { authLayout } from '@/constants/authLayout';
 import { figmaColors } from '@/constants/figmaColors';
 import { useAuth } from '@/context/AuthContext';
 import { useAuthLayout } from '@/hooks/useAuthLayout';
-import { MOBILE_OTP_LENGTH } from '@/lib/mobile-auth';
-
-type Step = 'form' | 'otp';
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -27,16 +23,17 @@ export default function SignUpScreen() {
   const labelStyles = useMemo(() => createLabelStyles(t), [t]);
   const copy = authCopy.signUp;
 
-  const [step, setStep] = useState<Step>('form');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [otp, setOtp] = useState('');
+  const [otpModalVisible, setOtpModalVisible] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
+  const [modalError, setModalError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [modalLoading, setModalLoading] = useState(false);
 
   const passwordsMatch = password.length > 0 && password === confirmPassword;
   const canSendCode =
@@ -45,12 +42,12 @@ export default function SignUpScreen() {
     email.trim().length > 0 &&
     password.length >= 8 &&
     passwordsMatch &&
-    !loading;
-  const canComplete = otp.trim().length >= MOBILE_OTP_LENGTH && !loading;
+    !loading &&
+    !modalLoading;
 
   const handleSendCode = async () => {
     setError(null);
-    setInfo(null);
+    setModalError(null);
     setLoading(true);
     const result = await sendSignUpOtp(email, name);
     setLoading(false);
@@ -58,150 +55,143 @@ export default function SignUpScreen() {
       setError(result.error);
       return;
     }
-    setInfo(copy.otpSent);
-    setStep('otp');
+    setOtp('');
+    setOtpModalVisible(true);
   };
 
-  const handleComplete = async () => {
-    setError(null);
-    setLoading(true);
-    const result = await completeSignUp(email, otp, password);
-    setLoading(false);
+  const handleConfirmOtp = async () => {
+    setModalError(null);
+    setModalLoading(true);
+    const result = await completeSignUp(email, otp, password, name);
+    setModalLoading(false);
     if (result.error) {
-      setError(result.error);
+      setModalError(result.error);
       return;
     }
+    setOtpModalVisible(false);
     router.replace('/database/database');
   };
 
   const handleResend = async () => {
-    setError(null);
-    setLoading(true);
+    setModalError(null);
+    setModalLoading(true);
     const result = await resendOtp(email, true, name);
-    setLoading(false);
-    if (result.error) setError(result.error);
-    else setInfo(copy.otpSent);
+    setModalLoading(false);
+    if (result.error) setModalError(result.error);
   };
 
-  const handleChangeEmail = () => {
-    setStep('form');
+  const handleCloseOtpModal = () => {
+    setOtpModalVisible(false);
     setOtp('');
-    setError(null);
-    setInfo(null);
+    setModalError(null);
   };
 
   return (
-    <AuthScreen
-      hero={authIcons.heroSignup}
-      title={copy.title}
-      subtitle={copy.subtitle}
-      footerBand={
-        <AuthTextLink
-          prefix={copy.footerPrefix}
-          linkLabel={copy.footerLink}
-          onPress={() => router.replace('/sign-in/sign-in')}
-        />
-      }
-    >
-      <AuthErrorBanner message={error} />
-      <AuthInfoBanner message={info} />
-
-      <AuthTextField
-        icon="person"
-        placeholder={copy.namePlaceholder}
-        value={name}
-        onChangeText={setName}
-        autoCapitalize="words"
-        autoComplete="name"
-        textContentType="name"
-        returnKeyType="next"
-        editable={!loading && step === 'form'}
-      />
-
-      <AuthTextField
-        icon="mail"
-        placeholder={copy.emailPlaceholder}
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        autoComplete="email"
-        textContentType="emailAddress"
-        returnKeyType="next"
-        editable={!loading && step === 'form'}
-      />
-
-      <AuthTextField
-        icon="lock"
-        placeholder={copy.passwordPlaceholder}
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        autoCapitalize="none"
-        autoComplete="new-password"
-        textContentType="newPassword"
-        returnKeyType="next"
-        editable={!loading && step === 'form'}
-      />
-
-      <AuthTextField
-        icon="lock"
-        placeholder={copy.confirmPlaceholder}
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-        secureTextEntry
-        autoCapitalize="none"
-        autoComplete="new-password"
-        textContentType="newPassword"
-        returnKeyType="done"
-        editable={!loading && step === 'form'}
-      />
-
-      {step === 'otp' ? (
-        <>
-          <AuthTextField
-            icon="otp"
-            placeholder={copy.otpPlaceholder}
-            value={otp}
-            onChangeText={setOtp}
-            keyboardType="number-pad"
-            autoComplete="one-time-code"
-            textContentType="oneTimeCode"
-            maxLength={MOBILE_OTP_LENGTH}
-            returnKeyType="done"
-            editable={!loading}
+    <>
+      <AuthScreen
+        hero={authIcons.heroSignup}
+        title={copy.title}
+        subtitle={copy.subtitle}
+        footerBand={
+          <AuthTextLink
+            prefix={copy.footerPrefix}
+            linkLabel={copy.footerLink}
+            onPress={() => router.replace('/sign-in/sign-in')}
           />
-          <AuthOtpHelperRow
-            resendLabel={copy.resendCode}
-            changeEmailLabel={copy.changeEmail}
-            onResend={handleResend}
-            onChangeEmail={handleChangeEmail}
-            disabled={loading}
-          />
-        </>
-      ) : null}
-
-      <AuthCheckbox
-        checked={agreed}
-        onToggle={() => setAgreed((v) => !v)}
-        label={
-          <Text style={labelStyles.agreeText}>
-            {copy.agreePrefix}
-            <Text style={labelStyles.agreeLink}>{copy.communityStandards}</Text>
-          </Text>
         }
-      />
+      >
+        <AuthErrorBanner message={error} />
 
-      <AuthPrimaryButton
-        label={step === 'form' ? copy.sendCode : copy.submit}
-        disabled={step === 'form' ? !canSendCode : !canComplete}
-        loading={loading}
-        onPress={step === 'form' ? handleSendCode : handleComplete}
-      />
+        <AuthTextField
+          icon="person"
+          placeholder={copy.namePlaceholder}
+          value={name}
+          onChangeText={setName}
+          autoCapitalize="words"
+          autoComplete="name"
+          textContentType="name"
+          returnKeyType="next"
+          editable={!loading && !modalLoading}
+        />
 
-      <AuthOrDivider label={copy.orContinue} />
-      <AuthSocialButtons />
-    </AuthScreen>
+        <AuthTextField
+          icon="mail"
+          placeholder={copy.emailPlaceholder}
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoComplete="email"
+          textContentType="emailAddress"
+          returnKeyType="next"
+          editable={!loading && !modalLoading}
+        />
+
+        <AuthTextField
+          icon="lock"
+          placeholder={copy.passwordPlaceholder}
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          autoCapitalize="none"
+          autoComplete="new-password"
+          textContentType="newPassword"
+          returnKeyType="next"
+          editable={!loading && !modalLoading}
+        />
+
+        <AuthTextField
+          icon="lock"
+          placeholder={copy.confirmPlaceholder}
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry
+          autoCapitalize="none"
+          autoComplete="new-password"
+          textContentType="newPassword"
+          returnKeyType="done"
+          editable={!loading && !modalLoading}
+        />
+
+        <AuthCheckbox
+          checked={agreed}
+          onToggle={() => setAgreed((v) => !v)}
+          label={
+            <Text style={labelStyles.agreeText}>
+              {copy.agreePrefix}
+              <Text style={labelStyles.agreeLink}>{copy.communityStandards}</Text>
+            </Text>
+          }
+        />
+
+        <AuthPrimaryButton
+          label={copy.sendCode}
+          disabled={!canSendCode}
+          loading={loading}
+          onPress={handleSendCode}
+        />
+
+        <AuthOrDivider label={copy.orContinue} />
+        <AuthSocialButtons />
+      </AuthScreen>
+
+      <AuthOtpModal
+        visible={otpModalVisible}
+        title={copy.otpModalTitle}
+        message={copy.otpSent}
+        confirmLabel={copy.confirmOtp}
+        resendLabel={copy.resendCode}
+        changeEmailLabel={copy.changeEmail}
+        otp={otp}
+        onChangeOtp={setOtp}
+        onConfirm={handleConfirmOtp}
+        onResend={handleResend}
+        onChangeEmail={handleCloseOtpModal}
+        onRequestClose={handleCloseOtpModal}
+        error={modalError}
+        loading={modalLoading}
+      />
+    </>
   );
 }
 

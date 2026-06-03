@@ -3,8 +3,8 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthErrorBanner } from '@/components/auth/AuthErrorBanner';
 import { AuthOtpHelperRow } from '@/components/auth/AuthOtpHelperRow';
+import { AuthOtpInput } from '@/components/auth/AuthOtpInput';
 import { AuthPrimaryButton } from '@/components/auth/AuthPrimaryButton';
-import { AuthTextField } from '@/components/auth/AuthTextField';
 import { figmaColors } from '@/constants/figmaColors';
 import { useAuthLayout } from '@/hooks/useAuthLayout';
 import { MOBILE_OTP_LENGTH } from '@/lib/mobile-auth';
@@ -13,7 +13,6 @@ type AuthOtpModalProps = {
   visible: boolean;
   title: string;
   message?: string | null;
-  otpPlaceholder: string;
   confirmLabel: string;
   resendLabel: string;
   changeEmailLabel: string;
@@ -31,7 +30,6 @@ export function AuthOtpModal({
   visible,
   title,
   message,
-  otpPlaceholder,
   confirmLabel,
   resendLabel,
   changeEmailLabel,
@@ -63,24 +61,18 @@ export function AuthOtpModal({
           accessibilityLabel="Dismiss verification"
           onPress={onRequestClose}
         />
-        <SafeAreaView edges={['top', 'left', 'right']} style={styles.panelSafe}>
+        <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={styles.panelSafe}>
           <View style={styles.panel}>
             <Text style={styles.title}>{title}</Text>
             {message ? <Text style={styles.message}>{message}</Text> : null}
             <AuthErrorBanner message={error ?? null} />
-            <AuthTextField
-              icon="otp"
-              placeholder={otpPlaceholder}
+            <AuthOtpInput
+              key={visible ? 'otp-open' : 'otp-closed'}
               value={otp}
-              onChangeText={onChangeOtp}
-              keyboardType="number-pad"
-              autoComplete="one-time-code"
-              textContentType="oneTimeCode"
-              maxLength={MOBILE_OTP_LENGTH}
-              returnKeyType="done"
+              onChangeValue={onChangeOtp}
               editable={!loading}
               autoFocus
-              onSubmitEditing={() => canConfirm && void onConfirm()}
+              onComplete={() => canConfirm && void onConfirm()}
             />
             <AuthOtpHelperRow
               resendLabel={resendLabel}
@@ -106,25 +98,25 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
     overlay: {
       flex: 1,
-      justifyContent: 'flex-start'
+      justifyContent: 'flex-end'
     },
     backdrop: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(0, 0, 0, 0.18)'
+      backgroundColor: 'rgba(0, 0, 0, 0.4)'
     },
     panelSafe: {
-      width: '100%'
+      width: '100%',
+      justifyContent: 'center'
     },
     panel: {
       marginHorizontal: s(16),
-      marginTop: s(8),
       paddingHorizontal: s(20),
       paddingTop: s(20),
       paddingBottom: s(22),
       borderRadius: s(16),
       borderWidth: 1,
-      borderColor: 'rgba(212, 206, 200, 0.65)',
-      backgroundColor: 'rgba(245, 245, 240, 0.92)'
+      borderColor: 'rgba(212, 206, 200, 0.8)',
+      backgroundColor: 'rgba(245, 245, 240, 1)'
     },
     title: {
       fontFamily: 'PermanentMarker_400Regular',

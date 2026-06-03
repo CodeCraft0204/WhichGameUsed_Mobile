@@ -37,7 +37,12 @@ type AuthState = {
   requestSignInOtp: (email: string, password: string) => Promise<AuthResult>;
   verifySignIn: (email: string, otp: string) => Promise<AuthSessionResult>;
   sendSignUpOtp: (email: string, displayName?: string) => Promise<AuthResult>;
-  completeSignUp: (email: string, otp: string, password?: string) => Promise<AuthSessionResult>;
+  completeSignUp: (
+    email: string,
+    otp: string,
+    password?: string,
+    displayName?: string
+  ) => Promise<AuthSessionResult>;
   sendPasswordOtp: (email: string) => Promise<AuthResult>;
   completeSetNewPassword: (email: string, otp: string, password: string) => Promise<AuthSessionResult>;
   resendOtp: (email: string, createUser: boolean, displayName?: string) => Promise<AuthResult>;
@@ -145,7 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const verifySignIn = useCallback(async (email: string, otp: string): Promise<AuthSessionResult> => {
-    const { error } = await verifyMobileOtp(email, otp);
+    const { error } = await verifyMobileOtp(email, otp, ['email', 'magiclink']);
     if (error) {
       return { error: formatAuthError(error.message), profile: null, isAdmin: false };
     }
@@ -158,10 +163,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const completeSignUp = useCallback(
-    async (email: string, otp: string, password?: string): Promise<AuthSessionResult> => {
-      const { verify, password: pwdResult } = await completeMobileSignUp(email, otp, password);
+    async (
+      email: string,
+      otp: string,
+      password?: string,
+      displayName?: string
+    ): Promise<AuthSessionResult> => {
+      const { verify, password: pwdResult, metaError } = await completeMobileSignUp(
+        email,
+        otp,
+        password,
+        displayName
+      );
       if (verify.error) {
         return { error: formatAuthError(verify.error.message), profile: null, isAdmin: false };
+      }
+      if (metaError) {
+        return { error: formatAuthError(metaError.message), profile: null, isAdmin: false };
       }
       if (pwdResult?.error) {
         return { error: formatAuthError(pwdResult.error.message), profile: null, isAdmin: false };
