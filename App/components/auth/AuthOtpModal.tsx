@@ -30,7 +30,12 @@ type AuthOtpModalProps = {
   onConfirm: () => void | Promise<void>;
   onResend: () => void | Promise<void>;
   onChangeEmail: () => void;
+  /** @deprecated Use onChangeEmail to leave the modal; backdrop/back no longer dismiss by default. */
   onRequestClose?: () => void;
+  /** Allow tapping outside the sheet to dismiss (default false). */
+  dismissOnBackdropPress?: boolean;
+  /** Allow Android hardware back to dismiss (default false). */
+  dismissOnBackPress?: boolean;
   error?: string | null;
   loading?: boolean;
 };
@@ -48,6 +53,8 @@ export function AuthOtpModal({
   onResend,
   onChangeEmail,
   onRequestClose,
+  dismissOnBackdropPress = false,
+  dismissOnBackPress = false,
   error,
   loading
 }: AuthOtpModalProps) {
@@ -56,25 +63,32 @@ export function AuthOtpModal({
   const styles = useMemo(() => createStyles(s, t), [s, t]);
   const canConfirm = otp.trim().length >= MOBILE_OTP_LENGTH && !loading;
 
+  const handleDismiss = onRequestClose ?? onChangeEmail;
+
   return (
     <Modal
       visible={visible}
       transparent
       animationType="fade"
-      onRequestClose={onRequestClose}
+      onRequestClose={dismissOnBackPress ? handleDismiss : () => {}}
       statusBarTranslucent
     >
       <View style={styles.overlay}>
-        <Pressable
-          style={styles.backdrop}
-          accessibilityRole="button"
-          accessibilityLabel="Dismiss verification"
-          onPress={onRequestClose}
-        />
+        {dismissOnBackdropPress ? (
+          <Pressable
+            style={styles.backdrop}
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss verification"
+            onPress={handleDismiss}
+          />
+        ) : (
+          <View style={styles.backdrop} accessibilityElementsHidden importantForAccessibility="no" />
+        )}
         <KeyboardAvoidingView
           style={styles.keyboardAvoid}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
+          pointerEvents="box-none"
         >
           <ScrollView
             style={styles.keyboardScroll}
@@ -86,8 +100,8 @@ export function AuthOtpModal({
             showsVerticalScrollIndicator={false}
             bounces={false}
           >
-            <SafeAreaView edges={['left', 'right']} style={styles.panelSafe}>
-              <View style={styles.panel}>
+            <SafeAreaView edges={['left', 'right']} style={styles.panelSafe} pointerEvents="box-none">
+              <View style={styles.panel} pointerEvents="auto">
                 <Text style={styles.title}>{title}</Text>
                 {message ? <Text style={styles.message}>{message}</Text> : null}
                 <AuthErrorBanner message={error ?? null} />

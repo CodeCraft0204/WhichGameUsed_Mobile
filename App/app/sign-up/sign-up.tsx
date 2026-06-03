@@ -1,6 +1,6 @@
-import { useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AuthCheckbox } from '@/components/auth/AuthCheckbox';
 import { AuthErrorBanner } from '@/components/auth/AuthErrorBanner';
 import { AuthOrDivider } from '@/components/auth/AuthOrDivider';
@@ -15,12 +15,13 @@ import { authLayout } from '@/constants/authLayout';
 import { figmaColors } from '@/constants/figmaColors';
 import { useAuth } from '@/context/AuthContext';
 import { useAuthLayout } from '@/hooks/useAuthLayout';
+import { hasAcceptedCommunityStandards } from '@/lib/community-standards-storage';
 
 export default function SignUpScreen() {
   const router = useRouter();
   const { sendSignUpOtp, completeSignUp, resendOtp } = useAuth();
-  const { t } = useAuthLayout();
-  const labelStyles = useMemo(() => createLabelStyles(t), [t]);
+  const { s, t } = useAuthLayout();
+  const labelStyles = useMemo(() => createLabelStyles(s, t), [s, t]);
   const copy = authCopy.signUp;
 
   const [name, setName] = useState('');
@@ -85,6 +86,25 @@ export default function SignUpScreen() {
     setOtp('');
     setModalError(null);
   };
+
+  const openCommunityStandards = () => {
+    router.push({
+      pathname: '/community-standards/community-standards',
+      params: { accept: '1' }
+    });
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      void hasAcceptedCommunityStandards().then((accepted) => {
+        if (active && accepted) setAgreed(true);
+      });
+      return () => {
+        active = false;
+      };
+    }, [])
+  );
 
   return (
     <>
@@ -157,10 +177,16 @@ export default function SignUpScreen() {
           checked={agreed}
           onToggle={() => setAgreed((v) => !v)}
           label={
-            <Text style={labelStyles.agreeText}>
-              {copy.agreePrefix}
-              <Text style={labelStyles.agreeLink}>{copy.communityStandards}</Text>
-            </Text>
+            <View style={labelStyles.agreeInline}>
+              <Text style={labelStyles.agreePrefix}>{copy.agreePrefix}</Text>
+              <Pressable
+                onPress={openCommunityStandards}
+                hitSlop={8}
+                accessibilityRole="link"
+              >
+                <Text style={labelStyles.agreeLink}>{copy.communityStandards}</Text>
+              </Pressable>
+            </View>
           }
         />
 
@@ -187,7 +213,6 @@ export default function SignUpScreen() {
         onConfirm={handleConfirmOtp}
         onResend={handleResend}
         onChangeEmail={handleCloseOtpModal}
-        onRequestClose={handleCloseOtpModal}
         error={modalError}
         loading={modalLoading}
       />
@@ -195,12 +220,18 @@ export default function SignUpScreen() {
   );
 }
 
-function createLabelStyles(t: (n: number) => number) {
+function createLabelStyles(s: (n: number) => number, t: (n: number) => number) {
   const fontSize = t(authLayout.fieldFontSize);
   const lineHeight = t(24);
 
   return StyleSheet.create({
-    agreeText: {
+    agreeInline: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexWrap: 'nowrap',
+      flexShrink: 1
+    },
+    agreePrefix: {
       fontFamily: 'Inter_400Regular',
       fontSize,
       lineHeight,

@@ -58,6 +58,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     labelWrap: {
       flex: 1,
+      flexShrink: 1,
       justifyContent: 'center'
     },
     label: {

@@ -168,7 +168,6 @@ export default function SignInScreen() {
         onConfirm={handleConfirmOtp}
         onResend={handleResend}
         onChangeEmail={handleCloseOtpModal}
-        onRequestClose={handleCloseOtpModal}
         error={modalError}
         loading={modalLoading}
       />

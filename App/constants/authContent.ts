@@ -34,7 +34,7 @@ export const authCopy = {
       'Use your saved password or Face ID / Touch ID when your device offers it.',
     orContinue: 'or continue with',
     footerPrefix: 'New Collector?',
-    footerLink: 'Create Account →'
+    footerLink: 'Create Account'
   },
   signUp: {
     title: 'JOIN THE COMMUNITY',
@@ -56,7 +56,7 @@ export const authCopy = {
     submit: 'CREATE ACCOUNT',
     orContinue: 'or continue with',
     footerPrefix: 'Already have an account?',
-    footerLink: 'Sign In →'
+    footerLink: 'Sign In'
   },
   passwordReset: {
     title: 'RESET PASSWORD',
@@ -94,8 +94,41 @@ export const authCopy = {
     submit: 'UPDATE PASSWORD',
     successRedirecting: 'Password updated. Taking you to sign in…',
     or: 'or',
-    backToSignIn: 'Back to Sign In →',
+    backToSignIn: 'Back to Sign In',
     footerNote: 'We never share your information. Your security is our priority.'
+  }
+} as const;
+
+export const legalCopy = {
+  communityStandards: {
+    title: 'Community Standards',
+    subtitle: 'Guidelines for every collector on Which Game Used.',
+    acceptButton: 'I ACCEPT',
+    versionLabel: 'Version',
+    readOnlyNote: 'Return to sign up and check the agreement box after reviewing these standards.'
+  },
+  contactSupport: {
+    title: 'Contact Support',
+    subtitle: 'We are here to help with account access, verification, and technical issues.',
+    topicLabel: 'What do you need help with?',
+    topics: [
+      { id: 'account', label: 'Account & sign-in' },
+      { id: 'password', label: 'Password reset' },
+      { id: 'verification', label: 'Verification & submissions' },
+      { id: 'report', label: 'Report content' },
+      { id: 'other', label: 'Something else' }
+    ] as const,
+    emailLabel: 'Your email',
+    emailPlaceholder: 'you@example.com',
+    messageLabel: 'Message',
+    messagePlaceholder: 'Describe your issue. Include any error messages you saw.',
+    submit: 'SEND MESSAGE',
+    emailUs: 'Email us directly',
+    responseHint: 'We typically respond within 1–2 business days.',
+    validationTopic: 'Please choose a topic.',
+    validationEmail: 'Enter a valid email address.',
+    validationMessage: 'Please enter a message (at least 10 characters).',
+    mailUnavailable: 'Could not open your email app. Copy our address below and reach out manually.'
   }
 } as const;
 

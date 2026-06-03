@@ -34,9 +34,18 @@ export function AuthHelpBox({
       <View style={styles.content}>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.body}>{body}</Text>
-        <Text style={styles.linkRow}>
-          {linkPrefix} <Text style={styles.link}>{linkLabel}</Text>
-        </Text>
+        <View style={styles.linkRow}>
+          <Text style={styles.linkPrefix}>{linkPrefix}</Text>
+          <Pressable
+            onPress={onLinkPress}
+            disabled={!onLinkPress}
+            hitSlop={8}
+            accessibilityRole="link"
+            style={styles.linkPressable}
+          >
+            <Text style={[styles.link, !onLinkPress && styles.linkDisabled]}>{linkLabel}</Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );
@@ -77,15 +86,28 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       color: figmaColors.gray
     },
     linkRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center'
+    },
+    linkPrefix: {
       fontFamily: 'EBGaramond_400Regular',
       fontSize: t(17),
       lineHeight: t(24),
       color: figmaColors.gray
     },
+    linkPressable: {
+      justifyContent: 'center'
+    },
     link: {
       fontFamily: 'EBGaramond_700Bold',
+      fontSize: t(17),
+      lineHeight: t(24),
       color: figmaColors.accent,
       textDecorationLine: 'underline'
+    },
+    linkDisabled: {
+      textDecorationLine: 'none'
     }
   });
 }

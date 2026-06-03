@@ -104,6 +104,12 @@ export default function PasswordResetScreen() {
             body={copy.helpBody}
             linkPrefix={copy.helpLinkPrefix}
             linkLabel={copy.helpLink}
+            onLinkPress={() =>
+              router.push({
+                pathname: '/contact-support/contact-support',
+                params: email.trim() ? { email: email.trim() } : {}
+              })
+            }
           />
         </>
       )}
