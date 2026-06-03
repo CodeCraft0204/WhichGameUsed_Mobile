@@ -10,7 +10,8 @@
       "plugins": ["expo-router"],
       "experiments": { "typedRoutes": true },
       "android": {
-        "package": "com.whichgameused.mobile"
+        "package": "com.whichgameused.mobile",
+        "softwareKeyboardLayoutMode": "resize"
       }
     }
 }

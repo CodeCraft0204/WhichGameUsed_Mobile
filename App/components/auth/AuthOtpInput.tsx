@@ -64,6 +64,12 @@ export function AuthOtpInput({
     }
   }, [editable]);
 
+  const applySelection = useCallback((start: number, end = start) => {
+    const next = { start, end };
+    selectionRef.current = next;
+    setSelection(next);
+  }, []);
+
   const commitValue = useCallback(
     (nextValue: string) => {
       const clean = nextValue.replace(/\D/g, '').slice(0, MOBILE_OTP_LENGTH);
@@ -101,8 +107,9 @@ export function AuthOtpInput({
       }
 
       commitValue(clean);
+      applySelection(clean.length, clean.length);
     },
-    [commitValue, showInvalidFlash]
+    [applySelection, commitValue, showInvalidFlash]
   );
 
   const handleCellPress = useCallback(
@@ -112,20 +119,16 @@ export function AuthOtpInput({
       if (nextValue !== sanitized) {
         commitValue(nextValue);
       }
-      inputRef.current?.setNativeProps({ selection: { start: index, end: index } });
-      selectionRef.current = { start: index, end: index };
-      setSelection({ start: index, end: index });
+      applySelection(index, index);
     },
-    [commitValue, focusInput, sanitized]
+    [applySelection, commitValue, focusInput, sanitized]
   );
 
   useEffect(() => {
     if (sanitized.length === 0) {
-      inputRef.current?.setNativeProps({ selection: { start: 0, end: 0 } });
-      selectionRef.current = { start: 0, end: 0 };
-      setSelection({ start: 0, end: 0 });
+      applySelection(0, 0);
     }
-  }, [sanitized]);
+  }, [applySelection, sanitized]);
 
   useEffect(() => {
     if (!autoFocus || !editable) return;
@@ -170,6 +173,7 @@ export function AuthOtpInput({
         style={styles.hiddenInput}
         value={sanitized}
         onChangeText={handleChange}
+        selection={selection}
         onSelectionChange={({ nativeEvent }) => {
           selectionRef.current = nativeEvent.selection;
           setSelection(nativeEvent.selection);
