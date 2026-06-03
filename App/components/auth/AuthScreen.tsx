@@ -18,7 +18,7 @@ import { useAuthLayout } from '@/hooks/useAuthLayout';
 type AuthScreenProps = {
   hero?: ImageSourcePropType;
   title: string;
-  subtitle: string;
+  subtitle?: string;
   children: React.ReactNode;
   headerLeading?: React.ReactNode;
   footerBand?: React.ReactNode;
@@ -63,7 +63,7 @@ export function AuthScreen({
           />
           {/* <Text style={styles.title}>{title}</Text> */}
           <Image source={authIcons.titleBrush} style={styles.titleBrush} resizeMode="stretch" />
-          <Text style={styles.subtitle}>{subtitle}</Text>
+          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
 
           <View style={styles.form}>{children}</View>
 

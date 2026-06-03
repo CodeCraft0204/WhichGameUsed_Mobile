@@ -75,7 +75,7 @@ export default function SetNewPasswordScreen() {
     const result = await sendPasswordOtp(email);
     setLoading(false);
     if (result.error) setError(result.error);
-    else setInfo(authCopy.passwordReset.otpSent);
+    else setInfo(authCopy.passwordReset.codeResent);
   };
 
   return (

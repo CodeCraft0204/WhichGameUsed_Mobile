@@ -3,8 +3,8 @@ import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AuthErrorBanner } from '@/components/auth/AuthErrorBanner';
+import { AuthEmailSentCard } from '@/components/auth/AuthEmailSentCard';
 import { AuthHelpBox } from '@/components/auth/AuthHelpBox';
-import { AuthInfoBanner } from '@/components/auth/AuthInfoBanner';
 import { AuthPrimaryButton } from '@/components/auth/AuthPrimaryButton';
 import { AuthScreen } from '@/components/auth/AuthScreen';
 import { AuthTextField } from '@/components/auth/AuthTextField';
@@ -23,14 +23,12 @@ export default function PasswordResetScreen() {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const canSubmit = email.trim().length > 0 && !loading;
 
   const handleSendCode = async () => {
     setError(null);
-    setInfo(null);
     setLoading(true);
     const result = await sendPasswordOtp(email);
     setLoading(false);
@@ -41,7 +39,6 @@ export default function PasswordResetScreen() {
     }
 
     setSent(true);
-    setInfo(copy.otpSent);
   };
 
   const goToSetPassword = () => {
@@ -55,21 +52,25 @@ export default function PasswordResetScreen() {
     <AuthScreen
       hero={authIcons.heroReset}
       title={copy.title}
-      subtitle={copy.subtitle}
+      subtitle={sent ? undefined : copy.subtitle}
       footerNote={copy.footerNote}
     >
       <AuthErrorBanner message={error} />
-      <AuthInfoBanner message={info} />
 
       {sent ? (
-        <View style={styles.successBox}>
-          <Text style={styles.successText}>{copy.success}</Text>
+        <>
+          <AuthEmailSentCard
+            email={email}
+            title={copy.codeSentTitle}
+            body={copy.codeSentBody}
+            hint={copy.codeSentHint}
+          />
           <AuthPrimaryButton
             label={copy.continueToSetPassword}
             disabled={loading}
             onPress={goToSetPassword}
           />
-        </View>
+        </>
       ) : (
         <>
           <AuthTextField
@@ -121,21 +122,6 @@ export default function PasswordResetScreen() {
 
 function createStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
-    successBox: {
-      gap: s(12)
-    },
-    successText: {
-      fontFamily: 'EBGaramond_600SemiBold',
-      fontSize: t(16),
-      lineHeight: t(22),
-      color: figmaColors.gray,
-      textAlign: 'center',
-      padding: s(16),
-      borderRadius: s(10),
-      borderWidth: 1,
-      borderColor: figmaColors.borderLight,
-      backgroundColor: '#FFFFFF'
-    },
     orRow: {
       flexDirection: 'row',
       alignItems: 'center',

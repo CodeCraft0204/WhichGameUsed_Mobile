@@ -6,6 +6,7 @@ export const authIcons = {
   heroReset: require('@/assets/auth/hero_reset_crop.png'),
   heroSetPassword: require('@/assets/auth/hero_set_password_crop.png'),
   resetPasswordInfoIllustration: require('@/assets/auth/ResetPwd_info_img.png'),
+  checkMail: require('@/assets/auth/CheckMail.png'),
   setNewPasswordInfoIllustration: require('@/assets/auth/SetNewPwd_info_img.png'),
   titleBrush: require('@/assets/figma/advocacy/title_brush.png'),
   tornEdge: require('@/assets/camera/bord.png')
@@ -70,8 +71,12 @@ export const authCopy = {
     helpLink: 'Contact Support',
     backToSignIn: 'Back to Sign In',
     footerNote: 'We take your security seriously. Your information is safe with us.',
-    success: 'If an account exists for that email, you will receive a code shortly.',
-    otpSent: 'Check your email for your code, then continue below.'
+    codeSentTitle: 'Check your email',
+    codeSentBody:
+      'If an account exists for this address, we sent a one-time verification code.',
+    codeSentHint:
+      'Open the message from Which Game Used, then continue below to enter your code. Check spam if it does not arrive within a few minutes.',
+    codeResent: 'A new code was sent. Check your inbox and spam folder.'
   },
   setNewPassword: {
     back: 'Back',

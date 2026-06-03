@@ -35,10 +35,7 @@ export function AuthHelpBox({
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.body}>{body}</Text>
         <Text style={styles.linkRow}>
-          {linkPrefix}
-          <Pressable onPress={onLinkPress} hitSlop={8} disabled={!onLinkPress}>
-            <Text style={styles.link}>{linkLabel}</Text>
-          </Pressable>
+          {linkPrefix} <Text style={styles.link}>{linkLabel}</Text>
         </Text>
       </View>
     </View>
