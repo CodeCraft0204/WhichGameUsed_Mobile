@@ -29,6 +29,9 @@ export function formatAuthError(message: string): string {
   if (lower.includes('session') && lower.includes('missing')) {
     return 'Your reset link has expired. Please request a new password reset email.';
   }
+  if (lower.includes('jwt issued at future')) {
+    return 'Your device date or time is incorrect. Turn on automatic date & time, then sign in again.';
+  }
 
   return message;
 }

@@ -17,7 +17,12 @@ import { databaseIcons } from '@/constants/databaseContent';
 import { figmaColors } from '@/constants/figmaColors';
 import { figmaSharedIcons } from '@/constants/figmaShared';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
-import { listMySubmissions, statusLabel, type SubmissionRow } from '@/lib/submissions';
+import {
+  linkedCardTitleFromItems,
+  listMySubmissionsWithItems,
+  statusLabel,
+  type SubmissionWithItems
+} from '@/lib/submissions';
 
 export default function AuthenticateScreen() {
   const router = useRouter();
@@ -25,12 +30,12 @@ export default function AuthenticateScreen() {
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
   const [activeTab, setActiveTab] = useState(0);
-  const [liveSubmissions, setLiveSubmissions] = useState<SubmissionRow[]>([]);
+  const [liveSubmissions, setLiveSubmissions] = useState<SubmissionWithItems[]>([]);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
-      void listMySubmissions().then(({ items, error }) => {
+      void listMySubmissionsWithItems().then(({ items, error }) => {
         if (active && !error) setLiveSubmissions(items);
       });
       return () => {
@@ -98,11 +103,17 @@ export default function AuthenticateScreen() {
           </View>
 
           {pending.length > 0
-            ? pending.map((row) => (
+            ? pending.map((row) => {
+                const linkedTitle = linkedCardTitleFromItems(row.items);
+                return (
                 <AuthenticateDraftCard
                   key={row.id}
                   cardImage={databaseIcons.recordMantle}
-                  title={`Card submission\n${statusLabel(row.status)}`}
+                  title={
+                    linkedTitle
+                      ? `${linkedTitle}\n${statusLabel(row.status)}`
+                      : `Card submission\n${statusLabel(row.status)}`
+                  }
                   description={row.user_notes?.trim() || 'Submitted from mobile capture.'}
                   tags={['MOBILE', row.status.toUpperCase()]}
                   meta={[
@@ -117,7 +128,8 @@ export default function AuthenticateScreen() {
                   s={s}
                   t={t}
                 />
-              ))
+              );
+              })
             : authenticateDraftRecords.map((record) => (
                 <AuthenticateDraftCard
                   key={record.key}
@@ -140,11 +152,13 @@ export default function AuthenticateScreen() {
           </View>
 
           {completed.length > 0
-            ? completed.map((row) => (
+            ? completed.map((row) => {
+                const linkedTitle = linkedCardTitleFromItems(row.items);
+                return (
                 <AuthenticateScannedCard
                   key={row.id}
                   cardImage={databaseIcons.recordJordan}
-                  title={`Submission ${statusLabel(row.status)}`}
+                  title={linkedTitle ? `${linkedTitle}` : `Submission ${statusLabel(row.status)}`}
                   tags={[row.status.toUpperCase()]}
                   scannedAt={
                     row.submitted_at ? new Date(row.submitted_at).toLocaleDateString() : '—'
@@ -152,7 +166,8 @@ export default function AuthenticateScreen() {
                   s={s}
                   t={t}
                 />
-              ))
+              );
+              })
             : authenticateScannedRecords.map((record) => (
                 <AuthenticateScannedCard
                   key={record.key}

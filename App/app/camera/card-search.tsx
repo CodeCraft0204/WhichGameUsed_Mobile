@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   Image,
   Pressable,
@@ -20,8 +21,29 @@ export default function CameraCardSearchScreen() {
   const { s, t } = useFigmaLayout(1);
   const styles = useMemo(() => createStyles(s, t), [s, t]);
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [results, setResults] = useState<CameraCardSearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const results = useMemo(() => searchCameraCardCatalog(query), [query]);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query), 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    void searchCameraCardCatalog(debouncedQuery).then(({ items, error: err }) => {
+      if (!active) return;
+      setResults(items);
+      setError(err);
+      setLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, [debouncedQuery]);
 
   const handleSelect = (item: CameraCardSearchResult) => {
     router.replace({
@@ -55,17 +77,26 @@ export default function CameraCardSearchScreen() {
         clearButtonMode="while-editing"
       />
 
+      {loading ? (
+        <ActivityIndicator style={styles.loader} color={figmaColors.charcoal} />
+      ) : null}
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+
       <FlatList
         data={results}
         keyExtractor={(item) => item.key}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.list}
         ListEmptyComponent={
-          <Text style={styles.empty}>{cameraCopy.searchEmpty}</Text>
+          !loading ? <Text style={styles.empty}>{cameraCopy.searchEmpty}</Text> : null
         }
         renderItem={({ item }) => (
           <Pressable style={styles.row} onPress={() => handleSelect(item)}>
-            <Image source={item.cardImage} style={styles.thumb} resizeMode="cover" />
+            <Image
+              source={item.imageUrl ? { uri: item.imageUrl } : item.cardImage}
+              style={styles.thumb}
+              resizeMode="cover"
+            />
             <View style={styles.rowText}>
               <Text style={styles.rowTitle} numberOfLines={2}>
                 {item.title}
@@ -115,6 +146,15 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: t(16),
       color: figmaColors.charcoal,
       backgroundColor: figmaColors.cream
+    },
+    loader: { marginVertical: s(12) },
+    error: {
+      marginHorizontal: s(16),
+      marginBottom: s(8),
+      fontFamily: 'EBGaramond_400Regular',
+      fontSize: t(14),
+      color: '#B42318',
+      textAlign: 'center'
     },
     list: { paddingHorizontal: s(16), paddingBottom: s(24) },
     empty: {

@@ -15,7 +15,12 @@ import { createAndSubmitCardCapture } from '@/lib/submissions';
 
 export default function CreateEditScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ frontUri?: string; backUri?: string }>();
+  const params = useLocalSearchParams<{
+    frontUri?: string;
+    backUri?: string;
+    linkedCardKey?: string;
+    linkedCardTitle?: string;
+  }>();
   const { user } = useAuth();
   const { s, t } = useFigmaLayout(1);
   const styles = useMemo(() => createStyles(s, t), [s, t]);
@@ -31,6 +36,15 @@ export default function CreateEditScreen() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+
+  const linkedCardId =
+    typeof params.linkedCardKey === 'string' && params.linkedCardKey.length > 0
+      ? params.linkedCardKey
+      : null;
+  const linkedCardTitle =
+    typeof params.linkedCardTitle === 'string' && params.linkedCardTitle.length > 0
+      ? params.linkedCardTitle
+      : null;
 
   const addProof = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -59,7 +73,8 @@ export default function CreateEditScreen() {
     const { submissionId, error: submitError } = await createAndSubmitCardCapture(
       user.id,
       { frontUri, backUri, proofUri },
-      notes
+      notes,
+      linkedCardId
     );
     setLoading(false);
 
@@ -95,6 +110,14 @@ export default function CreateEditScreen() {
         <Text style={styles.subtitle}>{editCopy.subtitle}</Text>
 
         <AuthErrorBanner message={error} />
+
+        {linkedCardTitle ? (
+          <View style={styles.linkedBanner}>
+            <Text style={styles.linkedBannerText}>
+              Catalog match: {linkedCardTitle}
+            </Text>
+          </View>
+        ) : null}
 
         <CreatePhotoSlot
           label={editCopy.frontLabel}
@@ -187,6 +210,20 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: t(17),
       lineHeight: t(24),
       color: figmaColors.gray,
+      textAlign: 'center'
+    },
+    linkedBanner: {
+      paddingVertical: s(10),
+      paddingHorizontal: s(12),
+      borderRadius: s(8),
+      backgroundColor: figmaColors.ctaBackground,
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight
+    },
+    linkedBannerText: {
+      fontFamily: 'EBGaramond_600SemiBold',
+      fontSize: t(15),
+      color: figmaColors.charcoal,
       textAlign: 'center'
     },
     proofRow: {

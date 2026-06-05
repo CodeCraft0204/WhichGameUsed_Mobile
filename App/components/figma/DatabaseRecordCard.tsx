@@ -17,6 +17,7 @@ const metaIconSources: Record<DatabaseMetaIconKey, number> = {
 
 type DatabaseRecordCardProps = {
   cardImage: number;
+  imageUrl?: string | null;
   title: string;
   description: string;
   tags: readonly string[];
@@ -28,6 +29,7 @@ type DatabaseRecordCardProps = {
 
 export function DatabaseRecordCard({
   cardImage,
+  imageUrl,
   title,
   description,
   tags,
@@ -41,7 +43,11 @@ export function DatabaseRecordCard({
 
   return (
     <View style={styles.card}>
-      <Image source={cardImage} style={styles.cardImage} resizeMode="contain" />
+      <Image
+        source={imageUrl ? { uri: imageUrl } : cardImage}
+        style={styles.cardImage}
+        resizeMode="contain"
+      />
 
       <View style={styles.body}>
         <Text style={styles.title}>{title}</Text>

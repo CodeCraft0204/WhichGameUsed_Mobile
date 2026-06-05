@@ -118,12 +118,16 @@ async function createDraftSubmission(userId: string, userNotes?: string) {
   return { submissionId: data.id as string, error: null };
 }
 
-async function createSubmissionItem(submissionId: string, userNotes?: string) {
+async function createSubmissionItem(
+  submissionId: string,
+  userNotes?: string,
+  cardId?: string | null
+) {
   const { data, error } = await supabase
     .from('submission_items')
     .insert({
       submission_id: submissionId,
-      card_id: null,
+      card_id: cardId?.trim() || null,
       status: 'draft',
       user_notes: userNotes?.trim() || null
     })
@@ -172,10 +176,55 @@ async function registerUpload(
 /**
  * Create a draft submission, upload photos, and submit for admin review.
  */
+export type SubmissionWithItems = SubmissionRow & {
+  items: {
+    id: string;
+    card_id: string | null;
+    cards: { title: string } | { title: string }[] | null;
+  }[];
+};
+
+export async function listMySubmissionsWithItems(
+  statuses?: SubmissionStatus[]
+): Promise<{ items: SubmissionWithItems[]; error: string | null }> {
+  const { items, error } = await listMySubmissions(statuses);
+  if (error) return { items: [], error };
+
+  const enriched: SubmissionWithItems[] = [];
+  for (const submission of items) {
+    const { data: itemRows, error: itemError } = await supabase
+      .from('submission_items')
+      .select('id, card_id, cards(title)')
+      .eq('submission_id', submission.id);
+
+    if (itemError) return { items: [], error: itemError.message };
+
+    enriched.push({
+      ...submission,
+      items: (itemRows ?? []) as SubmissionWithItems['items']
+    });
+  }
+
+  return { items: enriched, error: null };
+}
+
+function linkedCardTitleFromItems(items: SubmissionWithItems['items']): string | null {
+  for (const item of items) {
+    const cards = item.cards;
+    if (!cards) continue;
+    if (Array.isArray(cards)) return cards[0]?.title ?? null;
+    return cards.title;
+  }
+  return null;
+}
+
+export { linkedCardTitleFromItems };
+
 export async function createAndSubmitCardCapture(
   userId: string,
   photos: CapturedPhotos,
-  userNotes?: string
+  userNotes?: string,
+  cardId?: string | null
 ): Promise<{ submissionId: string | null; error: string | null }> {
   if (!photos.frontUri?.trim()) {
     return { submissionId: null, error: 'A front photo is required.' };
@@ -186,7 +235,7 @@ export async function createAndSubmitCardCapture(
     return { submissionId: null, error: draftError ?? 'Could not create submission.' };
   }
 
-  const { itemId, error: itemError } = await createSubmissionItem(submissionId, userNotes);
+  const { itemId, error: itemError } = await createSubmissionItem(submissionId, userNotes, cardId);
   if (itemError || !itemId) {
     return { submissionId: null, error: itemError ?? 'Could not create submission item.' };
   }

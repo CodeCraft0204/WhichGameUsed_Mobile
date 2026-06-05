@@ -1,4 +1,5 @@
-﻿import React, { useMemo } from 'react';
+﻿import { useFocusEffect } from 'expo-router';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { DatabaseRecordCard } from '@/components/figma/DatabaseRecordCard';
 import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
@@ -9,16 +10,64 @@ import {
   databaseFeaturedRecords,
   databaseIcons,
   databaseRecentRecords,
-  databaseSportTabs
+  databaseSportTabs,
+  type DatabaseMetaItem,
+  type DatabaseRecord
 } from '@/constants/databaseContent';
 import { figmaColors } from '@/constants/figmaColors';
 import { figmaSharedIcons } from '@/constants/figmaShared';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
+import { cardDescription, cardToTags, listRecentCards, type CardSummary } from '@/lib/cards';
+
+type LiveRecord = DatabaseRecord & { imageUrl?: string | null };
+
+function cardToLiveRecord(card: CardSummary, cardImage: number): LiveRecord {
+  const meta: DatabaseMetaItem[] = [];
+  if (card.player_name) meta.push({ key: 'player', icon: 'person', label: card.player_name });
+  if (card.team_name) meta.push({ key: 'team', icon: 'baseball', label: card.team_name });
+  if (card.year) meta.push({ key: 'year', icon: 'calendar', label: String(card.year) });
+  if (card.authenticated_count > 0) {
+    meta.push({ key: 'auth', icon: 'shield', label: `${card.authenticated_count} authenticated` });
+  }
+
+  return {
+    key: card.id,
+    cardImage,
+    imageUrl: card.imageUrl,
+    title: card.title,
+    description: cardDescription(card),
+    tags: cardToTags(card),
+    meta
+  };
+}
 
 export default function DatabaseScreen() {
   const { s, t } = useFigmaLayout();
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s), [s]);
+
+  const [featured, setFeatured] = useState<LiveRecord[]>(databaseFeaturedRecords);
+  const [recent, setRecent] = useState<LiveRecord[]>(databaseRecentRecords);
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      void listRecentCards(12).then(({ items, error }) => {
+        if (!active || error || items.length === 0) return;
+        const liveFeatured = items.slice(0, 4).map((card, i) =>
+          cardToLiveRecord(card, databaseFeaturedRecords[i % databaseFeaturedRecords.length]?.cardImage ?? databaseIcons.recordMantle)
+        );
+        const liveRecent = items.slice(4, 12).map((card, i) =>
+          cardToLiveRecord(card, databaseRecentRecords[i % databaseRecentRecords.length]?.cardImage ?? databaseIcons.recentKobe)
+        );
+        if (liveFeatured.length > 0) setFeatured(liveFeatured);
+        if (liveRecent.length > 0) setRecent(liveRecent);
+      });
+      return () => {
+        active = false;
+      };
+    }, [])
+  );
 
   return (
     <FigmaScreen
@@ -54,10 +103,11 @@ export default function DatabaseScreen() {
         </View>
       </View>
 
-      {databaseFeaturedRecords.map((record) => (
+      {featured.map((record) => (
         <DatabaseRecordCard
           key={record.key}
           cardImage={record.cardImage}
+          imageUrl={record.imageUrl}
           title={record.title}
           description={record.description}
           tags={record.tags}
@@ -76,10 +126,11 @@ export default function DatabaseScreen() {
         </View>
       </View>
 
-      {databaseRecentRecords.map((record) => (
+      {recent.map((record) => (
         <DatabaseRecordCard
           key={record.key}
           cardImage={record.cardImage}
+          imageUrl={record.imageUrl}
           title={record.title}
           description={record.description}
           tags={record.tags}

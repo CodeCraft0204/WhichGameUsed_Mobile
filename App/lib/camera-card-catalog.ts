@@ -1,8 +1,10 @@
+import { databaseIcons } from '@/constants/databaseContent';
 import {
-  databaseFeaturedRecords,
-  databaseRecentRecords,
-  type DatabaseRecord
-} from '@/constants/databaseContent';
+  cardDescription,
+  cardToTags,
+  searchApprovedCards,
+  type CardSummary
+} from '@/lib/cards';
 
 export type CameraCardSearchResult = {
   key: string;
@@ -10,29 +12,24 @@ export type CameraCardSearchResult = {
   description: string;
   tags: string[];
   cardImage: number;
+  imageUrl: string | null;
 };
 
-function toSearchResult(record: DatabaseRecord): CameraCardSearchResult {
+function toSearchResult(card: CardSummary): CameraCardSearchResult {
   return {
-    key: record.key,
-    title: record.title.replace(/\n/g, ' '),
-    description: record.description,
-    tags: record.tags,
-    cardImage: record.cardImage
+    key: card.id,
+    title: card.title.replace(/\n/g, ' '),
+    description: cardDescription(card),
+    tags: cardToTags(card),
+    cardImage: databaseIcons.recordMantle,
+    imageUrl: card.imageUrl
   };
 }
 
-const catalog: CameraCardSearchResult[] = [
-  ...databaseFeaturedRecords.map(toSearchResult),
-  ...databaseRecentRecords.map(toSearchResult)
-];
-
-export function searchCameraCardCatalog(query: string): CameraCardSearchResult[] {
-  const q = query.trim().toLowerCase();
-  if (!q) return catalog;
-
-  return catalog.filter((item) => {
-    const haystack = [item.title, item.description, ...item.tags].join(' ').toLowerCase();
-    return haystack.includes(q);
-  });
+export async function searchCameraCardCatalog(
+  query: string
+): Promise<{ items: CameraCardSearchResult[]; error: string | null }> {
+  const { items, error } = await searchApprovedCards(query, 25);
+  if (error) return { items: [], error };
+  return { items: items.map(toSearchResult), error: null };
 }

@@ -64,7 +64,13 @@ export function isAdminRole(role: AppRole | undefined): boolean {
   return role === 'admin' || role === 'super_admin';
 }
 
-async function fetchProfile(userId: string): Promise<Profile | null> {
+function isJwtClockSkewError(message: string): boolean {
+  return message.toLowerCase().includes('jwt issued at future');
+}
+
+async function fetchProfile(
+  userId: string
+): Promise<{ profile: Profile | null; clockSkew: boolean }> {
   const { data, error } = await supabase
     .from('profiles')
     .select('id, role, display_name, username, avatar_url, about, location_text')
@@ -72,10 +78,17 @@ async function fetchProfile(userId: string): Promise<Profile | null> {
     .maybeSingle();
 
   if (error) {
-    console.error('Failed to load profile', error.message);
-    return null;
+    const clockSkew = isJwtClockSkewError(error.message);
+    if (clockSkew) {
+      console.warn(
+        'Failed to load profile: device clock is behind server time (JWT issued at future). Sync date/time, then sign in again.'
+      );
+    } else {
+      console.error('Failed to load profile', error.message);
+    }
+    return { profile: null, clockSkew };
   }
-  return data as Profile | null;
+  return { profile: data as Profile | null, clockSkew: false };
 }
 
 async function profileAfterSession(): Promise<AuthSessionResult> {
@@ -84,7 +97,11 @@ async function profileAfterSession(): Promise<AuthSessionResult> {
   if (!userId) {
     return { error: null, profile: null, isAdmin: false };
   }
-  const profile = await fetchProfile(userId);
+  const { profile, clockSkew } = await fetchProfile(userId);
+  if (clockSkew) {
+    await supabase.auth.signOut();
+    return { error: null, profile: null, isAdmin: false };
+  }
   return { error: null, profile, isAdmin: isAdminRole(profile?.role) };
 }
 
@@ -101,7 +118,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     setProfileLoading(true);
-    setProfile(await fetchProfile(user.id));
+    const { profile: next, clockSkew } = await fetchProfile(user.id);
+    if (clockSkew) {
+      await supabase.auth.signOut();
+      setProfile(null);
+      return;
+    }
+    setProfile(next);
     setProfileLoading(false);
   }, [user]);
 
@@ -139,11 +162,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     let mounted = true;
     setProfileLoading(true);
-    void fetchProfile(user.id).then((next) => {
-      if (mounted) {
-        setProfile(next);
+    void fetchProfile(user.id).then(async ({ profile: next, clockSkew }) => {
+      if (!mounted) return;
+      if (clockSkew) {
+        await supabase.auth.signOut();
+        setProfile(null);
         setProfileLoading(false);
+        return;
       }
+      setProfile(next);
+      setProfileLoading(false);
     });
 
     return () => {
