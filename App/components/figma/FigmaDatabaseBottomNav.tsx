@@ -20,7 +20,7 @@ const navIcons = {
 const items = [
   { key: 'database', label: 'DATABASE', href: '/database/database' as Href, icon: navIcons.database },
   { key: 'authenticate', label: 'AUTHENTICATE', href: '/authenticate/authenticate' as Href, icon: navIcons.authenticate },
-  { key: 'create', label: 'CREATE', href: '/camera/camera' as Href, icon: navIcons.create },
+  { key: 'create', label: 'CREATE', href: '/create/create' as Href, icon: navIcons.create },
   { key: 'discussion', label: 'DISCUSSION', href: '/discussion/discussion' as Href, icon: navIcons.discussion },
   { key: 'more', label: 'MUCH MORE', href: '/advocacy/advocacy' as Href, icon: navIcons.more }
 ] as const;

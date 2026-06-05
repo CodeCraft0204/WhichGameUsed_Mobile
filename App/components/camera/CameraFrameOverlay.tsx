@@ -1,23 +1,22 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { figmaColors } from '@/constants/figmaColors';
 
 type CameraFrameOverlayProps = {
   width: number;
   height: number;
-  s: (n: number) => number;
   inset?: number;
 };
 
 function CornerBracket({
-  s,
+  cornerLen,
+  stroke,
   position
 }: {
-  s: (n: number) => number;
+  cornerLen: number;
+  stroke: number;
   position: 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight';
 }) {
-  const len = s(36);
-  const stroke = s(3);
+  const len = cornerLen;
 
   const anchor = {
     topLeft: { top: 0, left: 0 },
@@ -38,29 +37,33 @@ function CornerBracket({
         style={[
           styles.bar,
           horizontalStyle,
-          { width: len, height: stroke, backgroundColor: figmaColors.cream }
+          { width: len, height: stroke, backgroundColor: '#FFFFFF' }
         ]}
       />
       <View
         style={[
           styles.bar,
           verticalStyle,
-          { width: stroke, height: len, backgroundColor: figmaColors.cream }
+          { width: stroke, height: len, backgroundColor: '#FFFFFF' }
         ]}
       />
     </View>
   );
 }
 
-export function CameraFrameOverlay({ width, height, s, inset = 22 }: CameraFrameOverlayProps) {
-  const insetPx = s(inset);
+export function CameraFrameOverlay({ width, height, inset }: CameraFrameOverlayProps) {
+  const cornerLen = Math.min(width, height) * 0.065;
+  const stroke = Math.max(2, cornerLen * 0.085);
+  const insetPx = inset ?? Math.round(Math.min(width, height) * 0.04);
+  const borderWidth = Math.max(1, stroke * 0.55);
+  const borderRadius = Math.max(2, cornerLen * 0.12);
 
   return (
     <View style={[styles.wrap, { width, height }]}>
-      <CornerBracket s={s} position="topLeft" />
-      <CornerBracket s={s} position="topRight" />
-      <CornerBracket s={s} position="bottomLeft" />
-      <CornerBracket s={s} position="bottomRight" />
+      <CornerBracket cornerLen={cornerLen} stroke={stroke} position="topLeft" />
+      <CornerBracket cornerLen={cornerLen} stroke={stroke} position="topRight" />
+      <CornerBracket cornerLen={cornerLen} stroke={stroke} position="bottomLeft" />
+      <CornerBracket cornerLen={cornerLen} stroke={stroke} position="bottomRight" />
 
       <View
         style={[
@@ -70,8 +73,8 @@ export function CameraFrameOverlay({ width, height, s, inset = 22 }: CameraFrame
             left: insetPx,
             right: insetPx,
             bottom: insetPx,
-            borderWidth: s(1.5),
-            borderRadius: s(4)
+            borderWidth,
+            borderRadius
           }
         ]}
       />

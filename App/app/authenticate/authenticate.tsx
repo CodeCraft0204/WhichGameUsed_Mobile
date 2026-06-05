@@ -1,5 +1,5 @@
-﻿import { useRouter } from 'expo-router';
-import React, { useMemo } from 'react';
+﻿import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AuthenticateDraftCard, AuthenticateScannedCard } from '@/components/figma/AuthenticateRecordCard';
 import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
@@ -13,15 +13,41 @@ import {
   authenticateScannedRecords,
   authenticateTabs
 } from '@/constants/authenticateContent';
+import { databaseIcons } from '@/constants/databaseContent';
 import { figmaColors } from '@/constants/figmaColors';
 import { figmaSharedIcons } from '@/constants/figmaShared';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
+import { listMySubmissions, statusLabel, type SubmissionRow } from '@/lib/submissions';
 
 export default function AuthenticateScreen() {
   const router = useRouter();
   const { s, t } = useFigmaLayout();
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
+  const [activeTab, setActiveTab] = useState(0);
+  const [liveSubmissions, setLiveSubmissions] = useState<SubmissionRow[]>([]);
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      void listMySubmissions().then(({ items, error }) => {
+        if (active && !error) setLiveSubmissions(items);
+      });
+      return () => {
+        active = false;
+      };
+    }, [])
+  );
+
+  const pending = liveSubmissions.filter(
+    (s) => s.status === 'draft' || s.status === 'pending_admin_review' || s.status === 'needs_more_info'
+  );
+  const completed = liveSubmissions.filter(
+    (s) => s.status === 'approved' || s.status === 'rejected' || s.status === 'completed'
+  );
+
+  const showPending = activeTab !== 2;
+  const showCompleted = activeTab !== 1;
 
   return (
     <FigmaScreen
@@ -54,55 +80,94 @@ export default function AuthenticateScreen() {
           contentContainerStyle={[page.tabRow, styles.tabRow]}
         >
           {authenticateTabs.map((tab, index) => (
-            <Pressable key={tab} style={[page.tabButton, index === 0 && page.tabButtonActive]}>
-              <Text style={[page.tabText, index === 0 && page.tabTextActive]}>{tab}</Text>
+            <Pressable
+              key={tab}
+              style={[page.tabButton, index === activeTab && page.tabButtonActive]}
+              onPress={() => setActiveTab(index)}
+            >
+              <Text style={[page.tabText, index === activeTab && page.tabTextActive]}>{tab}</Text>
             </Pressable>
           ))}
         </ScrollView>
       </View>
 
-      <View style={page.sectionHeaderRow}>
-        <Text style={page.sectionTitle}>DRAFT SUBMISSIONS</Text>
-        <View style={page.viewAllRow}>
-          <Text style={styles.viewAllText}>VIEW ALL</Text>
-          <Image source={authenticateIcons.sectionChevron} style={page.sectionChevron} resizeMode="contain" />
-        </View>
-      </View>
+      {showPending ? (
+        <>
+          <View style={page.sectionHeaderRow}>
+            <Text style={page.sectionTitle}>YOUR SUBMISSIONS</Text>
+          </View>
 
-      {authenticateDraftRecords.map((record) => (
-        <AuthenticateDraftCard
-          key={record.key}
-          cardImage={record.cardImage}
-          title={record.title}
-          description={record.description}
-          tags={record.tags}
-          meta={record.meta}
-          s={s}
-          t={t}
-        />
-      ))}
+          {pending.length > 0
+            ? pending.map((row) => (
+                <AuthenticateDraftCard
+                  key={row.id}
+                  cardImage={databaseIcons.recordMantle}
+                  title={`Card submission\n${statusLabel(row.status)}`}
+                  description={row.user_notes?.trim() || 'Submitted from mobile capture.'}
+                  tags={['MOBILE', row.status.toUpperCase()]}
+                  meta={[
+                    {
+                      key: 'date',
+                      icon: 'calendar',
+                      label: row.submitted_at
+                        ? new Date(row.submitted_at).toLocaleDateString()
+                        : 'Draft'
+                    }
+                  ]}
+                  s={s}
+                  t={t}
+                />
+              ))
+            : authenticateDraftRecords.map((record) => (
+                <AuthenticateDraftCard
+                  key={record.key}
+                  cardImage={record.cardImage}
+                  title={record.title}
+                  description={record.description}
+                  tags={record.tags}
+                  meta={record.meta}
+                  s={s}
+                  t={t}
+                />
+              ))}
+        </>
+      ) : null}
 
-      <View style={page.sectionHeaderRow}>
-        <Text style={page.sectionTitle}>RECENTLY SCANNED</Text>
-        <View style={page.viewAllRow}>
-          <Text style={styles.viewAllText}>VIEW ALL</Text>
-          <Image source={authenticateIcons.sectionChevron} style={page.sectionChevron} resizeMode="contain" />
-        </View>
-      </View>
+      {showCompleted ? (
+        <>
+          <View style={page.sectionHeaderRow}>
+            <Text style={page.sectionTitle}>REVIEWED</Text>
+          </View>
 
-      {authenticateScannedRecords.map((record) => (
-        <AuthenticateScannedCard
-          key={record.key}
-          cardImage={record.cardImage}
-          title={record.title}
-          tags={record.tags}
-          scannedAt={record.scannedAt}
-          s={s}
-          t={t}
-        />
-      ))}
+          {completed.length > 0
+            ? completed.map((row) => (
+                <AuthenticateScannedCard
+                  key={row.id}
+                  cardImage={databaseIcons.recordJordan}
+                  title={`Submission ${statusLabel(row.status)}`}
+                  tags={[row.status.toUpperCase()]}
+                  scannedAt={
+                    row.submitted_at ? new Date(row.submitted_at).toLocaleDateString() : '—'
+                  }
+                  s={s}
+                  t={t}
+                />
+              ))
+            : authenticateScannedRecords.map((record) => (
+                <AuthenticateScannedCard
+                  key={record.key}
+                  cardImage={record.cardImage}
+                  title={record.title}
+                  tags={record.tags}
+                  scannedAt={record.scannedAt}
+                  s={s}
+                  t={t}
+                />
+              ))}
+        </>
+      ) : null}
 
-      <ScanSubmitButton s={s} t={t} onPress={() => router.push('/camera/camera')} />
+      <ScanSubmitButton s={s} t={t} onPress={() => router.push('/create/create')} />
 
       <View style={styles.ctaCard}>
         <Image source={authenticateIcons.ctaIcon} style={page.ctaIcon} resizeMode="contain" />

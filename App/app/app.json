@@ -7,7 +7,21 @@
       "orientation": "portrait",
       "userInterfaceStyle": "light",
       "assetBundlePatterns": ["**/*"],
-      "plugins": ["expo-router"],
+      "plugins": [
+        "expo-router",
+        [
+          "expo-camera",
+          {
+            "cameraPermission": "Allow Which Game Used to photograph cards for authentication."
+          }
+        ],
+        [
+          "expo-image-picker",
+          {
+            "photosPermission": "Allow Which Game Used to attach card photos from your library."
+          }
+        ]
+      ],
       "experiments": { "typedRoutes": true },
       "android": {
         "package": "com.whichgameused.mobile",

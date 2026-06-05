@@ -11,5 +11,7 @@ export const primaryNav: Array<{ label: string; href: Href }> = [
   { label: 'MostWanted', href: '/mostwanted/mostwanted' },
   { label: 'Leaderboard', href: '/leaderboard/leaderboard' },
   { label: 'Advocacy', href: '/advocacy/advocacy' },
-  { label: 'Camera', href: '/camera/camera' }
+  { label: 'Create', href: '/create/create' },
+  { label: 'Camera', href: '/camera/camera' },
+  { label: 'Edit photos', href: '/create/edit' }
 ];

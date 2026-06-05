@@ -7,8 +7,12 @@ export const cameraIcons = {
   tornEdge: require('@/assets/camera/bord.png'),
   gallery: require('@/assets/camera/thumb.png'),
   capture: require('@/assets/camera/capture.png'),
+  flip: require('@/assets/camera/flip.png'),
   search: require('@/assets/camera/search.png')
 } as const;
+
+/** Camera viewport fill (Figma cyan preview). */
+export const cameraPreviewColor = '#9DFFF5';
 
 export type CameraMode = 'front' | 'both';
 
@@ -17,7 +21,7 @@ export const cameraLayout = {
   logoWidth: 260,
   logoHeight: 64,
   frameWidth: 550,
-  frameHeight: 850,
+  frameHeight: 750,
   frameInset: 22,
   gallerySize: 64,
   modeToggleHeight: 70,
