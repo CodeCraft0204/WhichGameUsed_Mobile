@@ -28,7 +28,7 @@ export function AuthPasswordRequirements({ password, title }: AuthPasswordRequir
           return (
             <View key={rule.id} style={styles.row}>
               <View style={[styles.bullet, met && styles.bulletMet]}>
-                {met ? <Ionicons name="checkmark" size={s(10)} color="#FFFFFF" /> : null}
+                {met ? <Ionicons name="checkmark" size={s(10)} color={figmaColors.textOnDark} /> : null}
               </View>
               <Text style={[styles.rule, met && styles.ruleMet]}>{rule.label}</Text>
             </View>
@@ -54,8 +54,8 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       paddingRight: s(108),
       borderRadius: s(12),
       borderWidth: 1,
-      borderColor: '#D4D4D4',
-      backgroundColor: '#EDECE8',
+      borderColor: figmaColors.inputBorder,
+      backgroundColor: figmaColors.ctaBackground,
       marginTop: s(8),
       overflow: 'hidden',
       minHeight: s(168)
@@ -90,7 +90,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       borderRadius: s(9),
       borderWidth: 1,
       borderColor: figmaColors.accent,
-      backgroundColor: '#FFFFFF',
+      backgroundColor: figmaColors.inputBg,
       alignItems: 'center',
       justifyContent: 'center'
     },

@@ -3,6 +3,7 @@ import { figmaIcons } from '@/constants/figmaIcons';
 
 /** Authenticate screen assets (node 1:96) + shared database card/meta art. */
 export const authenticateIcons = {
+  main: require('@/assets/figma/authenticate/main.png'),
   hero: require('@/assets/figma/authenticate/hero.png'),
   sectionChevron: require('@/assets/figma/authenticate/chevron.png'),
   ctaIcon: require('@/assets/figma/authenticate/cta_icon.png'),

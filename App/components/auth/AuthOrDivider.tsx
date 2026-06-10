@@ -31,7 +31,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     line: {
       flex: 1,
       height: 1,
-      backgroundColor: '#D4D4D4'
+      backgroundColor: figmaColors.borderLight
     },
     label: {
       fontFamily: 'Inter_400Regular',

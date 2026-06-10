@@ -66,7 +66,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       backgroundColor: figmaColors.accent
     },
     segmentEmpty: {
-      backgroundColor: '#E0E0E0'
+      backgroundColor: figmaColors.borderLight
     },
     ends: {
       flexDirection: 'row',

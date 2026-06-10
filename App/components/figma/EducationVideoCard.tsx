@@ -85,7 +85,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       borderRadius: s(8),
       overflow: 'hidden',
       flexShrink: 0,
-      backgroundColor: '#ece7e1'
+      backgroundColor: figmaColors.surfaceHighlight
     },
     thumb: {
       width: '100%',

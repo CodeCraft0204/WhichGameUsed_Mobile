@@ -89,8 +89,8 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       marginBottom: s(8)
     },
     hero: {
-      width: s(200),
-      height: s(120),
+      width: s(500),
+      height: s(350),
       marginBottom: s(8)
     },
     stepsCard: {
@@ -99,7 +99,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       borderRadius: s(12),
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
-      backgroundColor: '#FFFFFF',
+      backgroundColor: figmaColors.inputBg,
       marginBottom: s(8)
     },
     step: {

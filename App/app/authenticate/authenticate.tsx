@@ -76,7 +76,7 @@ export default function AuthenticateScreen() {
           </View>
         </View>
 
-        <Image source={authenticateIcons.hero} style={styles.heroImage} resizeMode="contain" />
+        <Image source={authenticateIcons.main} style={styles.heroImage} resizeMode="contain" />
         <FigmaUtilityBar s={s} />
 
         <ScrollView
@@ -254,7 +254,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
     ctaCard: {
       minHeight: s(108),
       borderRadius: s(12),
-      backgroundColor: '#f7f3ed',
+      backgroundColor: figmaColors.ctaBackground,
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: s(12),

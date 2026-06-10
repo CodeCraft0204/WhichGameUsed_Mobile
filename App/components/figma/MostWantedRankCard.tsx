@@ -47,7 +47,7 @@ function VoteColumn({
 }) {
   return (
     <>
-      {showDivider && <View style={{ width: 1, height: s(52), backgroundColor: '#ddd8d4' }} />}
+      {showDivider && <View style={{ width: 1, height: s(52), backgroundColor: figmaColors.metaDivider }} />}
       <View style={{ alignItems: 'center', justifyContent: 'center', gap: s(4), minWidth: s(44) }}>
         <VoteIcon icon={icon} s={s} />
         <Text
@@ -122,7 +122,7 @@ function createStyles(
 ) {
   return StyleSheet.create({
     card: {
-      backgroundColor: highlight ? '#f3f0ea' : figmaColors.cream,
+      backgroundColor: highlight ? figmaColors.surfaceHighlight : figmaColors.cream,
       borderWidth: 1,
       borderColor: highlight ? figmaColors.accent : figmaColors.borderLight,
       borderRadius: s(highlight ? 12 : 10),
@@ -138,7 +138,7 @@ function createStyles(
       width: s(40),
       height: s(40),
       borderRadius: s(20),
-      backgroundColor: '#eee8df',
+      backgroundColor: figmaColors.tagBg,
       alignItems: 'center',
       justifyContent: 'center',
       flexShrink: 0
@@ -178,7 +178,7 @@ function createStyles(
       flexDirection: 'row',
       alignItems: 'center',
       gap: s(6),
-      backgroundColor: '#eee8df',
+      backgroundColor: figmaColors.tagBg,
       borderRadius: s(8),
       paddingHorizontal: s(8),
       paddingVertical: s(4),

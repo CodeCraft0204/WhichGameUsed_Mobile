@@ -210,8 +210,8 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       minHeight: s(48),
       borderRadius: s(10),
       borderWidth: 1,
-      borderColor: '#D4D4D4',
-      backgroundColor: '#FFFFFF',
+      borderColor: figmaColors.inputBorder,
+      backgroundColor: figmaColors.inputBg,
       alignItems: 'center',
       justifyContent: 'center'
     },

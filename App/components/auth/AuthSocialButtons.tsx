@@ -22,7 +22,7 @@ export function AuthSocialButtons({ onGoogle, onApple }: AuthSocialButtonsProps)
         <Text style={styles.label}>Google</Text>
       </Pressable>
       <Pressable style={styles.btn} onPress={onApple} accessibilityRole="button">
-        <Ionicons name="logo-apple" size={s(authLayout.fieldIconSize)} color={figmaColors.black} />
+        <Ionicons name="logo-apple" size={s(authLayout.fieldIconSize)} color={figmaColors.sepia} />
         <Text style={styles.label}>Apple</Text>
       </Pressable>
     </View>
@@ -44,8 +44,8 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       minHeight: s(authLayout.socialButtonMinHeight),
       borderRadius: s(12),
       borderWidth: 1,
-      borderColor: '#D4D4D4',
-      backgroundColor: '#FFFFFF'
+      borderColor: figmaColors.inputBorder,
+      backgroundColor: figmaColors.inputBg
     },
     label: {
       fontFamily: 'Inter_400Regular',

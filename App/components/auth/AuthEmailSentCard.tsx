@@ -81,7 +81,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       paddingVertical: s(10),
       paddingHorizontal: s(16),
       borderRadius: s(8),
-      backgroundColor: '#FFFFFF',
+      backgroundColor: figmaColors.inputBg,
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
       maxWidth: '100%'

@@ -1,13 +1,14 @@
 import { figmaColors } from '@/constants/figmaColors';
 
-/** Bottom nav tokens — Advocacy page is the reference. */
+/** Bottom nav tokens — Advocacy reference (parchment bar, bronze active icon). */
 export const figmaNavTheme = {
   barBackground: figmaColors.bottomNav,
   barBorder: figmaColors.bottomNavBorder,
   itemActiveBackground: figmaColors.navItemActiveBg,
-  label: figmaColors.charcoal,
-  iconInactive: figmaColors.charcoal,
-  iconActive: figmaColors.taupe,
+  label: figmaColors.textPrimary,
+  labelActive: figmaColors.textAccent,
+  iconInactive: figmaColors.navInactive,
+  iconActive: figmaColors.bronze,
   /** Design width 810: icon 60×60, label Inter Bold 11 / 13 line-height */
   iconSize: 52,
   labelFontSize: 11,

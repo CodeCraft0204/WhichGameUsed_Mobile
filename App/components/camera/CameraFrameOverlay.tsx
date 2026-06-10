@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { figmaColors } from '@/constants/figmaColors';
 
 type CameraFrameOverlayProps = {
   width: number;
@@ -37,14 +38,14 @@ function CornerBracket({
         style={[
           styles.bar,
           horizontalStyle,
-          { width: len, height: stroke, backgroundColor: '#FFFFFF' }
+          { width: len, height: stroke, backgroundColor: figmaColors.overlayLight }
         ]}
       />
       <View
         style={[
           styles.bar,
           verticalStyle,
-          { width: stroke, height: len, backgroundColor: '#FFFFFF' }
+          { width: stroke, height: len, backgroundColor: figmaColors.overlayLight }
         ]}
       />
     </View>

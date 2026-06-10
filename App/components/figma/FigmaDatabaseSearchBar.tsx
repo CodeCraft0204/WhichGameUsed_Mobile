@@ -23,7 +23,7 @@ export function FigmaDatabaseSearchBar({ s, t, value, onChangeText }: FigmaDatab
           value={value}
           onChangeText={onChangeText}
           placeholder={databaseCopy.searchPlaceholder}
-          placeholderTextColor={figmaColors.gray}
+          placeholderTextColor={figmaColors.textMuted}
           autoCapitalize="none"
           autoCorrect={false}
           returnKeyType="search"

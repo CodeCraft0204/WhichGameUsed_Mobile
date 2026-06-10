@@ -84,11 +84,11 @@ function createStyles(s: (n: number) => number, t: (n: number) => number, varian
 
   return StyleSheet.create({
     card: {
-      backgroundColor: isFeatured ? '#f9f6f1' : '#f9f5f0',
-      borderWidth: isFeatured ? 1 : 7,
-      borderColor: isFeatured ? '#ebe7e3' : '#eeeae6',
-      borderRadius: s(isFeatured ? 16 : 18),
-      minHeight: s(isFeatured ? 185 : 158),
+      backgroundColor: isFeatured ? figmaColors.cardFeaturedBg : figmaColors.cardRecentBg,
+      borderWidth: 1,
+      borderColor: isFeatured ? figmaColors.cardFeaturedBorder : figmaColors.cardRecentBorder,
+      borderRadius: s(isFeatured ? 16 : 14),
+      minHeight: s(isFeatured ? 185 : 120),
       marginBottom: s(10),
       flexDirection: 'row',
       alignItems: 'stretch',
@@ -127,9 +127,9 @@ function createStyles(s: (n: number) => number, t: (n: number) => number, varian
       marginTop: s(2)
     },
     tag: {
-      backgroundColor: '#eee8df',
+      backgroundColor: figmaColors.tagBg,
       borderWidth: 1,
-      borderColor: '#f6f2ec',
+      borderColor: figmaColors.tagBorder,
       borderRadius: s(7),
       paddingHorizontal: s(8),
       paddingVertical: s(4)
@@ -147,7 +147,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number, varian
     },
     metaDivider: {
       width: 1,
-      backgroundColor: '#ddd8d4',
+      backgroundColor: figmaColors.metaDivider,
       marginVertical: s(4),
       marginRight: s(10)
     },

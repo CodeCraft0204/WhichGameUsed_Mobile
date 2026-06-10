@@ -81,6 +81,7 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
+      borderTopWidth: 1,
       borderTopColor: figmaColors.divider,
       paddingTop: s(10)
     },
@@ -182,7 +183,7 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
       width: '100%'
     },
     navTextActive: {
-      color: figmaNavTheme.label
+      color: figmaNavTheme.labelActive
     }
   });
 }

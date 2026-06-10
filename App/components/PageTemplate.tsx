@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderStrong,
     borderRadius: radius.xl,
-    backgroundColor: '#F2EFEA',
+    backgroundColor: colors.utilityRail,
     padding: spacing.xs,
     gap: spacing.xs
   },
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     borderColor: colors.borderSoft,
     borderRadius: radius.md,
     paddingVertical: spacing.xs,
-    backgroundColor: '#FAF8F6',
+    backgroundColor: colors.utilityButton,
     alignItems: 'center'
   },
   utilityText: {
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     fontWeight: '600'
   },
   tabTextActive: {
-    color: colors.white
+    color: colors.signButtonText
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -258,10 +258,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderWidth: 1,
-    borderColor: '#44484C'
+    borderColor: colors.signButtonBorder
   },
   signButtonText: {
-    color: '#F5F4F2',
+    color: colors.signButtonText,
     fontWeight: '700',
     fontSize: 12
   },
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     right: 0,
     borderTopWidth: 1,
     borderTopColor: colors.borderStrong,
-    backgroundColor: '#F7F5F3',
+    backgroundColor: colors.bottomNav,
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',

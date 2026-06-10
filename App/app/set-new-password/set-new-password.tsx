@@ -180,7 +180,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     orLine: {
       flex: 1,
       height: 1,
-      backgroundColor: '#D4D4D4'
+      backgroundColor: figmaColors.borderLight
     },
     orText: {
       fontFamily: 'Inter_400Regular',

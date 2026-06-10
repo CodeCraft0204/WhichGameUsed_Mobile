@@ -26,8 +26,8 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       padding: s(12),
       borderRadius: s(10),
       borderWidth: 1,
-      borderColor: '#E8B4B4',
-      backgroundColor: '#FFF5F5',
+      borderColor: figmaColors.errorBorder,
+      backgroundColor: figmaColors.errorBg,
       marginBottom: s(8)
     },
     text: {

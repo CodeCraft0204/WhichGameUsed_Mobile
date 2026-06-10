@@ -70,7 +70,7 @@ export default function CameraCardSearchScreen() {
         value={query}
         onChangeText={setQuery}
         placeholder={cameraCopy.searchPlaceholder}
-        placeholderTextColor="#9A9A9A"
+        placeholderTextColor={figmaColors.textMuted}
         autoFocus
         autoCapitalize="none"
         autoCorrect={false}
@@ -153,7 +153,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       marginBottom: s(8),
       fontFamily: 'EBGaramond_400Regular',
       fontSize: t(14),
-      color: '#B42318',
+      color: figmaColors.error,
       textAlign: 'center'
     },
     list: { paddingHorizontal: s(16), paddingBottom: s(24) },

@@ -46,7 +46,7 @@ export const AuthTextField = React.forwardRef<TextInput, AuthTextFieldProps>(fun
       />
       <TextInput
         ref={ref}
-        placeholderTextColor="#9A9A9A"
+        placeholderTextColor={figmaColors.textMuted}
         secureTextEntry={isPassword && hidden}
         style={[styles.input, style]}
         {...inputProps}
@@ -78,8 +78,8 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       minHeight: s(authLayout.fieldMinHeight),
       borderRadius: s(12),
       borderWidth: 1,
-      borderColor: '#D4D4D4',
-      backgroundColor: '#FFFFFF',
+      borderColor: figmaColors.inputBorder,
+      backgroundColor: figmaColors.inputBg,
       paddingHorizontal: s(14)
     },
     leadingIcon: {

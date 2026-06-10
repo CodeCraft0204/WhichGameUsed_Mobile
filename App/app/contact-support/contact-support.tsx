@@ -131,7 +131,7 @@ export default function ContactSupportScreen() {
       <TextInput
         style={styles.messageInput}
         placeholder={copy.messagePlaceholder}
-        placeholderTextColor="#9A9A9A"
+        placeholderTextColor={figmaColors.textMuted}
         value={message}
         onChangeText={setMessage}
         multiline
@@ -198,7 +198,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       borderRadius: s(20),
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
-      backgroundColor: '#FFFFFF'
+      backgroundColor: figmaColors.inputBg
     },
     chipSelected: {
       borderColor: figmaColors.charcoal,
@@ -217,8 +217,8 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       minHeight: s(120),
       borderRadius: s(12),
       borderWidth: 1,
-      borderColor: '#D4D4D4',
-      backgroundColor: '#FFFFFF',
+      borderColor: figmaColors.inputBorder,
+      backgroundColor: figmaColors.inputBg,
       paddingHorizontal: s(14),
       paddingVertical: s(12),
       fontFamily: 'Inter_400Regular',

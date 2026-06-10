@@ -40,9 +40,9 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       width: '100%',
       height,
       borderRadius: height / 2,
-      backgroundColor: figmaColors.taupe,
+      backgroundColor: figmaColors.buttonPrimaryBg,
       borderWidth: s(2),
-      borderColor: figmaColors.black,
+      borderColor: figmaColors.buttonPrimaryBorder,
       alignItems: 'center',
       justifyContent: 'center',
       paddingHorizontal: s(20),
@@ -55,7 +55,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontFamily: 'PermanentMarker_400Regular',
       fontSize: t(20),
       lineHeight: t(26),
-      color: figmaColors.black,
+      color: figmaColors.buttonPrimaryText,
       letterSpacing: -0.2,
       textAlign: 'center'
     }

@@ -163,10 +163,10 @@ function createLocalStyles(s: (n: number) => number) {
     },
     heroImage: {
       position: 'absolute',
-      right: s(90),
+      right: s(100),
       top: s(28),
-      width: s(279),
-      height: s(268)
+      width: s(329),
+      height: s(300)
     },
     viewAllText: {
       fontFamily: 'EBGaramond_700Bold',
@@ -176,7 +176,7 @@ function createLocalStyles(s: (n: number) => number) {
     ctaCard: {
       minHeight: s(108),
       borderRadius: s(12),
-      backgroundColor: '#f7f3ed',
+      backgroundColor: figmaColors.ctaBackground,
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: s(12),

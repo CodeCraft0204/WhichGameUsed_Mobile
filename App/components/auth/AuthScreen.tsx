@@ -93,7 +93,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       backgroundColor: figmaColors.background
     },
     safeBottom: {
-      backgroundColor: '#E8E0D6'
+      backgroundColor: figmaColors.stone
     },
     flex: {
       flex: 1
@@ -117,7 +117,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontFamily: 'PermanentMarker_400Regular',
       fontSize: t(authLayout.titleSize),
       lineHeight: t(authLayout.titleLineHeight),
-      color: figmaColors.black,
+      color: figmaColors.textPrimary,
       textAlign: 'center',
       letterSpacing: 1.2,
       textTransform: 'uppercase'
@@ -153,18 +153,18 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       textAlign: 'center'
     },
     footerOuter: {
-      backgroundColor: '#E8E0D6'
+      backgroundColor: figmaColors.stone
     },
     tornEdge: {
       width: '100%',
       height: s(20),
-      tintColor: '#E8E0D6'
+      tintColor: figmaColors.stone
     },
     footerBand: {
       paddingHorizontal: s(24),
       paddingTop: s(14),
       paddingBottom: s(22),
-      backgroundColor: '#E8E0D6'
+      backgroundColor: figmaColors.stone
     }
   });
 }

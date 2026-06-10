@@ -1,20 +1,29 @@
-﻿export const colors = {
-  pageBackground: '#F6F4F0',
-  cardBackground: '#F6F4F1',
-  cardMutedBackground: '#F3F0EC',
-  borderSoft: '#E8E5E2',
-  borderStrong: '#D8D2CC',
-  ink: '#2A2E33',
-  inkSoft: '#61666B',
-  textPrimary: '#35393D',
-  textSecondary: '#6D7074',
-  textMuted: '#8C9094',
-  accentBronze: '#B0927D',
-  accentTaupe: '#9C8370',
-  accentTab: '#292D31',
-  tabInactive: '#FCF9F7',
-  tabBorder: '#B3A499',
-  white: '#FFFFFF'
+﻿import { figmaColors } from '@/constants/figmaColors';
+
+/** Legacy page-template tokens — vintage parchment palette via figmaColors. */
+export const colors = {
+  pageBackground: figmaColors.background,
+  cardBackground: figmaColors.surfaceElevated,
+  cardMutedBackground: figmaColors.surfaceMuted,
+  borderSoft: figmaColors.divider,
+  borderStrong: figmaColors.borderLight,
+  ink: figmaColors.ink,
+  inkSoft: figmaColors.gray,
+  textPrimary: figmaColors.textPrimary,
+  textSecondary: figmaColors.textSecondary,
+  textMuted: figmaColors.textMuted,
+  accentBronze: figmaColors.bronze,
+  accentTaupe: figmaColors.taupe,
+  accentTab: figmaColors.tabActiveBg,
+  tabInactive: figmaColors.tabInactiveBg,
+  tabBorder: figmaColors.tabInactiveBorder,
+  white: figmaColors.white,
+  utilityRail: figmaColors.utilityBar,
+  utilityButton: figmaColors.surface,
+  bottomNav: figmaColors.bottomNav,
+  signButtonBorder: figmaColors.scanButtonBg,
+  signButtonText: figmaColors.textOnDark,
+  inputPlaceholder: figmaColors.textMuted
 } as const;
 
 export const spacing = {
@@ -58,10 +67,10 @@ export const lineHeight = {
 
 export const shadow = {
   card: {
-    shadowColor: '#000000',
+    shadowColor: figmaColors.ink,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 3
   }
-};
+} as const;

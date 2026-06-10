@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   track: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#4a4a4a'
+    backgroundColor: figmaColors.cameraControlBg
   },
   segment: {
     flex: 1,
@@ -84,6 +84,6 @@ const styles = StyleSheet.create({
     textAlign: 'center'
   },
   labelActive: {
-    color: figmaColors.black
+    color: figmaColors.sepia
   }
 });

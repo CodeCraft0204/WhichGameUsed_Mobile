@@ -178,7 +178,7 @@ export default function CreateEditScreen() {
         <TextInput
           style={styles.notes}
           placeholder={editCopy.notesPlaceholder}
-          placeholderTextColor="#9A9A9A"
+          placeholderTextColor={figmaColors.textMuted}
           value={notes}
           onChangeText={setNotes}
           multiline
@@ -265,7 +265,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       borderRadius: s(10),
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
-      backgroundColor: '#fff'
+      backgroundColor: figmaColors.inputBg
     },
     proofThumb: {
       width: s(48),
@@ -281,8 +281,8 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       minHeight: s(96),
       borderRadius: s(12),
       borderWidth: 1,
-      borderColor: '#D4D4D4',
-      backgroundColor: '#FFFFFF',
+      borderColor: figmaColors.inputBorder,
+      backgroundColor: figmaColors.inputBg,
       padding: s(14),
       fontFamily: 'Inter_400Regular',
       fontSize: t(15),
@@ -295,7 +295,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       borderRadius: s(10),
       borderWidth: 1,
       borderColor: figmaColors.accent,
-      backgroundColor: '#fff'
+      backgroundColor: figmaColors.inputBg
     },
     improveRowPressed: { opacity: 0.88 },
     improveRowDisabled: { opacity: 0.45 },

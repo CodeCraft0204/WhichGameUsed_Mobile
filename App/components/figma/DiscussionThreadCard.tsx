@@ -95,9 +95,9 @@ export function DiscussionThreadCard({
 function createStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
     card: {
-      backgroundColor: '#f9f6f1',
+      backgroundColor: figmaColors.cardFeaturedBg,
       borderWidth: 1,
-      borderColor: '#ebe7e3',
+      borderColor: figmaColors.cardFeaturedBorder,
       borderRadius: s(14),
       minHeight: s(100),
       marginBottom: s(8),
@@ -112,7 +112,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       height: s(76),
       borderRadius: s(38),
       flexShrink: 0,
-      backgroundColor: '#ece7e1'
+      backgroundColor: figmaColors.surfaceHighlight
     },
     body: {
       flex: 1,
@@ -134,9 +134,9 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       gap: s(6)
     },
     categoryTag: {
-      backgroundColor: '#eee8df',
+      backgroundColor: figmaColors.tagBg,
       borderWidth: 1,
-      borderColor: '#f6f2ec',
+      borderColor: figmaColors.tagBorder,
       borderRadius: s(7),
       paddingHorizontal: s(8),
       paddingVertical: s(3),
@@ -160,7 +160,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     actionsDivider: {
       width: 1,
-      backgroundColor: '#ddd8d4',
+      backgroundColor: figmaColors.metaDivider,
       marginVertical: s(8),
       marginRight: s(8)
     },

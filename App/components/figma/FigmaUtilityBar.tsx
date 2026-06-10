@@ -28,6 +28,8 @@ function createStyles(s: (n: number) => number) {
       width: s(84),
       height: s(263),
       borderRadius: s(18),
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
       backgroundColor: figmaColors.utilityBar,
       alignItems: 'center',
       justifyContent: 'space-evenly'

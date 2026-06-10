@@ -50,7 +50,7 @@ function createStyles(
 ) {
   return StyleSheet.create({
     card: {
-      backgroundColor: highlight ? '#f3f0ea' : figmaColors.cream,
+      backgroundColor: highlight ? figmaColors.surfaceHighlight : figmaColors.cream,
       borderWidth: 1,
       borderColor: highlight ? figmaColors.accent : figmaColors.borderLight,
       borderRadius: s(highlight ? 12 : 10),
@@ -66,7 +66,7 @@ function createStyles(
       width: s(40),
       height: s(40),
       borderRadius: s(20),
-      backgroundColor: '#eee8df',
+      backgroundColor: figmaColors.tagBg,
       alignItems: 'center',
       justifyContent: 'center',
       flexShrink: 0
@@ -114,7 +114,7 @@ function createStyles(
       alignItems: 'center',
       justifyContent: 'center',
       gap: s(4),
-      backgroundColor: '#eee8df',
+      backgroundColor: figmaColors.tagBg,
       borderRadius: s(20),
       paddingHorizontal: s(12),
       paddingVertical: s(8),

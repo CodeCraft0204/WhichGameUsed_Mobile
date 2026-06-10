@@ -89,9 +89,9 @@ export function DiscussionTopicCard({
 function createStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
     card: {
-      backgroundColor: '#f9f6f1',
+      backgroundColor: figmaColors.cardFeaturedBg,
       borderWidth: 1,
-      borderColor: '#ebe7e3',
+      borderColor: figmaColors.cardFeaturedBorder,
       borderRadius: s(16),
       minHeight: s(118),
       marginBottom: s(8),
@@ -131,7 +131,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     metaDivider: {
       width: 1,
-      backgroundColor: '#ddd8d4',
+      backgroundColor: figmaColors.metaDivider,
       marginVertical: s(6),
       marginRight: s(10)
     },

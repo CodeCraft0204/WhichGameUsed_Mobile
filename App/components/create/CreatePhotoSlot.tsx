@@ -61,7 +61,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       width: '100%',
       aspectRatio: 0.72,
       borderRadius: s(10),
-      backgroundColor: '#ddd'
+      backgroundColor: figmaColors.stoneDark
     },
     placeholder: {
       width: '100%',

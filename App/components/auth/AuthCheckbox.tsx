@@ -24,7 +24,7 @@ export function AuthCheckbox({ checked, onToggle, label }: AuthCheckboxProps) {
       accessibilityState={{ checked }}
     >
       <View style={[styles.box, { width: boxSize, height: boxSize }, checked && styles.boxChecked]}>
-        {checked ? <Ionicons name="checkmark" size={s(14)} color="#FFFFFF" /> : null}
+        {checked ? <Ionicons name="checkmark" size={s(14)} color={figmaColors.textOnDark} /> : null}
       </View>
       <View style={styles.labelWrap}>
         {typeof label === 'string' ? <Text style={styles.label}>{label}</Text> : label}
@@ -47,14 +47,14 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     box: {
       borderRadius: s(4),
       borderWidth: 1,
-      borderColor: figmaColors.black,
-      backgroundColor: '#FFFFFF',
+      borderColor: figmaColors.sepia,
+      backgroundColor: figmaColors.inputBg,
       alignItems: 'center',
       justifyContent: 'center',
       flexShrink: 0
     },
     boxChecked: {
-      backgroundColor: figmaColors.black
+      backgroundColor: figmaColors.sepia
     },
     labelWrap: {
       flex: 1,

@@ -102,9 +102,9 @@ export function AuthenticateScannedCard({ cardImage, title, tags, scannedAt, s, 
 function createDraftStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
     card: {
-      backgroundColor: '#f9f6f1',
+      backgroundColor: figmaColors.cardFeaturedBg,
       borderWidth: 1,
-      borderColor: '#ebe7e3',
+      borderColor: figmaColors.cardFeaturedBorder,
       borderRadius: s(16),
       minHeight: s(185),
       marginBottom: s(10),
@@ -145,9 +145,9 @@ function createDraftStyles(s: (n: number) => number, t: (n: number) => number) {
       marginTop: s(2)
     },
     tag: {
-      backgroundColor: '#eee8df',
+      backgroundColor: figmaColors.tagBg,
       borderWidth: 1,
-      borderColor: '#f6f2ec',
+      borderColor: figmaColors.tagBorder,
       borderRadius: s(7),
       paddingHorizontal: s(8),
       paddingVertical: s(4)
@@ -165,7 +165,7 @@ function createDraftStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     metaDivider: {
       width: 1,
-      backgroundColor: '#ddd8d4',
+      backgroundColor: figmaColors.metaDivider,
       marginVertical: s(4),
       marginRight: s(10)
     },
@@ -192,7 +192,7 @@ function createDraftStyles(s: (n: number) => number, t: (n: number) => number) {
       color: figmaColors.gray
     },
     metaTextAccent: {
-      color: '#9c8370'
+      color: figmaColors.bronze
     },
     cardChevron: {
       position: 'absolute',
@@ -208,9 +208,9 @@ function createDraftStyles(s: (n: number) => number, t: (n: number) => number) {
 function createScannedStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
     card: {
-      backgroundColor: '#f9f5f0',
+      backgroundColor: figmaColors.cardRecentBg,
       borderWidth: 1,
-      borderColor: '#ede9e5',
+      borderColor: figmaColors.cardRecentBorder,
       borderRadius: s(14),
       minHeight: s(120),
       marginBottom: s(10),
@@ -244,9 +244,9 @@ function createScannedStyles(s: (n: number) => number, t: (n: number) => number)
       gap: s(6)
     },
     tag: {
-      backgroundColor: '#eee8df',
+      backgroundColor: figmaColors.tagBg,
       borderWidth: 1,
-      borderColor: '#f6f2ec',
+      borderColor: figmaColors.tagBorder,
       borderRadius: s(7),
       paddingHorizontal: s(8),
       paddingVertical: s(4)
@@ -264,7 +264,7 @@ function createScannedStyles(s: (n: number) => number, t: (n: number) => number)
     },
     metaDivider: {
       width: 1,
-      backgroundColor: '#ddd8d4',
+      backgroundColor: figmaColors.metaDivider,
       marginVertical: s(4),
       marginRight: s(10)
     },

@@ -351,7 +351,7 @@ function createStyles(layout: ReturnType<typeof useCameraLayout>) {
     },
     previewArea: {
       flex: 1,
-      backgroundColor: '#2f3134'
+      backgroundColor: figmaColors.cameraChrome
     },
     cameraClip: {
       ...StyleSheet.absoluteFillObject,
@@ -442,7 +442,7 @@ function createStyles(layout: ReturnType<typeof useCameraLayout>) {
       width: layout.zoomSize,
       height: layout.zoomSize,
       borderRadius: layout.zoomSize / 2,
-      backgroundColor: '#4a4a4a',
+      backgroundColor: figmaColors.cameraControlBg,
       alignItems: 'center',
       justifyContent: 'center'
     },

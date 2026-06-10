@@ -146,6 +146,8 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       width: s(84),
       height: s(263),
       borderRadius: s(18),
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
       backgroundColor: figmaColors.utilityBar,
       alignItems: 'center',
       justifyContent: 'space-evenly'
@@ -235,7 +237,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       height: s(42),
       borderRadius: s(20),
       borderWidth: 1,
-      borderColor: figmaColors.charcoal,
+      borderColor: figmaColors.buttonPrimaryBorder,
       backgroundColor: figmaColors.buttonPrimaryBg,
       alignItems: 'center',
       justifyContent: 'center'

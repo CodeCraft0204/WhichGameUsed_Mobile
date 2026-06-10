@@ -1,6 +1,7 @@
 import React from 'react';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { cameraIcons } from '@/constants/cameraContent';
+import { figmaColors } from '@/constants/figmaColors';
 
 type CameraFloatingControlsProps = {
   right: number;
@@ -32,11 +33,11 @@ export function CameraFloatingControls({ right, top, iconSize, onFlip }: CameraF
 const styles = StyleSheet.create({
   rail: {
     position: 'absolute',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: figmaColors.overlayLight,
     borderRadius: 32,
     paddingVertical: 10,
     paddingHorizontal: 10,
-    shadowColor: '#000',
+    shadowColor: figmaColors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
     shadowRadius: 6,
