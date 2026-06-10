@@ -6,16 +6,16 @@ import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import { figmaColors } from '@/constants/figmaColors';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 
+import { figmaIcons } from '@/constants/figmaIcons';
+import { figmaSharedIcons } from '@/constants/figmaShared';
+
 const icons = {
-  utilitySearch: require('@/assets/figma/advocacy/utility_search.png'),
-  utilityProfile: require('@/assets/figma/advocacy/utility_profile.png'),
-  utilitySettings: require('@/assets/figma/advocacy/utility_settings.png'),
   hero: require('@/assets/figma/advocacy/hero_illustration.png'),
   titleBrush: require('@/assets/figma/advocacy/title_brush.png'),
   petitionPanini: require('@/assets/figma/advocacy/petition_panini.png'),
   petitionTopps: require('@/assets/figma/advocacy/petition_topps.png'),
   petitionFanatics: require('@/assets/figma/advocacy/petition_fanatics.png'),
-  ctaIcon: require('@/assets/figma/advocacy/cta_icon.png'),
+  ctaIcon: figmaIcons.megaphone,
   ctaArrow: require('@/assets/figma/advocacy/section_chevron.png')
 };
 
@@ -71,9 +71,9 @@ export default function AdvocacyScreen() {
         <Image source={icons.hero} style={styles.heroImage} resizeMode="contain" />
 
         <View style={styles.utilityBar}>
-          <Image source={icons.utilitySearch} style={styles.utilityIcon} resizeMode="contain" />
-          <Image source={icons.utilityProfile} style={styles.utilityIcon} resizeMode="contain" />
-          <Image source={icons.utilitySettings} style={styles.utilityIcon} resizeMode="contain" />
+          <Image source={figmaSharedIcons.utilitySearch} style={styles.utilityIcon} resizeMode="contain" />
+          <Image source={figmaSharedIcons.utilityProfile} style={styles.utilityIcon} resizeMode="contain" />
+          <Image source={figmaSharedIcons.utilitySettings} style={styles.utilityIcon} resizeMode="contain" />
         </View>
 
         <View style={page.tabRow}>

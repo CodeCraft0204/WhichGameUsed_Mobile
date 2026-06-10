@@ -1,16 +1,18 @@
+import { figmaIcons } from '@/constants/figmaIcons';
+
 /** Education screen assets (node 1:574). */
 export const educationIcons = {
   hero: require('@/assets/figma/education/hero_illustration.png'),
   guideFakePatches: require('@/assets/figma/education/guide_fake_patches.png'),
   guideBeckett: require('@/assets/figma/education/guide_beckett.png'),
   guideHobbyHistory: require('@/assets/figma/education/guide_hobby_history.png'),
-  pdfIcon: require('@/assets/figma/education/pdf_icon.png'),
+  pdfIcon: figmaIcons.guidesBook,
   videoEbay: require('@/assets/figma/education/video_thumb_ebay.png'),
   videoBeckett: require('@/assets/figma/education/video_thumb_beckett.png'),
   videoPatch: require('@/assets/figma/education/video_thumb_patch.png'),
   ctaShield: require('@/assets/figma/education/cta_shield.png'),
   ctaArrow: require('@/assets/figma/education/cta_arrow.png'),
-  playButton: require('@/assets/figma/education/play_button.png')
+  playButton: figmaIcons.filmReel
 } as const;
 
 export type EducationGuide = {

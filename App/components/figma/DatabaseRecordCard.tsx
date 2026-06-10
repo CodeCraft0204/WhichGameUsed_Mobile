@@ -163,8 +163,8 @@ function createStyles(s: (n: number) => number, t: (n: number) => number, varian
       gap: s(6)
     },
     metaIcon: {
-      width: s(16),
-      height: s(16)
+      width: s(20),
+      height: s(20)
     },
     metaText: {
       flex: 1,

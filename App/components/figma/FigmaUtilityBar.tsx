@@ -33,8 +33,8 @@ function createStyles(s: (n: number) => number) {
       justifyContent: 'space-evenly'
     },
     utilityIcon: {
-      width: s(44),
-      height: s(44)
+      width: s(40),
+      height: s(40)
     }
   });
 }

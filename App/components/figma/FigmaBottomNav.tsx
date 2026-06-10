@@ -2,7 +2,6 @@ import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
-import { figmaNavTheme } from '@/constants/figmaNavTheme';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 
 export type FigmaBottomNavItem = {
@@ -27,7 +26,6 @@ export function FigmaBottomNav({ items, activeKey }: FigmaBottomNavProps) {
     <View style={page.bottomNav}>
       {items.map((item) => {
         const isActive = item.key === activeKey;
-        const iconTint = isActive ? figmaNavTheme.iconActive : figmaNavTheme.iconInactive;
 
         return (
           <View key={item.key} style={page.navSlot}>
@@ -38,11 +36,7 @@ export function FigmaBottomNav({ items, activeKey }: FigmaBottomNavProps) {
               accessibilityRole="button"
               accessibilityState={{ selected: isActive }}
             >
-              <Image
-                source={item.icon}
-                style={[page.navIcon, { tintColor: iconTint }]}
-                resizeMode="contain"
-              />
+              <Image source={item.icon} style={page.navIcon} resizeMode="contain" />
               <Text
                 style={StyleSheet.flatten([page.navText, isActive && page.navTextActive])}
                 numberOfLines={2}

@@ -1,4 +1,12 @@
+import { figmaIcons } from '@/constants/figmaIcons';
+
 /** Figma MCP assets + copy for Database screen (node 1:251). */
+export const databaseCopy = {
+  searchPlaceholder: 'Search players, teams, sets, years…',
+  searchEmpty: 'No matching cards in the catalog.',
+  searchResultsTitle: 'SEARCH RESULTS'
+} as const;
+
 export const databaseIcons = {
   hero: require('@/assets/figma/database/hero_archive.png'),
   recordMantle: require('@/assets/figma/database/record_mantle.png'),
@@ -6,11 +14,11 @@ export const databaseIcons = {
   recordRuth: require('@/assets/figma/database/record_ruth.png'),
   recentKobe: require('@/assets/figma/database/recent_kobe.png'),
   recentGehrig: require('@/assets/figma/database/recent_gehrig.png'),
-  metaPerson: require('@/assets/figma/database/meta_person.png'),
+  metaPerson: figmaIcons.metaPerson,
   metaBaseball: require('@/assets/figma/database/meta_baseball.png'),
   metaBasketball: require('@/assets/figma/database/meta_basketball.png'),
-  metaCalendar: require('@/assets/figma/database/meta_calendar.png'),
-  metaShield: require('@/assets/figma/database/meta_shield.png'),
+  metaCalendar: figmaIcons.metaCalendar,
+  metaShield: figmaIcons.metaShield,
   cardChevron: require('@/assets/figma/database/card_chevron.png'),
   sectionChevron: require('@/assets/figma/database/section_chevron.png'),
   ctaRecords: require('@/assets/figma/database/cta_records.png'),

@@ -9,7 +9,7 @@ export const figmaNavTheme = {
   iconInactive: figmaColors.charcoal,
   iconActive: figmaColors.taupe,
   /** Design width 810: icon 60×60, label Inter Bold 11 / 13 line-height */
-  iconSize: 60,
+  iconSize: 52,
   labelFontSize: 11,
   labelLineHeight: 13,
   barMinHeight: 120,

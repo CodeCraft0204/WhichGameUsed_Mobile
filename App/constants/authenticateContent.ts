@@ -1,4 +1,5 @@
 import { databaseIcons } from '@/constants/databaseContent';
+import { figmaIcons } from '@/constants/figmaIcons';
 
 /** Authenticate screen assets (node 1:96) + shared database card/meta art. */
 export const authenticateIcons = {
@@ -6,9 +7,9 @@ export const authenticateIcons = {
   sectionChevron: require('@/assets/figma/authenticate/chevron.png'),
   ctaIcon: require('@/assets/figma/authenticate/cta_icon.png'),
   ctaArrow: require('@/assets/figma/authenticate/cta_arrow.png'),
-  metaCalendar: databaseIcons.metaCalendar,
-  metaClock: databaseIcons.metaShield,
-  metaScan: databaseIcons.metaPerson,
+  metaCalendar: figmaIcons.metaCalendar,
+  metaClock: figmaIcons.hourglassPending,
+  metaScan: figmaIcons.collectionChest,
   cardChevron: databaseIcons.cardChevron
 } as const;
 

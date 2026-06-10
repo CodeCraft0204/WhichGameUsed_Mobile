@@ -1,13 +1,14 @@
 import { databaseIcons } from '@/constants/databaseContent';
+import { figmaIcons } from '@/constants/figmaIcons';
 
 /** Discussion screen assets (node 1:431). */
 export const discussionIcons = {
   hero: require('@/assets/figma/discussion/hero.png'),
-  topicAuthenticated: require('@/assets/figma/discussion/topic_01.png'),
-  topicCounterfeits: require('@/assets/figma/discussion/topic_02.png'),
-  topicShowTell: require('@/assets/figma/discussion/topic_03.png'),
-  topicAskAnything: require('@/assets/figma/discussion/topic_04.png'),
-  threadActions: require('@/assets/figma/discussion/thread_01.png'),
+  topicAuthenticated: figmaIcons.sealApproved,
+  topicCounterfeits: figmaIcons.sealRejected,
+  topicShowTell: figmaIcons.evidencePinned,
+  topicAskAnything: figmaIcons.scrollQuestion,
+  threadActions: figmaIcons.topicNotepad,
   avatar1: require('@/assets/figma/leaderboard/avatar_rank1.png'),
   avatar2: require('@/assets/figma/leaderboard/avatar_rank2.png'),
   avatar3: require('@/assets/figma/leaderboard/avatar_rank3.png'),
@@ -15,7 +16,7 @@ export const discussionIcons = {
   cardChevron: require('@/assets/figma/database/card_chevron.png'),
   ctaIcon: require('@/assets/figma/discussion/cta_icon.png'),
   ctaArrow: require('@/assets/figma/discussion/cta_arrow.png'),
-  metaFollowers: databaseIcons.metaPerson
+  metaFollowers: figmaIcons.metaSupporters
 } as const;
 
 export type DiscussionTopic = {

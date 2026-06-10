@@ -1,15 +1,17 @@
+import { figmaIcons } from '@/constants/figmaIcons';
+
 /** Icons reused across hub screens (Return / Education / Most Wanted / Leaderboard / Advocacy). */
 export const figmaSharedIcons = {
-  utilitySearch: require('@/assets/figma/advocacy/utility_search.png'),
-  utilityProfile: require('@/assets/figma/advocacy/utility_profile.png'),
-  utilitySettings: require('@/assets/figma/advocacy/utility_settings.png'),
+  utilitySearch: figmaIcons.utilitySearch,
+  utilityProfile: figmaIcons.utilityProfile,
+  utilitySettings: figmaIcons.utilitySettings,
   titleBrush: require('@/assets/figma/advocacy/title_brush.png'),
   sectionChevron: require('@/assets/figma/advocacy/section_chevron.png'),
-  navReturn: require('@/assets/figma/advocacy/nav_return.png'),
-  navEducation: require('@/assets/figma/advocacy/nav_education.png'),
-  navMostwanted: require('@/assets/figma/advocacy/nav_mostwanted.png'),
-  navLeaderboard: require('@/assets/figma/advocacy/nav_leaderboard.png'),
-  navAdvocacy: require('@/assets/figma/advocacy/nav_advocacy.png')
+  navReturn: figmaIcons.navReturn,
+  navEducation: figmaIcons.navEducation,
+  navMostwanted: figmaIcons.navMostWanted,
+  navLeaderboard: figmaIcons.navLeaderboard,
+  navAdvocacy: figmaIcons.navAdvocacy
 } as const;
 
 export type HubNavKey = 'return' | 'education' | 'mostwanted' | 'leaderboard' | 'advocacy';

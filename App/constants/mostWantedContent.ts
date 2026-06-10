@@ -1,13 +1,14 @@
 import { databaseIcons } from '@/constants/databaseContent';
+import { figmaIcons } from '@/constants/figmaIcons';
 
 /** Most Wanted screen assets + ranking data (node 1:851). */
 export const mostWantedIcons = {
   hero: require('@/assets/figma/mostwanted/hero_illustration.png'),
-  gift: require('@/assets/figma/mostwanted/icon_gift.png'),
-  like: require('@/assets/figma/mostwanted/icon_like.png'),
-  dislike: require('@/assets/figma/mostwanted/icon_dislike.png'),
-  comment: require('@/assets/figma/mostwanted/icon_comment.png'),
-  ctaTrophy: require('@/assets/figma/mostwanted/cta_trophy.png'),
+  gift: figmaIcons.treasureChest,
+  like: figmaIcons.thumbsUp,
+  dislike: figmaIcons.sealRejected,
+  comment: figmaIcons.replyBubble,
+  ctaTrophy: figmaIcons.trophyRanking,
   ctaArrow: require('@/assets/figma/mostwanted/cta_arrow.png')
 } as const;
 

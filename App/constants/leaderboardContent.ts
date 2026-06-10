@@ -1,7 +1,9 @@
+import { figmaIcons } from '@/constants/figmaIcons';
+
 /** Leaderboard screen assets + ranking data. */
 export const leaderboardIcons = {
   hero: require('@/assets/figma/leaderboard/hero_trophy.png'),
-  ctaTrophy: require('@/assets/figma/leaderboard/cta_trophy.png'),
+  ctaTrophy: figmaIcons.trophyRanking,
   ctaArrow: require('@/assets/figma/leaderboard/cta_arrow.png')
 } as const;
 
