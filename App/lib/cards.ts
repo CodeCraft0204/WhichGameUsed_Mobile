@@ -82,7 +82,8 @@ export async function searchApprovedCards(
     .limit(limit);
 
   if (q) {
-    const pat = `%${q.replace(/[%_]/g, '')}%`;
+    const pattern = `%${q.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_')}%`;
+    const pat = `"${pattern.replace(/"/g, '""')}"`;
     request = request.or(
       `title.ilike.${pat},card_number.ilike.${pat},player_name.ilike.${pat},team_name.ilike.${pat},product_name.ilike.${pat}`
     );

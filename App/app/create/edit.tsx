@@ -12,6 +12,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import { cropCardPhoto, retakeCardPhotoWithCamera } from '@/lib/capture-photos';
 import { createAndSubmitCardCapture } from '@/lib/submissions';
+import { improveSubmissionNotes } from '@/lib/writing-improver';
 
 export default function CreateEditScreen() {
   const router = useRouter();
@@ -35,6 +36,7 @@ export default function CreateEditScreen() {
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [improving, setImproving] = useState(false);
   const [done, setDone] = useState(false);
 
   const linkedCardId =
@@ -56,6 +58,21 @@ export default function CreateEditScreen() {
     if (!result.canceled && result.assets[0]?.uri) {
       setProofUri(result.assets[0].uri);
     }
+  };
+
+  const handleImproveNotes = async () => {
+    setError(null);
+    setImproving(true);
+    const { improved, error: improveError } = await improveSubmissionNotes(
+      notes,
+      linkedCardTitle
+    );
+    setImproving(false);
+    if (improveError || !improved) {
+      setError(improveError ?? editCopy.improveNotesError);
+      return;
+    }
+    setNotes(improved);
   };
 
   const handleSend = async () => {
@@ -166,13 +183,27 @@ export default function CreateEditScreen() {
           onChangeText={setNotes}
           multiline
           textAlignVertical="top"
-          editable={!loading}
+          editable={!loading && !improving}
         />
+
+        {/* <Pressable
+          style={({ pressed }) => [
+            styles.improveRow,
+            pressed && styles.improveRowPressed,
+            (loading || improving) && styles.improveRowDisabled
+          ]}
+          disabled={loading || improving}
+          onPress={() => void handleImproveNotes()}
+        >
+          <Text style={styles.improveLabel}>
+            {improving ? editCopy.improvingNotes : editCopy.improveNotes}
+          </Text>
+        </Pressable> */}
 
         <AuthPrimaryButton
           label={editCopy.send}
           loading={loading}
-          disabled={!frontUri || loading}
+          disabled={!frontUri || loading || improving}
           onPress={handleSend}
         />
 
@@ -256,6 +287,22 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontFamily: 'Inter_400Regular',
       fontSize: t(15),
       color: figmaColors.charcoal
+    },
+    improveRow: {
+      alignSelf: 'flex-start',
+      paddingVertical: s(10),
+      paddingHorizontal: s(14),
+      borderRadius: s(10),
+      borderWidth: 1,
+      borderColor: figmaColors.accent,
+      backgroundColor: '#fff'
+    },
+    improveRowPressed: { opacity: 0.88 },
+    improveRowDisabled: { opacity: 0.45 },
+    improveLabel: {
+      fontFamily: 'EBGaramond_700Bold',
+      fontSize: t(15),
+      color: figmaColors.accent
     },
     linkPress: { alignItems: 'center', paddingVertical: s(8) },
     link: {
