@@ -6,7 +6,7 @@ import { figmaColors } from '@/constants/figmaColors';
 type FigmaScreenProps = {
   backgroundColor?: string;
   scrollProps?: ScrollViewProps;
-  bottomNav: React.ReactNode;
+  bottomNav?: React.ReactNode;
   children: React.ReactNode;
 };
 
@@ -28,9 +28,11 @@ export function FigmaScreen({
         >
           {children}
         </ScrollView>
-        <SafeAreaView edges={['bottom']} style={styles.bottomSafe}>
-          {bottomNav}
-        </SafeAreaView>
+        {bottomNav ? (
+          <SafeAreaView edges={['bottom']} style={styles.bottomSafe}>
+            {bottomNav}
+          </SafeAreaView>
+        ) : null}
       </View>
     </SafeAreaView>
   );

@@ -12,25 +12,30 @@ function parseParamsFromUrl(url: string): URLSearchParams {
   return new URLSearchParams();
 }
 
-/** Establish a Supabase session from an auth deep link (email confirm / password recovery). */
+/** Establish a Supabase session from an auth deep link (OAuth, email confirm, password recovery). */
 export async function createSessionFromUrl(url: string): Promise<string | null> {
   const params = parseParamsFromUrl(url);
-  const accessToken = params.get('access_token');
-  const refreshToken = params.get('refresh_token');
   const errorDescription = params.get('error_description') ?? params.get('error');
 
   if (errorDescription) {
     return decodeURIComponent(errorDescription.replace(/\+/g, ' '));
   }
 
-  if (!accessToken || !refreshToken) {
-    return null;
+  const code = params.get('code');
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    return error?.message ?? null;
   }
 
-  const { error } = await supabase.auth.setSession({
-    access_token: accessToken,
-    refresh_token: refreshToken
-  });
+  const accessToken = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+  if (accessToken && refreshToken) {
+    const { error } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken
+    });
+    return error?.message ?? null;
+  }
 
-  return error?.message ?? null;
+  return null;
 }

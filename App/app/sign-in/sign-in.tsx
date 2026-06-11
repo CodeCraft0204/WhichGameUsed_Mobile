@@ -17,8 +17,8 @@ import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 
 export default function SignInScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ email?: string; reauth?: string }>();
-  const { requestSignInOtp, verifySignIn, resendOtp } = useAuth();
+  const params = useLocalSearchParams<{ email?: string; reauth?: string; error?: string }>();
+  const { requestSignInOtp, verifySignIn, resendOtp, signInWithGoogle, clearOtpChallenge } = useAuth();
   const { s, t } = useFigmaLayout(1);
   const styles = useMemo(() => createStyles(s, t), [s, t]);
   const copy = authCopy.signIn;
@@ -34,10 +34,13 @@ export default function SignInScreen() {
   );
   const [otp, setOtp] = useState('');
   const [otpModalVisible, setOtpModalVisible] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    typeof params.error === 'string' ? decodeURIComponent(params.error) : null
+  );
   const [modalError, setModalError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   useEffect(() => {
     if (!showPasswordResetMessage) return;
@@ -45,7 +48,8 @@ export default function SignInScreen() {
     return () => clearTimeout(timer);
   }, [showPasswordResetMessage]);
 
-  const canSignIn = email.trim().length > 0 && password.length > 0 && !loading && !modalLoading;
+  const canSignIn =
+    email.trim().length > 0 && password.length > 0 && !loading && !modalLoading && !googleLoading;
 
   const handleSignIn = async () => {
     setError(null);
@@ -83,9 +87,22 @@ export default function SignInScreen() {
   };
 
   const handleCloseOtpModal = () => {
+    clearOtpChallenge();
     setOtpModalVisible(false);
     setOtp('');
     setModalError(null);
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    setGoogleLoading(true);
+    const result = await signInWithGoogle();
+    setGoogleLoading(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    router.replace('/database/database');
   };
 
   return (
@@ -153,7 +170,7 @@ export default function SignInScreen() {
         />
 
         <AuthOrDivider label={copy.orContinue} />
-        <AuthSocialButtons />
+        <AuthSocialButtons onGoogle={() => void handleGoogleSignIn()} googleLoading={googleLoading} />
       </AuthScreen>
 
       <AuthOtpModal

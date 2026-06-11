@@ -22,7 +22,7 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
       color: figmaColors.charcoal,
       letterSpacing: 0.6,
       transform: [{ rotate: '-4deg' }],
-      width: s(360)
+      width: s(460)
     },
     titleBrush: {
       width: s(338),

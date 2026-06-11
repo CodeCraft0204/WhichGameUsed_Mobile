@@ -59,6 +59,12 @@ async function syncMobileProfile(userId: string, displayName?: string) {
     .eq('id', userId);
 }
 
+/** After Google OAuth, tag the user and profile as mobile. */
+export async function ensureMobileProfile(userId: string) {
+  await supabase.auth.updateUser({ data: MOBILE_META });
+  return syncMobileProfile(userId);
+}
+
 /** Verify the email OTP and establish a session. */
 export async function verifyMobileOtp(
   email: string,

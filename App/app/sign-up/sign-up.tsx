@@ -19,7 +19,7 @@ import { hasAcceptedCommunityStandards } from '@/lib/community-standards-storage
 
 export default function SignUpScreen() {
   const router = useRouter();
-  const { sendSignUpOtp, completeSignUp, resendOtp } = useAuth();
+  const { sendSignUpOtp, completeSignUp, resendOtp, signInWithGoogle } = useAuth();
   const { s, t } = useAuthLayout();
   const labelStyles = useMemo(() => createLabelStyles(s, t), [s, t]);
   const copy = authCopy.signUp;
@@ -35,6 +35,7 @@ export default function SignUpScreen() {
   const [modalError, setModalError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const passwordsMatch = password.length > 0 && password === confirmPassword;
   const canSendCode =
@@ -44,7 +45,8 @@ export default function SignUpScreen() {
     password.length >= 8 &&
     passwordsMatch &&
     !loading &&
-    !modalLoading;
+    !modalLoading &&
+    !googleLoading;
 
   const handleSendCode = async () => {
     setError(null);
@@ -85,6 +87,22 @@ export default function SignUpScreen() {
     setOtpModalVisible(false);
     setOtp('');
     setModalError(null);
+  };
+
+  const handleGoogleSignUp = async () => {
+    if (!agreed) {
+      setError(copy.agreeRequired);
+      return;
+    }
+    setError(null);
+    setGoogleLoading(true);
+    const result = await signInWithGoogle();
+    setGoogleLoading(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    router.replace('/database/database');
   };
 
   const openCommunityStandards = () => {
@@ -198,7 +216,7 @@ export default function SignUpScreen() {
         />
 
         <AuthOrDivider label={copy.orContinue} />
-        <AuthSocialButtons />
+        <AuthSocialButtons onGoogle={() => void handleGoogleSignUp()} googleLoading={googleLoading} />
       </AuthScreen>
 
       <AuthOtpModal

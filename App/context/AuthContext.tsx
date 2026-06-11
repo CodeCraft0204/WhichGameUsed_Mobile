@@ -4,11 +4,15 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode
 } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
+import * as Linking from 'expo-linking';
+import { createSessionFromUrl } from '@/lib/auth-session-from-url';
 import { formatAuthError } from '@/lib/auth-errors';
+import { signInWithGoogleOAuth } from '@/lib/google-auth';
 import {
   completeMobileSetNewPassword,
   completeMobileSignUp,
@@ -54,8 +58,14 @@ type AuthState = {
     password: string
   ) => Promise<PasswordResetCompleteResult>;
   resendOtp: (email: string, createUser: boolean, displayName?: string) => Promise<AuthResult>;
+  signInWithGoogle: () => Promise<AuthSessionResult>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  /** True while password was verified and OTP entry is pending (blocks auth guard redirect). */
+  otpChallengeActive: boolean;
+  /** Synchronous check — use in navigation guard before state flushes. */
+  isOtpChallengePending: () => boolean;
+  clearOtpChallenge: () => void;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -111,6 +121,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [otpChallengeActive, setOtpChallengeActive] = useState(false);
+  const otpChallengeRef = useRef(false);
+
+  const startOtpChallenge = useCallback(() => {
+    otpChallengeRef.current = true;
+    setOtpChallengeActive(true);
+  }, []);
+
+  const clearOtpChallenge = useCallback(() => {
+    otpChallengeRef.current = false;
+    setOtpChallengeActive(false);
+  }, []);
+
+  const isOtpChallengePending = useCallback(() => otpChallengeRef.current, []);
 
   const refreshProfile = useCallback(async () => {
     if (!user) {
@@ -127,6 +151,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(next);
     setProfileLoading(false);
   }, [user]);
+
+  useEffect(() => {
+    const handleAuthDeepLink = async (incomingUrl: string) => {
+      if (!incomingUrl.includes('auth/callback')) return;
+      await createSessionFromUrl(incomingUrl);
+    };
+
+    void Linking.getInitialURL().then((url) => {
+      if (url) void handleAuthDeepLink(url);
+    });
+
+    const linkSub = Linking.addEventListener('url', ({ url }) => {
+      void handleAuthDeepLink(url);
+    });
+
+    return () => linkSub.remove();
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -180,18 +221,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const requestSignInOtp = useCallback(async (email: string, password: string): Promise<AuthResult> => {
-    const { passwordError, otpError } = await requestSignInOtpAfterPassword(email, password);
-    const error = passwordError ?? otpError;
-    return { error: error ? formatAuthError(error.message) : null };
-  }, []);
+    startOtpChallenge();
+    try {
+      const { passwordError, otpError } = await requestSignInOtpAfterPassword(email, password);
+      const error = passwordError ?? otpError;
+      if (error) {
+        clearOtpChallenge();
+        return { error: formatAuthError(error.message) };
+      }
+      return { error: null };
+    } catch (err) {
+      clearOtpChallenge();
+      const message = err instanceof Error ? err.message : 'Sign-in failed.';
+      return { error: formatAuthError(message) };
+    }
+  }, [clearOtpChallenge, startOtpChallenge]);
 
   const verifySignIn = useCallback(async (email: string, otp: string): Promise<AuthSessionResult> => {
     const { error } = await verifyMobileOtp(email, otp, ['email']);
     if (error) {
       return { error: formatAuthError(error.message), profile: null, isAdmin: false };
     }
+    clearOtpChallenge();
     return profileAfterSession();
-  }, []);
+  }, [clearOtpChallenge]);
 
   const sendSignUpOtp = useCallback(async (email: string, _displayName?: string): Promise<AuthResult> => {
     const { error } = await sendMobileOtp(email, { createUser: true });
@@ -259,6 +312,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  const signInWithGoogle = useCallback(async (): Promise<AuthSessionResult> => {
+    const { error } = await signInWithGoogleOAuth();
+    if (error) {
+      return { error: formatAuthError(error), profile: null, isAdmin: false };
+    }
+    return profileAfterSession();
+  }, []);
+
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setProfile(null);
@@ -279,8 +340,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sendPasswordOtp,
       completeSetNewPassword,
       resendOtp,
+      signInWithGoogle,
       signOut,
-      refreshProfile
+      refreshProfile,
+      otpChallengeActive,
+      isOtpChallengePending,
+      clearOtpChallenge
     }),
     [
       session,
@@ -288,6 +353,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       loading,
       profileLoading,
+      otpChallengeActive,
+      isOtpChallengePending,
       requestSignInOtp,
       verifySignIn,
       sendSignUpOtp,
@@ -295,8 +362,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sendPasswordOtp,
       completeSetNewPassword,
       resendOtp,
+      signInWithGoogle,
       signOut,
-      refreshProfile
+      refreshProfile,
+      clearOtpChallenge
     ]
   );
 

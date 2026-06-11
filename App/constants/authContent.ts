@@ -46,6 +46,7 @@ export const authCopy = {
     confirmPlaceholder: 'Confirm Password',
     agreePrefix: 'I agree to the ',
     communityStandards: 'Community Standards',
+    agreeRequired: 'Please agree to the Community Standards before continuing.',
     sendCode: 'SIGN UP',
     otpPlaceholder: '8-digit code',
     otpSent: 'Enter the code we sent to your email.',

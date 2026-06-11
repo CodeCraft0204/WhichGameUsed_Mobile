@@ -1,0 +1,37 @@
+export const settingsCopy = {
+  title: 'SETTINGS',
+  subtitle: 'ACCOUNT & PREFERENCES.',
+  description: 'Privacy, security, support, and app preferences.',
+  sections: {
+    privacy: 'PRIVACY',
+    account: 'ACCOUNT',
+    legal: 'LEGAL & SUPPORT',
+    app: 'APP'
+  },
+  privacy: {
+    publicProfile: 'Public profile',
+    publicProfileHint: 'Allow others to view your profile and contributions.',
+    leaderboard: 'Leaderboard eligible',
+    leaderboardHint: 'Include your activity in monthly rankings and prizes.'
+  },
+  account: {
+    editProfile: 'Edit profile',
+    email: 'Email',
+    memberSince: 'Member since',
+    signInMethod: 'Sign-in method',
+    changePassword: 'Change password',
+    signOut: 'Sign out'
+  },
+  legal: {
+    communityStandards: 'Community standards',
+    contactSupport: 'Contact support'
+  },
+  app: {
+    version: 'App version',
+    versionValue: '1.0.0'
+  },
+  actions: {
+    saved: 'Settings saved.',
+    signOutConfirm: 'Sign out of Which Game Used?'
+  }
+} as const;

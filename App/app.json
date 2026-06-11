@@ -1,4 +1,4 @@
-﻿{
+{
   "expo": {
     "name": "Which Game Used",
     "slug": "which-game-used",
@@ -10,13 +10,24 @@
       "**/*"
     ],
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
     },
+    "ios": {
+      "bundleIdentifier": "com.whichgameused.mobile"
+    },
     "android": {
+      "package": "com.whichgameused.mobile",
       "softwareKeyboardLayoutMode": "resize"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "a49775a4-fd5d-439a-9e7f-66efbff150e9"
+      }
     }
   }
 }

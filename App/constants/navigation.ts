@@ -1,9 +1,15 @@
 ﻿import type { Href } from 'expo-router';
 
-export const primaryNav: Array<{ label: string; href: Href }> = [
+export const authNav: Array<{ label: string; href: Href }> = [
   { label: 'Sign In', href: '/sign-in/sign-in' },
   { label: 'Sign Up', href: '/sign-up/sign-up' },
-  { label: 'Password Reset', href: '/password-reset/password-reset' },
+  { label: 'Password Reset', href: '/password-reset/password-reset' }
+];
+
+/** Main app destinations — require a signed-in session (enforced in AuthNavigationGuard). */
+export const primaryNav: Array<{ label: string; href: Href }> = [
+  { label: 'Profile', href: '/profile/profile' },
+  { label: 'Settings', href: '/settings/settings' },
   { label: 'Database', href: '/database/database' },
   { label: 'Authenticate', href: '/authenticate/authenticate' },
   { label: 'Discussion', href: '/discussion/discussion' },

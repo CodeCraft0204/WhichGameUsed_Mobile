@@ -14,9 +14,11 @@ if (!url || !anonKey) {
 
 export const supabase = createClient(url, anonKey, {
   auth: {
-    storage: AsyncStorage,
+    // Web: default localStorage. Native: AsyncStorage.
+    ...(Platform.OS !== 'web' ? { storage: AsyncStorage } : {}),
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: Platform.OS === 'web'
+    detectSessionInUrl: Platform.OS === 'web',
+    flowType: 'pkce'
   }
 });

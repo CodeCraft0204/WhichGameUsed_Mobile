@@ -12,6 +12,7 @@ import {
   EBGaramond_700Bold
 } from '@expo-google-fonts/eb-garamond';
 import { useFonts as usePmFonts, PermanentMarker_400Regular } from '@expo-google-fonts/permanent-marker';
+import { AuthNavigationGuard } from '@/components/AuthNavigationGuard';
 import { AuthProvider } from '@/context/AuthContext';
 
 export default function RootLayout() {
@@ -25,7 +26,9 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <Stack screenOptions={{ headerShown: false }} />
+      <AuthNavigationGuard>
+        <Stack screenOptions={{ headerShown: false }} />
+      </AuthNavigationGuard>
     </AuthProvider>
   );
 }

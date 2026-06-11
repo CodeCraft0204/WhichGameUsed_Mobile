@@ -1,6 +1,7 @@
 ﻿import React, { useMemo } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { FigmaHubBottomNav } from '@/components/figma/FigmaHubBottomNav';
+import { FigmaUtilityBar } from '@/components/figma/FigmaUtilityBar';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import { figmaColors } from '@/constants/figmaColors';
@@ -70,11 +71,7 @@ export default function AdvocacyScreen() {
 
         <Image source={icons.hero} style={styles.heroImage} resizeMode="contain" />
 
-        <View style={styles.utilityBar}>
-          <Image source={figmaSharedIcons.utilitySearch} style={styles.utilityIcon} resizeMode="contain" />
-          <Image source={figmaSharedIcons.utilityProfile} style={styles.utilityIcon} resizeMode="contain" />
-          <Image source={figmaSharedIcons.utilitySettings} style={styles.utilityIcon} resizeMode="contain" />
-        </View>
+        <FigmaUtilityBar s={s} />
 
         <View style={page.tabRow}>
           <Pressable style={[page.tabButton, page.tabButtonActive]}>
