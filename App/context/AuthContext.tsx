@@ -9,8 +9,6 @@ import {
   type ReactNode
 } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import * as Linking from 'expo-linking';
-import { createSessionFromUrl } from '@/lib/auth-session-from-url';
 import { formatAuthError } from '@/lib/auth-errors';
 import { signInWithGoogleOAuth } from '@/lib/google-auth';
 import {
@@ -151,23 +149,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(next);
     setProfileLoading(false);
   }, [user]);
-
-  useEffect(() => {
-    const handleAuthDeepLink = async (incomingUrl: string) => {
-      if (!incomingUrl.includes('auth/callback')) return;
-      await createSessionFromUrl(incomingUrl);
-    };
-
-    void Linking.getInitialURL().then((url) => {
-      if (url) void handleAuthDeepLink(url);
-    });
-
-    const linkSub = Linking.addEventListener('url', ({ url }) => {
-      void handleAuthDeepLink(url);
-    });
-
-    return () => linkSub.remove();
-  }, []);
 
   useEffect(() => {
     let mounted = true;

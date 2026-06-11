@@ -1,5 +1,8 @@
 import { supabase } from '@/lib/supabase';
 
+/** Prevent double PKCE exchange when callback is handled from multiple listeners. */
+const exchangedAuthCodes = new Set<string>();
+
 function parseParamsFromUrl(url: string): URLSearchParams {
   const hashIndex = url.indexOf('#');
   if (hashIndex >= 0) {
@@ -23,8 +26,23 @@ export async function createSessionFromUrl(url: string): Promise<string | null> 
 
   const code = params.get('code');
   if (code) {
+    if (exchangedAuthCodes.has(code)) {
+      return null;
+    }
+
+    const { data: existing } = await supabase.auth.getSession();
+    if (existing.session) {
+      exchangedAuthCodes.add(code);
+      return null;
+    }
+
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    return error?.message ?? null;
+    if (error) {
+      return error.message;
+    }
+
+    exchangedAuthCodes.add(code);
+    return null;
   }
 
   const accessToken = params.get('access_token');

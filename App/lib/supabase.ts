@@ -18,7 +18,8 @@ export const supabase = createClient(url, anonKey, {
     ...(Platform.OS !== 'web' ? { storage: AsyncStorage } : {}),
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: Platform.OS === 'web',
+    // Manual callback handling in auth/callback + google-auth (avoids double PKCE exchange).
+    detectSessionInUrl: false,
     flowType: 'pkce'
   }
 });
