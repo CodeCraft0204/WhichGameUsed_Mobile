@@ -12,7 +12,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { cameraCopy } from '@/constants/cameraCopy';
+import { databaseCopy } from '@/constants/databaseCopy';
 import { figmaColors } from '@/constants/figmaColors';
+import { databaseRequestCardHref } from '@/constants/navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import { searchCameraCardCatalog, type CameraCardSearchResult } from '@/lib/camera-card-catalog';
 
@@ -88,7 +90,37 @@ export default function CameraCardSearchScreen() {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.list}
         ListEmptyComponent={
-          !loading ? <Text style={styles.empty}>{cameraCopy.searchEmpty}</Text> : null
+          !loading ? (
+            <View style={styles.emptyWrap}>
+              <Text style={styles.empty}>{cameraCopy.searchEmpty}</Text>
+              <Pressable
+                style={styles.requestBtn}
+                onPress={() =>
+                  router.push(
+                    databaseRequestCardHref({ query: debouncedQuery, returnTo: 'camera' })
+                  )
+                }
+              >
+                <Text style={styles.requestBtnText}>{databaseCopy.requestAddLink}</Text>
+              </Pressable>
+            </View>
+          ) : null
+        }
+        ListFooterComponent={
+          results.length > 0 ? (
+            <View style={styles.footer}>
+              <Text style={styles.footerHint}>{databaseCopy.cardNotFound}</Text>
+              <Pressable
+                onPress={() =>
+                  router.push(
+                    databaseRequestCardHref({ query: debouncedQuery, returnTo: 'camera' })
+                  )
+                }
+              >
+                <Text style={styles.requestLink}>{databaseCopy.requestAddLink}</Text>
+              </Pressable>
+            </View>
+          ) : null
         }
         renderItem={({ item }) => (
           <Pressable style={styles.row} onPress={() => handleSelect(item)}>
@@ -157,12 +189,42 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       textAlign: 'center'
     },
     list: { paddingHorizontal: s(16), paddingBottom: s(24) },
+    emptyWrap: { marginTop: s(24), gap: s(16), alignItems: 'center' },
     empty: {
       fontFamily: 'EBGaramond_400Regular',
       fontSize: t(16),
       color: figmaColors.gray,
-      textAlign: 'center',
-      marginTop: s(24)
+      textAlign: 'center'
+    },
+    requestBtn: {
+      borderWidth: 1,
+      borderColor: figmaColors.charcoal,
+      borderRadius: s(10),
+      paddingHorizontal: s(16),
+      paddingVertical: s(12)
+    },
+    requestBtnText: {
+      fontFamily: 'EBGaramond_700Bold',
+      fontSize: t(15),
+      color: figmaColors.charcoal
+    },
+    footer: {
+      marginTop: s(20),
+      paddingTop: s(16),
+      borderTopWidth: 1,
+      borderTopColor: figmaColors.divider,
+      alignItems: 'center',
+      gap: s(8)
+    },
+    footerHint: {
+      fontFamily: 'EBGaramond_400Regular',
+      fontSize: t(14),
+      color: figmaColors.gray
+    },
+    requestLink: {
+      fontFamily: 'EBGaramond_700Bold',
+      fontSize: t(15),
+      color: figmaColors.bronze
     },
     row: {
       flexDirection: 'row',

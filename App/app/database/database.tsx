@@ -1,6 +1,6 @@
-﻿import { useFocusEffect } from 'expo-router';
+﻿import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { DatabaseRecordCard } from '@/components/figma/DatabaseRecordCard';
 import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
@@ -14,12 +14,20 @@ import {
   type DatabaseMetaItem,
   type DatabaseRecord
 } from '@/constants/databaseContent';
+import { databaseCopy } from '@/constants/databaseCopy';
 import { figmaColors } from '@/constants/figmaColors';
 import { figmaSharedIcons } from '@/constants/figmaShared';
+import { databaseCardHref, databaseSearchHref } from '@/constants/navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
-import { cardDescription, cardToTags, listRecentCards, type CardSummary } from '@/lib/cards';
+import {
+  cardDescription,
+  cardToTags,
+  listCatalogCards,
+  type CardSummary,
+  type DatabaseSportFilter
+} from '@/lib/cards';
 
-type LiveRecord = DatabaseRecord & { imageUrl?: string | null };
+type LiveRecord = DatabaseRecord & { imageUrl?: string | null; cardId?: string };
 
 function cardToLiveRecord(card: CardSummary, cardImage: number): LiveRecord {
   const meta: DatabaseMetaItem[] = [];
@@ -27,11 +35,12 @@ function cardToLiveRecord(card: CardSummary, cardImage: number): LiveRecord {
   if (card.team_name) meta.push({ key: 'team', icon: 'baseball', label: card.team_name });
   if (card.year) meta.push({ key: 'year', icon: 'calendar', label: String(card.year) });
   if (card.authenticated_count > 0) {
-    meta.push({ key: 'auth', icon: 'shield', label: `${card.authenticated_count} authenticated` });
+    meta.push({ key: 'auth', icon: 'shield', label: databaseCopy.authCount(card.authenticated_count) });
   }
 
   return {
     key: card.id,
+    cardId: card.id,
     cardImage,
     imageUrl: card.imageUrl,
     title: card.title,
@@ -42,32 +51,75 @@ function cardToLiveRecord(card: CardSummary, cardImage: number): LiveRecord {
 }
 
 export default function DatabaseScreen() {
+  const router = useRouter();
   const { s, t } = useFigmaLayout();
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s), [s]);
 
-  const [featured, setFeatured] = useState<LiveRecord[]>(databaseFeaturedRecords);
-  const [recent, setRecent] = useState<LiveRecord[]>(databaseRecentRecords);
+  const [activeSport, setActiveSport] = useState<DatabaseSportFilter>('ALL');
+  const [featured, setFeatured] = useState<LiveRecord[]>([]);
+  const [recent, setRecent] = useState<LiveRecord[]>([]);
+  const [usingLiveData, setUsingLiveData] = useState(false);
+
+  const loadCards = useCallback((sport: DatabaseSportFilter) => {
+    void Promise.all([
+      listCatalogCards({ sport, authenticatedOnly: true, limit: 4 }),
+      listCatalogCards({ sport, limit: 8 })
+    ]).then(([featuredResult, recentResult]) => {
+      const hasLive = featuredResult.items.length > 0 || recentResult.items.length > 0;
+      setUsingLiveData(hasLive);
+
+      if (featuredResult.items.length > 0) {
+        setFeatured(
+          featuredResult.items.map((card, i) =>
+            cardToLiveRecord(
+              card,
+              databaseFeaturedRecords[i % databaseFeaturedRecords.length]?.cardImage ??
+                databaseIcons.recordMantle
+            )
+          )
+        );
+      } else if (!hasLive) {
+        setFeatured(databaseFeaturedRecords);
+      } else {
+        setFeatured([]);
+      }
+
+      if (recentResult.items.length > 0) {
+        setRecent(
+          recentResult.items.map((card, i) =>
+            cardToLiveRecord(
+              card,
+              databaseRecentRecords[i % databaseRecentRecords.length]?.cardImage ?? databaseIcons.recentKobe
+            )
+          )
+        );
+      } else if (!hasLive) {
+        setRecent(databaseRecentRecords);
+      } else {
+        setRecent([]);
+      }
+    });
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
-      let active = true;
-      void listRecentCards(12).then(({ items, error }) => {
-        if (!active || error || items.length === 0) return;
-        const liveFeatured = items.slice(0, 4).map((card, i) =>
-          cardToLiveRecord(card, databaseFeaturedRecords[i % databaseFeaturedRecords.length]?.cardImage ?? databaseIcons.recordMantle)
-        );
-        const liveRecent = items.slice(4, 12).map((card, i) =>
-          cardToLiveRecord(card, databaseRecentRecords[i % databaseRecentRecords.length]?.cardImage ?? databaseIcons.recentKobe)
-        );
-        if (liveFeatured.length > 0) setFeatured(liveFeatured);
-        if (liveRecent.length > 0) setRecent(liveRecent);
-      });
-      return () => {
-        active = false;
-      };
-    }, [])
+      loadCards(activeSport);
+    }, [activeSport, loadCards])
   );
+
+  const openSearch = (opts?: { sport?: DatabaseSportFilter; authenticated?: boolean }) => {
+    router.push(
+      databaseSearchHref({
+        sport: opts?.sport ?? activeSport,
+        authenticated: opts?.authenticated
+      })
+    );
+  };
+
+  const openCard = (cardId: string | undefined) => {
+    if (cardId) router.push(databaseCardHref(cardId));
+  };
 
   return (
     <FigmaScreen
@@ -86,10 +138,24 @@ export default function DatabaseScreen() {
         <Image source={databaseIcons.hero} style={styles.heroImage} resizeMode="contain" />
         <FigmaUtilityBar s={s} />
 
+        <Pressable onPress={() => openSearch()} accessibilityRole="search">
+          <TextInput
+            style={styles.searchInput}
+            placeholder={databaseCopy.searchPlaceholder}
+            placeholderTextColor={figmaColors.textMuted}
+            editable={false}
+            pointerEvents="none"
+          />
+        </Pressable>
+
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={page.tabRow}>
-          {databaseSportTabs.map((tab, index) => (
-            <Pressable key={tab} style={[page.tabButton, index === 0 && page.tabButtonActive]}>
-              <Text style={[page.tabText, index === 0 && page.tabTextActive]}>{tab}</Text>
+          {databaseSportTabs.map((tab) => (
+            <Pressable
+              key={tab}
+              style={[page.tabButton, activeSport === tab && page.tabButtonActive]}
+              onPress={() => setActiveSport(tab)}
+            >
+              <Text style={[page.tabText, activeSport === tab && page.tabTextActive]}>{tab}</Text>
             </Pressable>
           ))}
         </ScrollView>
@@ -97,11 +163,15 @@ export default function DatabaseScreen() {
 
       <View style={page.sectionHeaderRow}>
         <Text style={page.sectionTitle}>FEATURED RECORDS</Text>
-        <View style={page.viewAllRow}>
-          <Text style={styles.viewAllText}>VIEW ALL</Text>
+        <Pressable style={page.viewAllRow} onPress={() => openSearch({ authenticated: true })}>
+          <Text style={styles.viewAllText}>{databaseCopy.viewAll}</Text>
           <Image source={databaseIcons.sectionChevron} style={page.sectionChevron} resizeMode="contain" />
-        </View>
+        </Pressable>
       </View>
+
+      {featured.length === 0 && usingLiveData ? (
+        <Text style={styles.sectionEmpty}>{databaseCopy.featuredEmpty}</Text>
+      ) : null}
 
       {featured.map((record) => (
         <DatabaseRecordCard
@@ -115,16 +185,21 @@ export default function DatabaseScreen() {
           variant="featured"
           s={s}
           t={t}
+          onPress={record.cardId ? () => openCard(record.cardId) : undefined}
         />
       ))}
 
       <View style={page.sectionHeaderRow}>
         <Text style={page.sectionTitle}>RECENTLY ADDED</Text>
-        <View style={page.viewAllRow}>
-          <Text style={styles.viewAllText}>VIEW ALL</Text>
+        <Pressable style={page.viewAllRow} onPress={() => openSearch()}>
+          <Text style={styles.viewAllText}>{databaseCopy.viewAll}</Text>
           <Image source={databaseIcons.sectionChevron} style={page.sectionChevron} resizeMode="contain" />
-        </View>
+        </Pressable>
       </View>
+
+      {recent.length === 0 && usingLiveData ? (
+        <Text style={styles.sectionEmpty}>{databaseCopy.recentEmpty}</Text>
+      ) : null}
 
       {recent.map((record) => (
         <DatabaseRecordCard
@@ -138,6 +213,7 @@ export default function DatabaseScreen() {
           variant="featured"
           s={s}
           t={t}
+          onPress={record.cardId ? () => openCard(record.cardId) : undefined}
         />
       ))}
 
@@ -159,7 +235,7 @@ export default function DatabaseScreen() {
 function createLocalStyles(s: (n: number) => number) {
   return StyleSheet.create({
     headerSection: {
-      minHeight: s(380)
+      minHeight: s(420)
     },
     heroImage: {
       position: 'absolute',
@@ -168,10 +244,29 @@ function createLocalStyles(s: (n: number) => number) {
       width: s(329),
       height: s(300)
     },
+    searchInput: {
+      marginTop: s(8),
+      marginBottom: s(4),
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      borderRadius: s(10),
+      paddingHorizontal: s(14),
+      paddingVertical: s(12),
+      fontFamily: 'Inter_400Regular',
+      fontSize: 15,
+      color: figmaColors.charcoal,
+      backgroundColor: figmaColors.cream
+    },
     viewAllText: {
       fontFamily: 'EBGaramond_700Bold',
       fontSize: 15,
       color: figmaColors.gray
+    },
+    sectionEmpty: {
+      fontFamily: 'EBGaramond_400Regular',
+      fontSize: 16,
+      color: figmaColors.gray,
+      marginBottom: s(12)
     },
     ctaCard: {
       minHeight: s(108),

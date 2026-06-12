@@ -13,5 +13,6 @@ export const cameraCopy = {
   searchCancel: 'Cancel',
   searchEmpty: 'No matching cards in the catalog.',
   searchPlaceholder: 'Player, team, year, set…',
-  searchTitle: 'Find card in database'
+  searchTitle: 'Find card in database',
+  requestAdd: 'Request to add to database'
 } as const;

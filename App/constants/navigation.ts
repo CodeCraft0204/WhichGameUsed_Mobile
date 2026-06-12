@@ -21,3 +21,39 @@ export const primaryNav: Array<{ label: string; href: Href }> = [
   { label: 'Camera', href: '/camera/camera' },
   { label: 'Edit photos', href: '/create/edit' }
 ];
+
+export function databaseSearchHref(params?: {
+  sport?: string;
+  q?: string;
+  authenticated?: boolean;
+}): Href {
+  return {
+    pathname: '/database/search',
+    params: {
+      ...(params?.sport ? { sport: params.sport } : {}),
+      ...(params?.q ? { q: params.q } : {}),
+      ...(params?.authenticated ? { authenticated: '1' } : {})
+    }
+  } as unknown as Href;
+}
+
+export function databaseCardHref(id: string): Href {
+  return { pathname: '/database/card/[id]', params: { id } } as unknown as Href;
+}
+
+export function databaseRequestCardHref(params?: {
+  query?: string;
+  returnTo?: string;
+}): Href {
+  return {
+    pathname: '/database/request-card',
+    params: {
+      ...(params?.query ? { query: params.query } : {}),
+      ...(params?.returnTo ? { returnTo: params.returnTo } : {})
+    }
+  } as unknown as Href;
+}
+
+export function submissionDetailHref(id: string): Href {
+  return { pathname: '/authenticate/submission/[id]', params: { id } } as unknown as Href;
+}

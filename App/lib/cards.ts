@@ -69,23 +69,71 @@ export function cardToTags(row: Omit<CardSummary, 'imageUrl'>): string[] {
 
 export { toDescription as cardDescription };
 
-export async function searchApprovedCards(
-  query: string,
-  limit = 20
+export type DatabaseSportFilter = 'ALL' | 'BASEBALL' | 'BASKETBALL' | 'FOOTBALL' | 'PLAYERS';
+
+export type CatalogListOptions = {
+  query?: string;
+  sport?: DatabaseSportFilter;
+  authenticatedOnly?: boolean;
+  year?: number;
+  limit?: number;
+  offset?: number;
+};
+
+export type AuthenticatedAssetSummary = {
+  id: string;
+  asset_id: string;
+  status: string;
+  authenticated_at: string | null;
+  verification_url: string | null;
+};
+
+function ilikePattern(q: string): string {
+  const pattern = `%${q.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_')}%`;
+  return `"${pattern.replace(/"/g, '""')}"`;
+}
+
+async function rowsToSummaries(
+  rows: Omit<CardSummary, 'imageUrl'>[]
+): Promise<CardSummary[]> {
+  const fileIds = await fetchFrontFileIds(rows.map((r) => r.id));
+  return attachImageUrls(rows, fileIds);
+}
+
+export async function listCatalogCards(
+  options: CatalogListOptions = {}
 ): Promise<{ items: CardSummary[]; error: string | null }> {
-  const q = query.trim();
+  const { query, sport, authenticatedOnly, year, limit = 20, offset = 0 } = options;
+  const q = query?.trim() ?? '';
+
   let request = supabase
     .from('card_public_summary')
     .select(SUMMARY_COLUMNS)
     .eq('status', 'approved')
     .order('title', { ascending: true })
-    .limit(limit);
+    .range(offset, offset + limit - 1);
+
+  if (sport && sport !== 'ALL') {
+    if (sport === 'PLAYERS') {
+      request = request.not('player_name', 'is', null);
+    } else {
+      const name = sport.charAt(0) + sport.slice(1).toLowerCase();
+      request = request.ilike('sport_name', ilikePattern(name));
+    }
+  }
+
+  if (authenticatedOnly) {
+    request = request.gt('authenticated_count', 0);
+  }
+
+  if (year != null) {
+    request = request.eq('year', year);
+  }
 
   if (q) {
-    const pattern = `%${q.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_')}%`;
-    const pat = `"${pattern.replace(/"/g, '""')}"`;
+    const pat = ilikePattern(q);
     request = request.or(
-      `title.ilike.${pat},card_number.ilike.${pat},player_name.ilike.${pat},team_name.ilike.${pat},product_name.ilike.${pat}`
+      `title.ilike.${pat},card_number.ilike.${pat},player_name.ilike.${pat},team_name.ilike.${pat},product_name.ilike.${pat},manufacturer_name.ilike.${pat}`
     );
   }
 
@@ -93,27 +141,36 @@ export async function searchApprovedCards(
   if (error) return { items: [], error: error.message };
 
   const rows = (data ?? []) as Omit<CardSummary, 'imageUrl'>[];
-  const fileIds = await fetchFrontFileIds(rows.map((r) => r.id));
-  const items = await attachImageUrls(rows, fileIds);
+  const items = await rowsToSummaries(rows);
   return { items, error: null };
 }
 
-export async function listRecentCards(
-  limit = 8
+export async function searchApprovedCards(
+  query: string,
+  limit = 20
 ): Promise<{ items: CardSummary[]; error: string | null }> {
+  return listCatalogCards({ query, limit });
+}
+
+export async function listRecentCards(
+  limit = 8,
+  sport?: DatabaseSportFilter
+): Promise<{ items: CardSummary[]; error: string | null }> {
+  return listCatalogCards({ sport, limit });
+}
+
+export async function listAuthenticatedAssetsForCard(
+  cardId: string
+): Promise<{ items: AuthenticatedAssetSummary[]; error: string | null }> {
   const { data, error } = await supabase
-    .from('card_public_summary')
-    .select(SUMMARY_COLUMNS)
-    .eq('status', 'approved')
-    .order('title', { ascending: true })
-    .limit(limit);
+    .from('authenticated_assets')
+    .select('id, asset_id, status, authenticated_at, verification_url')
+    .eq('card_id', cardId)
+    .eq('status', 'active')
+    .order('authenticated_at', { ascending: false });
 
   if (error) return { items: [], error: error.message };
-
-  const rows = (data ?? []) as Omit<CardSummary, 'imageUrl'>[];
-  const fileIds = await fetchFrontFileIds(rows.map((r) => r.id));
-  const items = await attachImageUrls(rows, fileIds);
-  return { items, error: null };
+  return { items: (data ?? []) as AuthenticatedAssetSummary[], error: null };
 }
 
 export async function getCardById(

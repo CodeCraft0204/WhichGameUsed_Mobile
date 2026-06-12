@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   databaseIcons,
   type DatabaseMetaIconKey,
@@ -23,6 +23,7 @@ type DatabaseRecordCardProps = {
   tags: readonly string[];
   meta: readonly DatabaseMetaItem[];
   variant?: 'featured' | 'recent';
+  onPress?: () => void;
   s: (n: number) => number;
   t: (n: number) => number;
 };
@@ -35,14 +36,15 @@ export function DatabaseRecordCard({
   tags,
   meta,
   variant = 'featured',
+  onPress,
   s,
   t
 }: DatabaseRecordCardProps) {
   const styles = createStyles(s, t, variant);
   const isFeatured = variant === 'featured';
 
-  return (
-    <View style={styles.card}>
+  const content = (
+    <>
       <Image
         source={imageUrl ? { uri: imageUrl } : cardImage}
         style={styles.cardImage}
@@ -75,8 +77,18 @@ export function DatabaseRecordCard({
         </View>
         <Image source={databaseIcons.cardChevron} style={styles.cardChevron} resizeMode="contain" />
       </View>
-    </View>
+    </>
   );
+
+  if (onPress) {
+    return (
+      <Pressable onPress={onPress} style={styles.card} accessibilityRole="button">
+        {content}
+      </Pressable>
+    );
+  }
+
+  return <View style={styles.card}>{content}</View>;
 }
 
 function createStyles(s: (n: number) => number, t: (n: number) => number, variant: 'featured' | 'recent') {

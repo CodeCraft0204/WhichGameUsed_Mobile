@@ -72,6 +72,31 @@ export async function listMySubmissions(
   return { items: (data ?? []) as SubmissionRow[], error: null };
 }
 
+export async function getSubmissionWithItems(
+  submissionId: string
+): Promise<{
+  submission: SubmissionWithItems | null;
+  error: string | null;
+}> {
+  const { submission, uploads, error } = await getSubmissionWithUploads(submissionId);
+  if (error || !submission) return { submission: null, error: error ?? 'Submission not found.' };
+
+  const { data: itemRows, error: itemError } = await supabase
+    .from('submission_items')
+    .select('id, card_id, cards(title)')
+    .eq('submission_id', submissionId);
+
+  if (itemError) return { submission: null, error: itemError.message };
+
+  return {
+    submission: {
+      ...submission,
+      items: (itemRows ?? []) as SubmissionWithItems['items']
+    },
+    error: null
+  };
+}
+
 export async function getSubmissionWithUploads(
   submissionId: string
 ): Promise<{

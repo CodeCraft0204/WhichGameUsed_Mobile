@@ -7,15 +7,12 @@ import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import { FigmaUtilityBar } from '@/components/figma/FigmaUtilityBar';
 import { ScanSubmitButton } from '@/components/figma/ScanSubmitButton';
-import {
-  authenticateDraftRecords,
-  authenticateIcons,
-  authenticateScannedRecords,
-  authenticateTabs
-} from '@/constants/authenticateContent';
+import { authenticateIcons, authenticateTabs } from '@/constants/authenticateContent';
+import { databaseCopy } from '@/constants/databaseCopy';
 import { databaseIcons } from '@/constants/databaseContent';
 import { figmaColors } from '@/constants/figmaColors';
 import { figmaSharedIcons } from '@/constants/figmaShared';
+import { submissionDetailHref } from '@/constants/navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import {
   linkedCardTitleFromItems,
@@ -102,10 +99,10 @@ export default function AuthenticateScreen() {
             <Text style={page.sectionTitle}>YOUR SUBMISSIONS</Text>
           </View>
 
-          {pending.length > 0
-            ? pending.map((row) => {
-                const linkedTitle = linkedCardTitleFromItems(row.items);
-                return (
+          {pending.length > 0 ? (
+            pending.map((row) => {
+              const linkedTitle = linkedCardTitleFromItems(row.items);
+              return (
                 <AuthenticateDraftCard
                   key={row.id}
                   cardImage={databaseIcons.recordMantle}
@@ -127,21 +124,13 @@ export default function AuthenticateScreen() {
                   ]}
                   s={s}
                   t={t}
+                  onPress={() => router.push(submissionDetailHref(row.id))}
                 />
               );
-              })
-            : authenticateDraftRecords.map((record) => (
-                <AuthenticateDraftCard
-                  key={record.key}
-                  cardImage={record.cardImage}
-                  title={record.title}
-                  description={record.description}
-                  tags={record.tags}
-                  meta={record.meta}
-                  s={s}
-                  t={t}
-                />
-              ))}
+            })
+          ) : (
+            <Text style={styles.emptyText}>{databaseCopy.submissionEmptyPending}</Text>
+          )}
         </>
       ) : null}
 
@@ -151,10 +140,10 @@ export default function AuthenticateScreen() {
             <Text style={page.sectionTitle}>REVIEWED</Text>
           </View>
 
-          {completed.length > 0
-            ? completed.map((row) => {
-                const linkedTitle = linkedCardTitleFromItems(row.items);
-                return (
+          {completed.length > 0 ? (
+            completed.map((row) => {
+              const linkedTitle = linkedCardTitleFromItems(row.items);
+              return (
                 <AuthenticateScannedCard
                   key={row.id}
                   cardImage={databaseIcons.recordJordan}
@@ -165,20 +154,13 @@ export default function AuthenticateScreen() {
                   }
                   s={s}
                   t={t}
+                  onPress={() => router.push(submissionDetailHref(row.id))}
                 />
               );
-              })
-            : authenticateScannedRecords.map((record) => (
-                <AuthenticateScannedCard
-                  key={record.key}
-                  cardImage={record.cardImage}
-                  title={record.title}
-                  tags={record.tags}
-                  scannedAt={record.scannedAt}
-                  s={s}
-                  t={t}
-                />
-              ))}
+            })
+          ) : (
+            <Text style={styles.emptyText}>{databaseCopy.submissionEmptyReviewed}</Text>
+          )}
         </>
       ) : null}
 
@@ -271,6 +253,13 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: 18,
       lineHeight: 20,
       color: figmaColors.gray
+    },
+    emptyText: {
+      fontFamily: 'EBGaramond_400Regular',
+      fontSize: 16,
+      lineHeight: 22,
+      color: figmaColors.gray,
+      marginBottom: s(12)
     }
   });
 }

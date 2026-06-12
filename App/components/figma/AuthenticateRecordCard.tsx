@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   authenticateIcons,
   type AuthenticateDraftRecord,
@@ -15,6 +15,7 @@ const metaIconSources: Record<AuthenticateMetaIconKey, number> = {
 };
 
 type AuthenticateDraftCardProps = AuthenticateDraftRecord & {
+  onPress?: () => void;
   s: (n: number) => number;
   t: (n: number) => number;
 };
@@ -25,13 +26,14 @@ export function AuthenticateDraftCard({
   description,
   tags,
   meta,
+  onPress,
   s,
   t
 }: AuthenticateDraftCardProps) {
   const styles = createDraftStyles(s, t);
 
-  return (
-    <View style={styles.card}>
+  const content = (
+    <>
       <Image source={cardImage} style={styles.cardImage} resizeMode="contain" />
 
       <View style={styles.body}>
@@ -58,20 +60,39 @@ export function AuthenticateDraftCard({
         </View>
         <Image source={authenticateIcons.cardChevron} style={styles.cardChevron} resizeMode="contain" />
       </View>
-    </View>
+    </>
   );
+
+  if (onPress) {
+    return (
+      <Pressable onPress={onPress} style={styles.card} accessibilityRole="button">
+        {content}
+      </Pressable>
+    );
+  }
+
+  return <View style={styles.card}>{content}</View>;
 }
 
 type AuthenticateScannedCardProps = AuthenticateScannedRecord & {
+  onPress?: () => void;
   s: (n: number) => number;
   t: (n: number) => number;
 };
 
-export function AuthenticateScannedCard({ cardImage, title, tags, scannedAt, s, t }: AuthenticateScannedCardProps) {
+export function AuthenticateScannedCard({
+  cardImage,
+  title,
+  tags,
+  scannedAt,
+  onPress,
+  s,
+  t
+}: AuthenticateScannedCardProps) {
   const styles = createScannedStyles(s, t);
 
-  return (
-    <View style={styles.card}>
+  const content = (
+    <>
       <Image source={cardImage} style={styles.cardImage} resizeMode="contain" />
 
       <View style={styles.body}>
@@ -95,8 +116,18 @@ export function AuthenticateScannedCard({ cardImage, title, tags, scannedAt, s, 
         </View>
         <Image source={authenticateIcons.cardChevron} style={styles.cardChevron} resizeMode="contain" />
       </View>
-    </View>
+    </>
   );
+
+  if (onPress) {
+    return (
+      <Pressable onPress={onPress} style={styles.card} accessibilityRole="button">
+        {content}
+      </Pressable>
+    );
+  }
+
+  return <View style={styles.card}>{content}</View>;
 }
 
 function createDraftStyles(s: (n: number) => number, t: (n: number) => number) {
