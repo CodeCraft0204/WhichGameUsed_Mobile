@@ -3,8 +3,8 @@ import { appFonts } from '@/constants/appFonts';
 import { bodyText } from '@/constants/appTypography';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { FigmaHubBottomNav } from '@/components/figma/FigmaHubBottomNav';
-import { FigmaUtilityBar } from '@/components/figma/FigmaUtilityBar';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
+import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import { figmaColors } from '@/constants/figmaColors';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
@@ -62,19 +62,14 @@ export default function AdvocacyScreen() {
       bottomNav={<FigmaHubBottomNav active="advocacy" />}
       scrollProps={{ contentContainerStyle: page.scrollContent }}
     >
-      <View style={page.headerSection}>
-        <Text style={page.title}>ADVOCACY</Text>
-        <Image source={icons.titleBrush} style={page.titleBrush} resizeMode="stretch" />
-        <Text style={page.subtitle}>MORE TRANSPARENCY.{'\n'}MORE TRUST. BETTER HOBBY.</Text>
-        <Text style={page.description}>
-          Sign petitions, raise your voice, and push the hobby toward transparency. Together, we can ask
-          manufacturers to share the records collectors deserve.
-        </Text>
-
-        <Image source={icons.hero} style={styles.heroImage} resizeMode="contain" />
-
-        <FigmaUtilityBar s={s} />
-
+      <FigmaPageHeader
+        title="ADVOCACY"
+        subtitle={'MORE TRANSPARENCY.\nMORE TRUST. BETTER HOBBY.'}
+        description="Sign petitions, raise your voice, and push the hobby toward transparency. Together, we can ask manufacturers to share the records collectors deserve."
+        heroSource={icons.hero}
+        s={s}
+        page={page}
+      >
         <View style={page.tabRow}>
           <Pressable style={[page.tabButton, page.tabButtonActive]}>
             <Text style={[page.tabText, page.tabTextActive]}>ALL</Text>
@@ -86,7 +81,7 @@ export default function AdvocacyScreen() {
             <Text style={page.tabText}>WINS</Text>
           </Pressable>
         </View>
-      </View>
+      </FigmaPageHeader>
 
       <View style={page.sectionHeaderRow}>
         <Text style={page.sectionTitle}>ACTVE PETITONS</Text>
@@ -133,13 +128,6 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
   const tb = (n: number) => bodyText(t, n);
 
   return StyleSheet.create({
-    heroImage: {
-      position: 'absolute',
-      right: s(84),
-      top: s(36),
-      width: s(288),
-      height: s(338)
-    },
     utilityBar: {
       position: 'absolute',
       right: 0,

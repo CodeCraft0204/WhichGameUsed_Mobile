@@ -30,7 +30,7 @@ export function DatabaseChipRow<T extends string>({
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.label}>{label}</Text>
+      {/* <Text style={styles.label}>{label}</Text> */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -60,11 +60,12 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
   const tb = (n: number) => bodyText(t, n);
 
   return StyleSheet.create({
-    wrap: { marginBottom: s(14) },
+    wrap: { marginVertical: s(20) },
     label: {
-      fontFamily: appFonts.body,
-      fontSize: tb(12),
+      fontFamily: appFonts.accent,
+      fontSize: tb(10),
       color: figmaColors.gray,
+      marginTop: s(10),
       marginBottom: s(8),
       ...broadsheetAccent
     },
@@ -90,7 +91,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     chipText: {
       fontFamily: appFonts.body,
-      fontSize: tb(18),
+      fontSize: tb(13),
       color: figmaColors.tabText
     },
     chipTextActive: {

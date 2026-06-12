@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { appFonts } from '@/constants/appFonts';
-import { bodyText, broadsheetAccent } from '@/constants/appTypography';
+import { bodyText } from '@/constants/appTypography';
 import { databaseCopy } from '@/constants/databaseCopy';
 import { figmaColors } from '@/constants/figmaColors';
 
@@ -22,8 +22,9 @@ export function DatabaseStatsBar({
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.primary}>{databaseCopy.statsAuthenticated(authenticatedCards)}</Text>
-      <Text style={styles.secondary}>{databaseCopy.statsTotal(totalCards)}</Text>
+      <Text style={styles.line} numberOfLines={1}>
+        {databaseCopy.statsLine(authenticatedCards, totalCards)}
+      </Text>
     </View>
   );
 }
@@ -33,22 +34,14 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
 
   return StyleSheet.create({
     wrap: {
-      marginTop: s(16),
-      marginBottom: s(8),
-      paddingBottom: s(8)
+      marginTop: s(10),
+      marginBottom: s(6),
+      paddingBottom: s(4)
     },
-    primary: {
-      fontFamily: appFonts.body,
-      fontSize: tb(22),
-      lineHeight: tb(28),
-      color: figmaColors.charcoal,
-      ...broadsheetAccent,
-      letterSpacing: 0.8
-    },
-    secondary: {
-      marginTop: s(4),
+    line: {
       fontFamily: appFonts.body,
       fontSize: tb(18),
+      lineHeight: tb(18),
       color: figmaColors.gray
     }
   });

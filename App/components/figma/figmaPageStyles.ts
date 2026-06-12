@@ -16,40 +16,38 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
     },
     headerSection: {
       position: 'relative',
-      minHeight: s(420)
+      paddingRight: s(72),
+      marginBottom: s(4)
     },
     title: {
       fontFamily: appFonts.display,
-      marginTop: s(16),
+      marginTop: s(12),
       fontSize: t(52),
-      lineHeight: t(82),
+      lineHeight: t(58),
       color: figmaColors.charcoal,
       letterSpacing: 0.6,
-      transform: [{ rotate: '-4deg' }],
-      width: s(460)
+      transform: [{ rotate: '-4deg' }]
     },
     titleBrush: {
       width: s(338),
       height: s(33),
-      marginTop: s(-14),
+      marginTop: s(10),
       marginLeft: s(2)
     },
     subtitle: {
-      marginTop: s(26),
-      fontFamily: appFonts.body,
-      fontSize: tb(22),
-      lineHeight: tb(28),
+      marginTop: s(12),
+      fontFamily: appFonts.accent,
+      fontSize: tb(20),
+      lineHeight: tb(26),
       color: figmaColors.gray,
-      width: s(340),
       ...broadsheetAccent
     },
     description: {
-      marginTop: s(24),
+      marginTop: s(12),
       fontFamily: appFonts.body,
-      fontSize: tb(22),
-      lineHeight: tb(28),
-      color: figmaColors.gray,
-      width: s(380)
+      fontSize: tb(19),
+      lineHeight: tb(26),
+      color: figmaColors.gray
     },
     tabRow: {
       marginTop: s(32),
@@ -81,24 +79,21 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
       color: figmaColors.tabTextActive
     },
     sectionHeaderRow: {
-      marginTop: s(14),
-      marginBottom: s(8),
+      marginBottom: s(5),
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      borderTopWidth: 1,
       borderTopColor: figmaColors.divider,
-      paddingTop: s(10)
     },
     sectionTitle: {
       fontFamily: appFonts.display,
       marginVertical: s(16),
-      fontSize: t(28),
+      fontSize: t(20),
       color: figmaColors.charcoal
     },
     viewAllText: {
-      fontFamily: appFonts.body,
-      fontSize: tb(19),
+      fontFamily: appFonts.accent,
+      fontSize: tb(16),
       color: figmaColors.gray,
       ...broadsheetAccent,
       letterSpacing: 0.8
@@ -187,7 +182,7 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
       height: s(figmaNavTheme.iconSize)
     },
     navText: {
-      fontFamily: appFonts.body,
+      fontFamily: appFonts.accent,
       fontSize: tb(figmaNavTheme.labelFontSize),
       lineHeight: tb(figmaNavTheme.labelLineHeight),
       color: figmaNavTheme.label,

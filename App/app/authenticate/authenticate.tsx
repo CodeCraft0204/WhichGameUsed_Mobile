@@ -1,18 +1,17 @@
-import { useFocusEffect, useRouter } from 'expo-router';
+﻿import { useFocusEffect, useRouter } from 'expo-router';
 import { appFonts } from '@/constants/appFonts';
 import React, { useCallback, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AuthenticateDraftCard, AuthenticateScannedCard } from '@/components/figma/AuthenticateRecordCard';
 import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
+import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
-import { FigmaUtilityBar } from '@/components/figma/FigmaUtilityBar';
 import { ScanSubmitButton } from '@/components/figma/ScanSubmitButton';
 import { authenticateIcons, authenticateTabs } from '@/constants/authenticateContent';
 import { databaseCopy } from '@/constants/databaseCopy';
 import { databaseIcons } from '@/constants/databaseContent';
 import { figmaColors } from '@/constants/figmaColors';
-import { figmaSharedIcons } from '@/constants/figmaShared';
 import { submissionDetailHref } from '@/constants/navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import {
@@ -58,25 +57,14 @@ export default function AuthenticateScreen() {
       bottomNav={<FigmaDatabaseBottomNav active="authenticate" />}
       scrollProps={{ contentContainerStyle: page.scrollContent }}
     >
-      <View style={[page.headerSection, styles.headerSection]}>
-        <Text style={[page.title, styles.title]}>AUTHENTICATE</Text>
-        <Image source={figmaSharedIcons.titleBrush} style={styles.titleBrush} resizeMode="stretch" />
-
-        <View style={styles.headerBody}>
-          <View style={styles.headerText}>
-            <Text style={[page.subtitle, styles.subtitle]}>
-              SUBMIT YOUR CARDS WITHOUT SUBMITTING YOUR CARDS.
-            </Text>
-            <Text style={[page.description, styles.description]}>
-              Scan your collection of game-used cards. If your card has been authenticated in our database,
-              simply submit for authentication and we will mail you a tamper-proof QR-linked label for FREE.
-            </Text>
-          </View>
-        </View>
-
-        <Image source={authenticateIcons.main} style={styles.heroImage} resizeMode="contain" />
-        <FigmaUtilityBar s={s} />
-
+      <FigmaPageHeader
+        title="AUTHENTICATE"
+        subtitle="SUBMIT YOUR CARDS WITHOUT SUBMITTING YOUR CARDS."
+        description="Scan your collection of game-used cards. If your card has been authenticated in our database, simply submit for authentication and we will mail you a tamper-proof QR-linked label for FREE."
+        heroSource={authenticateIcons.main}
+        s={s}
+        page={page}
+      >
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -92,7 +80,7 @@ export default function AuthenticateScreen() {
             </Pressable>
           ))}
         </ScrollView>
-      </View>
+      </FigmaPageHeader>
 
       {showPending ? (
         <>
@@ -183,48 +171,6 @@ export default function AuthenticateScreen() {
 
 function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
-    headerSection: {
-      minHeight: s(460),
-      paddingRight: s(88)
-    },
-    title: {
-      width: '100%',
-      alignSelf: 'flex-start',
-      lineHeight: t(58),
-      marginTop: s(12)
-    },
-    titleBrush: {
-      width: '92%',
-      maxWidth: s(480),
-      height: s(40),
-      marginTop: s(10),
-      marginLeft: s(2)
-    },
-    headerBody: {
-      flexDirection: 'row',
-      alignItems: 'flex-start'
-    },
-    headerText: {
-      flex: 1,
-      minWidth: 0,
-      maxWidth: s(420),
-      paddingRight: s(8),
-      zIndex: 1
-    },
-    subtitle: {
-      marginTop: s(22)
-    },
-    description: {
-      marginTop: s(20),
-      width: '100%'
-    },
-    heroImage: {
-      position: 'absolute',
-      right: s(88),
-      top: s(65),
-      width: s(300),
-      height: s(310)
-    },
     tabRow: {
       flexWrap: 'nowrap',
       gap: s(14)

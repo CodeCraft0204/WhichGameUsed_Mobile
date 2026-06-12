@@ -162,7 +162,7 @@ function createDraftStyles(s: (n: number) => number, t: (n: number) => number) {
       minWidth: 0
     },
     title: {
-      fontFamily: appFonts.body,
+      fontFamily: appFonts.accent,
       fontSize: tb(20),
       lineHeight: tb(27),
       color: figmaColors.charcoal
@@ -270,7 +270,7 @@ function createScannedStyles(s: (n: number) => number, t: (n: number) => number)
       minWidth: 0
     },
     title: {
-      fontFamily: appFonts.body,
+      fontFamily: appFonts.accent,
       fontSize: tb(16),
       lineHeight: tb(22),
       color: figmaColors.charcoal

@@ -126,7 +126,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       color: figmaColors.cream
     },
     btnText: {
-      fontFamily: appFonts.body,
+      fontFamily: appFonts.accent,
       fontSize: tb(11),
       color: figmaColors.charcoal,
       ...broadsheetAccent,

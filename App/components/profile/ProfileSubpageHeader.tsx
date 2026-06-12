@@ -75,7 +75,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     subtitle: {
       marginTop: s(16),
-      fontFamily: appFonts.body,
+      fontFamily: appFonts.accent,
       fontSize: tb(20),
       lineHeight: tb(26),
       color: figmaColors.gray,

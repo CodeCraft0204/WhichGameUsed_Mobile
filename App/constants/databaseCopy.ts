@@ -1,9 +1,11 @@
 export const databaseCopy = {
   searchPlaceholder: 'Search cards, players, teams, sets…',
   searchTitle: 'Browse database',
-  statsAuthenticated: (n: number) =>
-    `${n.toLocaleString()} AUTHENTICATED RECORD${n === 1 ? '' : 'S'}`,
-  statsTotal: (n: number) => `${n.toLocaleString()} catalog record${n === 1 ? '' : 's'}`,
+  statsLine: (authenticated: number, total: number) =>
+    `${authenticated.toLocaleString()} authenticated · ${total.toLocaleString()} catalog records`,
+  ctaObsessionTitle: 'AUTHENTICATION TAKES OBSESSION.',
+  ctaObsessionBody:
+    'Learn how to authenticate game-used cards, contribute to the conversation, and win monthly prizes.',
   browseBySport: 'BROWSE BY SPORT',
   browseByYear: 'BROWSE BY YEAR',
   filter: 'FILTER',

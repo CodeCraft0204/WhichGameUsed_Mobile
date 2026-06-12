@@ -6,7 +6,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -15,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthPrimaryButton } from '@/components/auth/AuthPrimaryButton';
+import { CardImagePager } from '@/components/database/CardImagePager';
 import { databaseIcons } from '@/constants/databaseContent';
 import { databaseCopy } from '@/constants/databaseCopy';
 import { figmaColors } from '@/constants/figmaColors';
@@ -134,26 +134,14 @@ export default function CardDetailScreen() {
               ) : null}
             </View>
 
-            <View style={styles.imageRow}>
-              <View style={styles.imageSlot}>
-                <Text style={styles.imageLabel}>{databaseCopy.frontLabel}</Text>
-                <Image
-                  source={card.imageUrl ? { uri: card.imageUrl } : databaseIcons.recordMantle}
-                  style={styles.cardImage}
-                  resizeMode="contain"
-                />
-              </View>
-              <View style={styles.imageSlot}>
-                <Text style={styles.imageLabel}>{databaseCopy.backLabel}</Text>
-                <Image
-                  source={
-                    card.backImageUrl ? { uri: card.backImageUrl } : databaseIcons.recordJordan
-                  }
-                  style={styles.cardImage}
-                  resizeMode="contain"
-                />
-              </View>
-            </View>
+            <CardImagePager
+              frontSource={card.imageUrl ? { uri: card.imageUrl } : databaseIcons.recordMantle}
+              backSource={
+                card.backImageUrl ? { uri: card.backImageUrl } : databaseIcons.recordJordan
+              }
+              s={s}
+              t={t}
+            />
 
             <View style={styles.actions}>
               <AuthPrimaryButton
@@ -236,7 +224,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       paddingVertical: s(4)
     },
     backText: {
-      fontFamily: appFonts.body,
+      fontFamily: appFonts.accent,
       fontSize: tb(16),
       color: figmaColors.charcoal,
       ...broadsheetAccent,
@@ -250,7 +238,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       marginBottom: s(12)
     },
     cardTitle: {
-      fontFamily: appFonts.body,
+      fontFamily: appFonts.accent,
       fontSize: tb(20),
       lineHeight: tb(27),
       color: figmaColors.charcoal
@@ -286,28 +274,6 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       color: figmaColors.gray
     },
     tagAuthText: { color: figmaColors.success },
-    imageRow: {
-      flexDirection: 'row',
-      gap: s(10),
-      marginBottom: s(18)
-    },
-    imageSlot: { flex: 1 },
-    imageLabel: {
-      fontFamily: appFonts.body,
-      fontSize: tb(11),
-      color: figmaColors.gray,
-      marginBottom: s(6),
-      ...broadsheetAccent,
-      letterSpacing: 1
-    },
-    cardImage: {
-      width: '100%',
-      aspectRatio: 3 / 4,
-      borderRadius: s(12),
-      backgroundColor: figmaColors.divider,
-      borderWidth: 1,
-      borderColor: figmaColors.borderLight
-    },
     actions: { gap: s(10), marginBottom: s(22) },
     secondaryBtn: {
       minHeight: s(48),
@@ -321,7 +287,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       gap: s(8)
     },
     secondaryBtnText: {
-      fontFamily: appFonts.body,
+      fontFamily: appFonts.accent,
       fontSize: tb(16),
       color: figmaColors.charcoal,
       ...broadsheetAccent,
@@ -343,7 +309,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     detailRow: { marginBottom: s(12) },
     detailLabel: {
-      fontFamily: appFonts.body,
+      fontFamily: appFonts.accent,
       fontSize: tb(11),
       color: figmaColors.gray,
       marginBottom: s(4),

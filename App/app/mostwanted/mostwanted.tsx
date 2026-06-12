@@ -3,8 +3,8 @@ import { appFonts } from '@/constants/appFonts';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaHubBottomNav } from '@/components/figma/FigmaHubBottomNav';
+import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
-import { FigmaUtilityBar } from '@/components/figma/FigmaUtilityBar';
 import { MostWantedRankCard } from '@/components/figma/MostWantedRankCard';
 import {
   mostWantedIcons,
@@ -26,25 +26,14 @@ export default function MostWantedScreen() {
       bottomNav={<FigmaHubBottomNav active="mostwanted" />}
       scrollProps={{ contentContainerStyle: page.scrollContent }}
     >
-      <View style={[page.headerSection, styles.headerSection]}>
-        <Text style={[page.title, styles.title]}>MOST WANTED</Text>
-        <Image source={figmaSharedIcons.titleBrush} style={styles.titleBrush} resizeMode="stretch" />
-
-        <View style={styles.headerBody}>
-          <View style={styles.headerText}>
-            <Text style={[page.subtitle, styles.subtitle]}>
-              VOTE THE HOBBY'S BIGGEST MYSTERIES TO THE TOP.
-            </Text>
-            <Text style={[page.description, styles.description]}>
-              Track the 20 game-used cards collectors most want authenticated. Vote with likes and
-              dislikes, discuss leads, and earn bounties for evidence that helps prove a card.
-            </Text>
-          </View>
-        </View>
-
-        <Image source={mostWantedIcons.hero} style={styles.heroImage} resizeMode="contain" />
-        <FigmaUtilityBar s={s} />
-
+      <FigmaPageHeader
+        title="MOST WANTED"
+        subtitle="VOTE THE HOBBY'S BIGGEST MYSTERIES TO THE TOP."
+        description="Track the 20 game-used cards collectors most want authenticated. Vote with likes and dislikes, discuss leads, and earn bounties for evidence that helps prove a card."
+        heroSource={mostWantedIcons.hero}
+        s={s}
+        page={page}
+      >
         <View style={styles.tabRow}>
           {mostWantedSportTabs.map((tab, index) => (
             <Pressable
@@ -55,7 +44,7 @@ export default function MostWantedScreen() {
             </Pressable>
           ))}
         </View>
-      </View>
+      </FigmaPageHeader>
 
       <View style={page.sectionHeaderRow}>
         <Text style={page.sectionTitle}>TOP 20 RANKING</Text>
@@ -85,48 +74,6 @@ export default function MostWantedScreen() {
 
 function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
-    headerSection: {
-      minHeight: s(450),
-      paddingRight: s(88)
-    },
-    title: {
-      width: '100%',
-      alignSelf: 'flex-start',
-      lineHeight: t(58),
-      marginTop: s(12)
-    },
-    titleBrush: {
-      width: '92%',
-      maxWidth: s(480),
-      height: s(33),
-      marginTop: s(14),
-      marginLeft: s(2)
-    },
-    headerBody: {
-      flexDirection: 'row',
-      alignItems: 'flex-start'
-    },
-    headerText: {
-      flex: 1,
-      minWidth: 0,
-      maxWidth: s(420),
-      paddingRight: s(8),
-      zIndex: 1
-    },
-    subtitle: {
-      marginTop: s(22)
-    },
-    description: {
-      marginTop: s(20),
-      width: '100%'
-    },
-    heroImage: {
-      position: 'absolute',
-      right: s(88),
-      top: s(64),
-      width: s(250),
-      height: s(268)
-    },
     tabRow: {
       marginTop: s(28),
       flexDirection: 'row',

@@ -138,7 +138,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number, varian
       minWidth: 0
     },
     title: {
-      fontFamily: appFonts.body,
+      fontFamily: appFonts.accent,
       fontSize: tb(18),
       lineHeight: tb(24),
       color: figmaColors.charcoal

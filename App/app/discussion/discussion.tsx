@@ -5,8 +5,8 @@ import { DiscussionThreadCard } from '@/components/figma/DiscussionThreadCard';
 import { DiscussionTopicCard } from '@/components/figma/DiscussionTopicCard';
 import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
+import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
-import { FigmaUtilityBar } from '@/components/figma/FigmaUtilityBar';
 import {
   discussionIcons,
   discussionTabs,
@@ -28,23 +28,14 @@ export default function DiscussionScreen() {
       bottomNav={<FigmaDatabaseBottomNav active="discussion" />}
       scrollProps={{ contentContainerStyle: page.scrollContent }}
     >
-      <View style={[page.headerSection, styles.headerSection]}>
-        <Text style={[page.title, styles.title]}>DISCUSSION</Text>
-        <Image source={figmaSharedIcons.titleBrush} style={styles.titleBrush} resizeMode="stretch" />
-
-        <View style={styles.headerBody}>
-          <View style={styles.headerText}>
-            <Text style={[page.subtitle, styles.subtitle]}>HOBBY TALK WITHOUT THE DRAMA.</Text>
-            <Text style={[page.description, styles.description]}>
-              Engage with the newest evidence, discuss past and future research findings, and align yourself
-              with the hobby's best and brightest.
-            </Text>
-          </View>
-        </View>
-
-        <Image source={discussionIcons.hero} style={styles.heroImage} resizeMode="contain" />
-        <FigmaUtilityBar s={s} />
-
+      <FigmaPageHeader
+        title="DISCUSSION"
+        subtitle="HOBBY TALK WITHOUT THE DRAMA."
+        description="Engage with the newest evidence, discuss past and future research findings, and align yourself with the hobby's best and brightest."
+        heroSource={discussionIcons.hero}
+        s={s}
+        page={page}
+      >
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -56,7 +47,7 @@ export default function DiscussionScreen() {
             </Pressable>
           ))}
         </ScrollView>
-      </View>
+      </FigmaPageHeader>
 
       <View style={page.sectionHeaderRow}>
         <Text style={page.sectionTitle}>TOPICS</Text>
@@ -98,48 +89,6 @@ export default function DiscussionScreen() {
 
 function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
-    headerSection: {
-      minHeight: s(440),
-      paddingRight: s(88)
-    },
-    title: {
-      width: '100%',
-      alignSelf: 'flex-start',
-      lineHeight: t(58),
-      marginTop: s(12)
-    },
-    titleBrush: {
-      width: '92%',
-      maxWidth: s(480),
-      height: s(33),
-      marginTop: s(10),
-      marginLeft: s(2)
-    },
-    headerBody: {
-      flexDirection: 'row',
-      alignItems: 'flex-start'
-    },
-    headerText: {
-      flex: 1,
-      minWidth: 0,
-      maxWidth: s(420),
-      paddingRight: s(8),
-      zIndex: 1
-    },
-    subtitle: {
-      marginTop: s(22)
-    },
-    description: {
-      marginTop: s(20),
-      width: '100%'
-    },
-    heroImage: {
-      position: 'absolute',
-      right: s(88),
-      top: s(40),
-      width: s(286),
-      height: s(310)
-    },
     tabRow: {
       flexWrap: 'nowrap',
       gap: s(14)

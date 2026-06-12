@@ -5,8 +5,8 @@ import { EducationGuideCard } from '@/components/figma/EducationGuideCard';
 import { EducationVideoCard } from '@/components/figma/EducationVideoCard';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaHubBottomNav } from '@/components/figma/FigmaHubBottomNav';
+import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
-import { FigmaUtilityBar } from '@/components/figma/FigmaUtilityBar';
 import {
   educationGuides,
   educationIcons,
@@ -29,23 +29,14 @@ export default function EducationScreen() {
       bottomNav={<FigmaHubBottomNav active="education" />}
       scrollProps={{ contentContainerStyle: page.scrollContent }}
     >
-      <View style={[page.headerSection, styles.headerSection]}>
-        <Text style={[page.title, styles.title]}>EDUCATION</Text>
-        <Image source={figmaSharedIcons.titleBrush} style={styles.titleBrush} resizeMode="stretch" />
-
-        <View style={styles.headerBody}>
-          <View style={styles.headerText}>
-            <Text style={[page.subtitle, styles.subtitle]}>LEARN THE HOBBY. SPOT THE FAKES.</Text>
-            <Text style={[page.description, styles.description]}>
-              Explore guides, videos, and research tools that help collectors study game-used cards,
-              identify fakes, and build evidence with confidence.
-            </Text>
-          </View>
-        </View>
-
-        <Image source={educationIcons.hero} style={styles.heroImage} resizeMode="contain" />
-        <FigmaUtilityBar s={s} />
-
+      <FigmaPageHeader
+        title="EDUCATION"
+        subtitle="LEARN THE HOBBY. SPOT THE FAKES."
+        description="Explore guides, videos, and research tools that help collectors study game-used cards, identify fakes, and build evidence with confidence."
+        heroSource={educationIcons.hero}
+        s={s}
+        page={page}
+      >
         <View style={styles.tabWrap}>
           {educationTabRows.map((row, rowIndex) => (
             <View key={`tab-row-${rowIndex}`} style={styles.tabRow}>
@@ -64,7 +55,7 @@ export default function EducationScreen() {
             </View>
           ))}
         </View>
-      </View>
+      </FigmaPageHeader>
 
       <View style={page.sectionHeaderRow}>
         <Text style={page.sectionTitle}>FEATURED GUIDES (PDF)</Text>
@@ -106,48 +97,6 @@ export default function EducationScreen() {
 
 function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
-    headerSection: {
-      minHeight: s(480),
-      paddingRight: s(88)
-    },
-    title: {
-      width: '100%',
-      alignSelf: 'flex-start',
-      lineHeight: t(58),
-      marginTop: s(12)
-    },
-    titleBrush: {
-      width: '92%',
-      maxWidth: s(480),
-      height: s(33),
-      marginTop: s(14),
-      marginLeft: s(2)
-    },
-    headerBody: {
-      flexDirection: 'row',
-      alignItems: 'flex-start'
-    },
-    headerText: {
-      flex: 1,
-      minWidth: 0,
-      maxWidth: s(420),
-      paddingRight: s(8),
-      zIndex: 1
-    },
-    subtitle: {
-      marginTop: s(22)
-    },
-    description: {
-      marginTop: s(20),
-      width: '100%'
-    },
-    heroImage: {
-      position: 'absolute',
-      right: s(88),
-      top: s(84),
-      width: s(210),
-      height: s(226)
-    },
     tabWrap: {
       marginTop: s(28),
       width: '100%',
