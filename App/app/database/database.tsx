@@ -1,6 +1,6 @@
 ﻿import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -84,17 +84,23 @@ export default function DatabaseScreen() {
     return () => clearTimeout(timer);
   }, [query]);
 
-  const loadCards = useCallback((sport: DatabaseSportFilter, search: string) => {
-    setLoading(true);
+  useEffect(() => {
+    let cancelled = false;
 
-    const trimmed = search.trim();
+    void (async () => {
+      const sport = activeSport;
+      const trimmed = debouncedQuery.trim();
 
-    if (trimmed) {
-      void Promise.all([
-        listCatalogCards({ sport, query: trimmed, limit: SEARCH_PAGE_SIZE, sort: 'title_asc' }),
-        getCatalogStats({ sport, query: trimmed })
-      ])
-        .then(([searchResult, statsResult]) => {
+      setLoading(true);
+
+      try {
+        if (trimmed) {
+          const [searchResult, statsResult] = await Promise.all([
+            listCatalogCards({ sport, query: trimmed, limit: SEARCH_PAGE_SIZE, sort: 'title_asc' }),
+            getCatalogStats({ sport, query: trimmed })
+          ]);
+          if (cancelled) return;
+
           setTotalCards(statsResult.stats.totalCards);
           setAuthenticatedCards(statsResult.stats.authenticatedCards);
           setSearchResults(
@@ -102,18 +108,16 @@ export default function DatabaseScreen() {
           );
           setFeatured([]);
           setRecent([]);
-        })
-        .finally(() => setLoading(false));
+          return;
+        }
 
-      return;
-    }
+        const [featuredResult, recentResult, statsResult] = await Promise.all([
+          listCatalogCards({ sport, authenticatedOnly: true, limit: 4, sort: 'auth_desc' }),
+          listCatalogCards({ sport, limit: 8, sort: 'year_desc' }),
+          getCatalogStats({ sport })
+        ]);
+        if (cancelled) return;
 
-    void Promise.all([
-      listCatalogCards({ sport, authenticatedOnly: true, limit: 4, sort: 'auth_desc' }),
-      listCatalogCards({ sport, limit: 8, sort: 'year_desc' }),
-      getCatalogStats({ sport })
-    ])
-      .then(([featuredResult, recentResult, statsResult]) => {
         setTotalCards(statsResult.stats.totalCards);
         setAuthenticatedCards(statsResult.stats.authenticatedCards);
         setSearchResults([]);
@@ -123,15 +127,15 @@ export default function DatabaseScreen() {
         setRecent(
           recentResult.items.map((card) => cardToLiveRecord(card, databaseIcons.recentKobe))
         );
-      })
-      .finally(() => setLoading(false));
-  }, []);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
 
-  useFocusEffect(
-    useCallback(() => {
-      loadCards(activeSport, debouncedQuery);
-    }, [activeSport, debouncedQuery, loadCards])
-  );
+    return () => {
+      cancelled = true;
+    };
+  }, [activeSport, debouncedQuery]);
 
   const openSearch = (opts?: { sport?: DatabaseSportFilter; authenticated?: boolean }) => {
     router.push(
