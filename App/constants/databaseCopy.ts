@@ -68,6 +68,8 @@ export const databaseCopy = {
   cardInfo: 'CARD INFORMATION',
   trending: 'TRENDING THIS WEEK',
   featuredRecords: 'FEATURED RECORDS',
+  searchResultsTitle: 'SEARCH RESULTS',
+  searchEmpty: 'No matching cards in the catalog.',
   recentlyAdded: 'RECENTLY ADDED',
   recentlyAuthenticated: 'RECENTLY AUTHENTICATED'
 } as const;
