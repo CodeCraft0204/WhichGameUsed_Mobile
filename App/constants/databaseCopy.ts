@@ -13,6 +13,7 @@ export const databaseCopy = {
   wishlist: 'WISHLIST',
   featuredEmpty: 'No authenticated cards in the catalog yet.',
   recentEmpty: 'No catalog cards yet. Check back after the team publishes records.',
+  loadingCatalog: 'Loading catalog records…',
   viewAll: 'VIEW ALL',
   resultsCount: (n: number) => `${n.toLocaleString()} result${n === 1 ? '' : 's'}`,
   authenticatedCopies: 'Authenticated copies',

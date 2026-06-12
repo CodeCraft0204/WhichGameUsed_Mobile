@@ -4,7 +4,16 @@ import { useFocusEffect, useRouter } from 'expo-router';
 
 import React, { useCallback, useMemo, useState } from 'react';
 
-import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
+} from 'react-native';
 
 import { DatabaseChipRow } from '@/components/database/DatabaseChipRow';
 
@@ -19,19 +28,7 @@ import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
 
-import {
-
-  databaseFeaturedRecords,
-
-  databaseIcons,
-
-  databaseRecentRecords,
-
-  type DatabaseMetaItem,
-
-  type DatabaseRecord
-
-} from '@/constants/databaseContent';
+import { databaseIcons, type DatabaseMetaItem, type DatabaseRecord } from '@/constants/databaseContent';
 
 import { appFonts } from '@/constants/appFonts';
 
@@ -130,7 +127,7 @@ export default function DatabaseScreen() {
 
   const [recent, setRecent] = useState<LiveRecord[]>([]);
 
-  const [usingLiveData, setUsingLiveData] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [totalCards, setTotalCards] = useState(0);
 
@@ -140,6 +137,8 @@ export default function DatabaseScreen() {
 
   const loadCards = useCallback((sport: DatabaseSportFilter) => {
 
+    setLoading(true);
+
     void Promise.all([
 
       listCatalogCards({ sport, authenticatedOnly: true, limit: 4, sort: 'auth_desc' }),
@@ -148,79 +147,37 @@ export default function DatabaseScreen() {
 
       getCatalogStats({ sport })
 
-    ]).then(([featuredResult, recentResult, statsResult]) => {
+    ])
 
-      const hasLive = featuredResult.items.length > 0 || recentResult.items.length > 0;
+      .then(([featuredResult, recentResult, statsResult]) => {
 
-      setUsingLiveData(hasLive);
+        setTotalCards(statsResult.stats.totalCards);
 
-      setTotalCards(statsResult.stats.totalCards);
-
-      setAuthenticatedCards(statsResult.stats.authenticatedCards);
-
-
-
-      if (featuredResult.items.length > 0) {
+        setAuthenticatedCards(statsResult.stats.authenticatedCards);
 
         setFeatured(
 
-          featuredResult.items.map((card, i) =>
+          featuredResult.items.map((card) =>
 
-            cardToLiveRecord(
-
-              card,
-
-              databaseFeaturedRecords[i % databaseFeaturedRecords.length]?.cardImage ??
-
-                databaseIcons.recordMantle
-
-            )
+            cardToLiveRecord(card, databaseIcons.recordMantle)
 
           )
 
         );
-
-      } else if (!hasLive) {
-
-        setFeatured(databaseFeaturedRecords);
-
-      } else {
-
-        setFeatured([]);
-
-      }
-
-
-
-      if (recentResult.items.length > 0) {
 
         setRecent(
 
-          recentResult.items.map((card, i) =>
+          recentResult.items.map((card) =>
 
-            cardToLiveRecord(
-
-              card,
-
-              databaseRecentRecords[i % databaseRecentRecords.length]?.cardImage ?? databaseIcons.recentKobe
-
-            )
+            cardToLiveRecord(card, databaseIcons.recentKobe)
 
           )
 
         );
 
-      } else if (!hasLive) {
+      })
 
-        setRecent(databaseRecentRecords);
-
-      } else {
-
-        setRecent([]);
-
-      }
-
-    });
+      .finally(() => setLoading(false));
 
   }, []);
 
@@ -355,7 +312,7 @@ export default function DatabaseScreen() {
 
         >
 
-          {(usingLiveData || totalCards > 0) && (
+          {!loading ? (
 
             <DatabaseStatsBar
 
@@ -369,7 +326,7 @@ export default function DatabaseScreen() {
 
             />
 
-          )}
+          ) : null}
 
 
 
@@ -389,99 +346,117 @@ export default function DatabaseScreen() {
 
 
 
-          {featured.length === 0 && usingLiveData ? (
+          {loading ? (
 
-            <Text style={styles.sectionEmpty}>{databaseCopy.featuredEmpty}</Text>
+            <View style={styles.sectionLoader}>
 
-          ) : null}
+              <ActivityIndicator size="small" color={figmaColors.charcoal} />
 
+              <Text style={styles.loadingText}>{databaseCopy.loadingCatalog}</Text>
 
+            </View>
 
-          {featured.map((record) => (
+          ) : (
 
-            <DatabaseRecordCard
+            <>
 
-              key={record.key}
+              {featured.length === 0 ? (
 
-              cardImage={record.cardImage}
+                <Text style={styles.sectionEmpty}>{databaseCopy.featuredEmpty}</Text>
 
-              imageUrl={record.imageUrl}
+              ) : (
 
-              title={record.title}
+                featured.map((record) => (
 
-              description={record.description}
+                  <DatabaseRecordCard
 
-              tags={record.tags}
+                    key={record.key}
 
-              meta={record.meta}
+                    cardImage={record.cardImage}
 
-              variant="featured"
+                    imageUrl={record.imageUrl}
 
-              s={s}
+                    title={record.title}
 
-              t={t}
+                    description={record.description}
 
-              onPress={record.cardId ? () => openCard(record.cardId) : undefined}
+                    tags={record.tags}
 
-            />
+                    meta={record.meta}
 
-          ))}
+                    variant="featured"
 
+                    s={s}
 
+                    t={t}
 
-          <View style={page.sectionHeaderRow}>
+                    onPress={record.cardId ? () => openCard(record.cardId) : undefined}
 
-            <Text style={page.sectionTitle}>{databaseCopy.recentlyAdded}</Text>
+                  />
 
-            <Pressable style={page.viewAllRow} onPress={() => openSearch()}>
+                ))
 
-              <Text style={page.viewAllText}>{databaseCopy.viewAll}</Text>
-
-              <Image source={databaseIcons.sectionChevron} style={page.sectionChevron} resizeMode="contain" />
-
-            </Pressable>
-
-          </View>
+              )}
 
 
 
-          {recent.length === 0 && usingLiveData ? (
+              <View style={page.sectionHeaderRow}>
 
-            <Text style={styles.sectionEmpty}>{databaseCopy.recentEmpty}</Text>
+                <Text style={page.sectionTitle}>{databaseCopy.recentlyAdded}</Text>
 
-          ) : null}
+                <Pressable style={page.viewAllRow} onPress={() => openSearch()}>
+
+                  <Text style={page.viewAllText}>{databaseCopy.viewAll}</Text>
+
+                  <Image source={databaseIcons.sectionChevron} style={page.sectionChevron} resizeMode="contain" />
+
+                </Pressable>
+
+              </View>
 
 
 
-          {recent.map((record) => (
+              {recent.length === 0 ? (
 
-            <DatabaseRecordCard
+                <Text style={styles.sectionEmpty}>{databaseCopy.recentEmpty}</Text>
 
-              key={record.key}
+              ) : (
 
-              cardImage={record.cardImage}
+                recent.map((record) => (
 
-              imageUrl={record.imageUrl}
+                  <DatabaseRecordCard
 
-              title={record.title}
+                    key={record.key}
 
-              description={record.description}
+                    cardImage={record.cardImage}
 
-              tags={record.tags}
+                    imageUrl={record.imageUrl}
 
-              meta={record.meta}
+                    title={record.title}
 
-              variant="recent"
+                    description={record.description}
 
-              s={s}
+                    tags={record.tags}
 
-              t={t}
+                    meta={record.meta}
 
-              onPress={record.cardId ? () => openCard(record.cardId) : undefined}
+                    variant="recent"
 
-            />
+                    s={s}
 
-          ))}
+                    t={t}
+
+                    onPress={record.cardId ? () => openCard(record.cardId) : undefined}
+
+                  />
+
+                ))
+
+              )}
+
+            </>
+
+          )}
 
 
 
@@ -591,17 +566,41 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
 
     },
 
+    sectionLoader: {
+
+      paddingVertical: s(32),
+
+      alignItems: 'center',
+
+      gap: s(10),
+
+      marginBottom: s(16)
+
+    },
+
+    loadingText: {
+
+      fontFamily: appFonts.body,
+
+      fontSize: tb(16),
+
+      color: figmaColors.gray
+
+    },
+
     sectionEmpty: {
 
       fontFamily: appFonts.body,
 
-      fontSize: tb(18),
+      fontSize: tb(17),
 
-      lineHeight: tb(26),
+      lineHeight: tb(24),
 
       color: figmaColors.gray,
 
-      marginBottom: s(12)
+      marginBottom: s(16),
+
+      paddingVertical: s(8)
 
     }
 
