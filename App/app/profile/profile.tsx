@@ -1,4 +1,5 @@
 import * as ImagePicker from 'expo-image-picker';
+import { appFonts } from '@/constants/appFonts';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
@@ -343,17 +344,17 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       gap: s(6)
     },
     heroName: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(28),
       color: figmaColors.charcoal
     },
     heroUsername: {
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(18),
       color: figmaColors.textSecondary
     },
     heroEmail: {
-      fontFamily: 'Inter_300Light',
+      fontFamily: appFonts.body,
       fontSize: t(17),
       color: figmaColors.textMuted
     },
@@ -366,12 +367,12 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       paddingHorizontal: s(2)
     },
     avatarActionText: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(18),
       color: figmaColors.accentStrong
     },
     avatarActionTextMuted: {
-      fontFamily: 'EBGaramond_600SemiBold',
+      fontFamily: appFonts.body,
       fontSize: t(18),
       color: figmaColors.textMuted
     },
@@ -380,7 +381,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       paddingVertical: s(6)
     },
     settingsLinkText: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(18),
       color: figmaColors.accent,
       textDecorationLine: 'underline'
@@ -398,7 +399,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       marginBottom: s(14)
     },
     bannerErrorText: {
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(17),
       color: figmaColors.error
     },
@@ -411,7 +412,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       marginBottom: s(14)
     },
     bannerSuccessText: {
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(17),
       color: figmaColors.success
     },
@@ -433,7 +434,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       opacity: 0.45
     },
     saveBtnText: {
-      fontFamily: 'PermanentMarker_400Regular',
+      fontFamily: appFonts.display,
       fontSize: t(22),
       color: figmaColors.buttonPrimaryText,
       letterSpacing: 0.4

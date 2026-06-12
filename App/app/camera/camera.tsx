@@ -1,4 +1,4 @@
-﻿import { CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -8,6 +8,7 @@ import { CameraFrameOverlay } from '@/components/camera/CameraFrameOverlay';
 import { CameraModeToggle } from '@/components/camera/CameraModeToggle';
 import { cameraCopy } from '@/constants/cameraCopy';
 import { cameraIcons, type CameraMode } from '@/constants/cameraContent';
+import { appFonts } from '@/constants/appFonts';
 import { figmaColors } from '@/constants/figmaColors';
 import { useCameraLayout } from '@/hooks/useCameraLayout';
 import { pickCardPhotoFromLibrary } from '@/lib/capture-photos';
@@ -292,13 +293,13 @@ function createStyles(layout: ReturnType<typeof useCameraLayout>) {
     },
     permissionCard: { gap: layout.s(16) },
     permissionTitle: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: layout.t(22),
       color: figmaColors.charcoal,
       textAlign: 'center'
     },
     permissionBody: {
-      fontFamily: 'EBGaramond_400Regular',
+      fontFamily: appFonts.body,
       fontSize: layout.t(17),
       lineHeight: layout.t(24),
       color: figmaColors.gray,
@@ -324,7 +325,7 @@ function createStyles(layout: ReturnType<typeof useCameraLayout>) {
       borderColor: figmaColors.borderLight
     },
     linkedBannerText: {
-      fontFamily: 'EBGaramond_600SemiBold',
+      fontFamily: appFonts.body,
       fontSize: layout.t(14),
       color: figmaColors.charcoal,
       textAlign: 'center'
@@ -375,13 +376,13 @@ function createStyles(layout: ReturnType<typeof useCameraLayout>) {
       gap: layout.s(4)
     },
     captureNoticeTitle: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: layout.t(18),
       color: figmaColors.cream,
       textAlign: 'center'
     },
     captureNoticeBody: {
-      fontFamily: 'EBGaramond_400Regular',
+      fontFamily: appFonts.body,
       fontSize: layout.t(15),
       lineHeight: layout.t(20),
       color: figmaColors.cream,
@@ -450,7 +451,7 @@ function createStyles(layout: ReturnType<typeof useCameraLayout>) {
       backgroundColor: figmaColors.charcoal
     },
     zoomText: {
-      fontFamily: 'PermanentMarker_400Regular',
+      fontFamily: appFonts.display,
       fontSize: t(20),
       lineHeight: t(22),
       color: figmaColors.cream

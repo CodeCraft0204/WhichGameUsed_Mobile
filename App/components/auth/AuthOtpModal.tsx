@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { appFonts } from '@/constants/appFonts';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -171,7 +172,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       backgroundColor: 'rgba(245, 245, 240, 1)'
     },
     title: {
-      fontFamily: 'PermanentMarker_400Regular',
+      fontFamily: appFonts.display,
       fontSize: t(22),
       lineHeight: t(28),
       color: figmaColors.black,
@@ -180,7 +181,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       marginBottom: s(8)
     },
     message: {
-      fontFamily: 'EBGaramond_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(16),
       lineHeight: t(22),
       color: figmaColors.gray,

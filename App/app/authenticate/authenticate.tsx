@@ -1,4 +1,5 @@
-﻿import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { appFonts } from '@/constants/appFonts';
 import React, { useCallback, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AuthenticateDraftCard, AuthenticateScannedCard } from '@/components/figma/AuthenticateRecordCard';
@@ -150,7 +151,7 @@ export default function AuthenticateScreen() {
                   title={linkedTitle ? `${linkedTitle}` : `Submission ${statusLabel(row.status)}`}
                   tags={[row.status.toUpperCase()]}
                   scannedAt={
-                    row.submitted_at ? new Date(row.submitted_at).toLocaleDateString() : '—'
+                    row.submitted_at ? new Date(row.submitted_at).toLocaleDateString() : '�'
                   }
                   s={s}
                   t={t}
@@ -229,7 +230,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       gap: s(14)
     },
     viewAllText: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: 15,
       color: figmaColors.gray
     },
@@ -243,19 +244,19 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       marginBottom: s(10)
     },
     ctaTitle: {
-      fontFamily: 'PermanentMarker_400Regular',
+      fontFamily: appFonts.display,
       fontSize: 17,
       color: figmaColors.charcoal,
       marginBottom: s(4)
     },
     ctaBody: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: 18,
       lineHeight: 20,
       color: figmaColors.gray
     },
     emptyText: {
-      fontFamily: 'EBGaramond_400Regular',
+      fontFamily: appFonts.body,
       fontSize: 16,
       lineHeight: 22,
       color: figmaColors.gray,

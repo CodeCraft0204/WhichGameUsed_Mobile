@@ -1,3 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
+import { appFonts } from '@/constants/appFonts';
+import { bodyText, broadsheetAccent } from '@/constants/appTypography';
 import * as Linking from 'expo-linking';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -11,39 +14,50 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader';
+import { AuthPrimaryButton } from '@/components/auth/AuthPrimaryButton';
 import { databaseIcons } from '@/constants/databaseContent';
 import { databaseCopy } from '@/constants/databaseCopy';
 import { figmaColors } from '@/constants/figmaColors';
+import { useAuth } from '@/context/AuthContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import {
   getCardById,
   listAuthenticatedAssetsForCard,
   type AuthenticatedAssetSummary,
-  type CardSummary
+  type CardDetail
 } from '@/lib/cards';
 import { absolutePortalUrl } from '@/lib/portal-url';
+import { addCardToWishlist, isCardOnWishlist } from '@/lib/wishlist';
 
-function DetailRow({ label, value }: { label: string; value: string | null | undefined }) {
+function DetailRow({
+  label,
+  value,
+  styles
+}: {
+  label: string;
+  value: string | null | undefined;
+  styles: ReturnType<typeof createStyles>;
+}) {
   if (!value?.trim()) return null;
   return (
-    <View style={{ marginBottom: 8 }}>
-      <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 12, color: figmaColors.gray }}>{label}</Text>
-      <Text style={{ fontFamily: 'EBGaramond_600SemiBold', fontSize: 18, color: figmaColors.charcoal }}>
-        {value}
-      </Text>
+    <View style={styles.detailRow}>
+      <Text style={styles.detailLabel}>{label}</Text>
+      <Text style={styles.detailValue}>{value}</Text>
     </View>
   );
 }
 
 export default function CardDetailScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { s, t } = useFigmaLayout(1);
+  const { s, t } = useFigmaLayout();
   const styles = useMemo(() => createStyles(s, t), [s, t]);
 
-  const [card, setCard] = useState<CardSummary | null>(null);
+  const [card, setCard] = useState<CardDetail | null>(null);
   const [assets, setAssets] = useState<AuthenticatedAssetSummary[]>([]);
+  const [onWishlist, setOnWishlist] = useState(false);
+  const [wishBusy, setWishBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,11 +65,12 @@ export default function CardDetailScreen() {
     if (!id || typeof id !== 'string') return;
     let active = true;
     setLoading(true);
-    void Promise.all([getCardById(id), listAuthenticatedAssetsForCard(id)]).then(
-      ([cardResult, assetsResult]) => {
+    void Promise.all([getCardById(id), listAuthenticatedAssetsForCard(id), isCardOnWishlist(id)]).then(
+      ([cardResult, assetsResult, wishlisted]) => {
         if (!active) return;
         setCard(cardResult.card);
         setAssets(assetsResult.items);
+        setOnWishlist(wishlisted);
         setError(cardResult.error ?? assetsResult.error);
         setLoading(false);
       }
@@ -70,40 +85,109 @@ export default function CardDetailScreen() {
     if (url) void Linking.openURL(url);
   };
 
+  const toggleWishlist = async () => {
+    if (!user) {
+      router.replace('/sign-in/sign-in');
+      return;
+    }
+    if (!card || onWishlist || wishBusy) return;
+    setWishBusy(true);
+    const { error: wishError } = await addCardToWishlist(user.id, card.id);
+    setWishBusy(false);
+    if (!wishError) setOnWishlist(true);
+  };
+
+  const subtitle = card?.product_full_name ?? card?.product_name ?? undefined;
+
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <ProfileSubpageHeader
-          title="CARD"
-          subtitle={card?.title ?? 'Loading…'}
-          s={s}
-          t={t}
-          onBack={() => router.back()}
-        />
+        <Pressable style={styles.backRow} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={s(22)} color={figmaColors.charcoal} />
+          <Text style={styles.backText}>{databaseCopy.backToResults}</Text>
+        </Pressable>
 
-        {loading ? <ActivityIndicator color={figmaColors.charcoal} /> : null}
+        {loading ? <ActivityIndicator color={figmaColors.charcoal} style={styles.loader} /> : null}
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         {card ? (
           <>
-            <Image
-              source={card.imageUrl ? { uri: card.imageUrl } : databaseIcons.recordMantle}
-              style={styles.heroImage}
-              resizeMode="contain"
-            />
+            <Text style={styles.cardTitle}>{card.title}</Text>
+            {subtitle ? <Text style={styles.cardSubtitle}>{subtitle}</Text> : null}
 
+            <View style={styles.tagRow}>
+              {card.sport_name ? (
+                <View style={styles.tag}>
+                  <Text style={styles.tagText}>{card.sport_name.toUpperCase()}</Text>
+                </View>
+              ) : null}
+              {card.memorabilia_type ? (
+                <View style={styles.tag}>
+                  <Text style={styles.tagText}>{card.memorabilia_type.toUpperCase()}</Text>
+                </View>
+              ) : null}
+              {card.authenticated_count > 0 ? (
+                <View style={[styles.tag, styles.tagAuth]}>
+                  <Ionicons name="shield-checkmark" size={s(14)} color={figmaColors.success} />
+                  <Text style={[styles.tagText, styles.tagAuthText]}>AUTHENTICATED</Text>
+                </View>
+              ) : null}
+            </View>
+
+            <View style={styles.imageRow}>
+              <View style={styles.imageSlot}>
+                <Text style={styles.imageLabel}>{databaseCopy.frontLabel}</Text>
+                <Image
+                  source={card.imageUrl ? { uri: card.imageUrl } : databaseIcons.recordMantle}
+                  style={styles.cardImage}
+                  resizeMode="contain"
+                />
+              </View>
+              <View style={styles.imageSlot}>
+                <Text style={styles.imageLabel}>{databaseCopy.backLabel}</Text>
+                <Image
+                  source={
+                    card.backImageUrl ? { uri: card.backImageUrl } : databaseIcons.recordJordan
+                  }
+                  style={styles.cardImage}
+                  resizeMode="contain"
+                />
+              </View>
+            </View>
+
+            <View style={styles.actions}>
+              <AuthPrimaryButton
+                label={onWishlist ? databaseCopy.onWishlist : databaseCopy.addToWishlist}
+                onPress={() => void toggleWishlist()}
+                disabled={onWishlist || wishBusy}
+              />
+              <Pressable
+                style={styles.secondaryBtn}
+                onPress={() => router.push('/create/create')}
+              >
+                <Ionicons name="scan-outline" size={s(18)} color={figmaColors.charcoal} />
+                <Text style={styles.secondaryBtnText}>{databaseCopy.authenticateSimilar}</Text>
+              </Pressable>
+            </View>
+
+            <Text style={styles.sectionTitle}>{databaseCopy.cardInfo}</Text>
             <View style={styles.detailsCard}>
-              <DetailRow label={databaseCopy.player} value={card.player_name} />
-              <DetailRow label={databaseCopy.team} value={card.team_name} />
-              <DetailRow label={databaseCopy.year} value={card.year ? String(card.year) : null} />
-              <DetailRow label={databaseCopy.sport} value={card.sport_name} />
-              <DetailRow label={databaseCopy.manufacturer} value={card.manufacturer_name} />
-              <DetailRow label={databaseCopy.product} value={card.product_full_name ?? card.product_name} />
-              <DetailRow label={databaseCopy.cardNumber} value={card.card_number} />
-              <DetailRow label={databaseCopy.memorabilia} value={card.memorabilia_type} />
+              <DetailRow label={databaseCopy.player} value={card.player_name} styles={styles} />
+              <DetailRow label={databaseCopy.team} value={card.team_name} styles={styles} />
+              <DetailRow label={databaseCopy.year} value={card.year ? String(card.year) : null} styles={styles} />
+              <DetailRow label={databaseCopy.sport} value={card.sport_name} styles={styles} />
+              <DetailRow label={databaseCopy.manufacturer} value={card.manufacturer_name} styles={styles} />
+              <DetailRow
+                label={databaseCopy.product}
+                value={card.product_full_name ?? card.product_name}
+                styles={styles}
+              />
+              <DetailRow label={databaseCopy.cardNumber} value={card.card_number} styles={styles} />
+              <DetailRow label={databaseCopy.memorabilia} value={card.memorabilia_type} styles={styles} />
               <DetailRow
                 label={databaseCopy.status}
                 value={databaseCopy.authCount(card.authenticated_count)}
+                styles={styles}
               />
             </View>
 
@@ -139,21 +223,115 @@ export default function CardDetailScreen() {
 }
 
 function createStyles(s: (n: number) => number, t: (n: number) => number) {
+  const tb = (n: number) => bodyText(t, n);
+
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: figmaColors.background },
     content: { paddingHorizontal: s(16), paddingBottom: s(32) },
+    backRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(8),
+      marginBottom: s(16),
+      paddingVertical: s(4)
+    },
+    backText: {
+      fontFamily: appFonts.body,
+      fontSize: tb(16),
+      color: figmaColors.charcoal,
+      ...broadsheetAccent,
+      letterSpacing: 0.8
+    },
+    loader: { marginVertical: s(20) },
     error: {
-      fontFamily: 'EBGaramond_400Regular',
-      fontSize: t(14),
+      fontFamily: appFonts.body,
+      fontSize: tb(15),
       color: figmaColors.error,
       marginBottom: s(12)
     },
-    heroImage: {
+    cardTitle: {
+      fontFamily: appFonts.body,
+      fontSize: tb(20),
+      lineHeight: tb(27),
+      color: figmaColors.charcoal
+    },
+    cardSubtitle: {
+      marginTop: s(6),
+      fontFamily: appFonts.body,
+      fontSize: tb(16),
+      color: figmaColors.gray
+    },
+    tagRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: s(8),
+      marginTop: s(12),
+      marginBottom: s(16)
+    },
+    tag: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(4),
+      backgroundColor: figmaColors.tagBg,
+      borderWidth: 1,
+      borderColor: figmaColors.tagBorder,
+      borderRadius: s(8),
+      paddingHorizontal: s(10),
+      paddingVertical: s(6)
+    },
+    tagAuth: { borderColor: figmaColors.success, backgroundColor: figmaColors.successBg },
+    tagText: {
+      fontFamily: appFonts.body,
+      fontSize: tb(11),
+      color: figmaColors.gray
+    },
+    tagAuthText: { color: figmaColors.success },
+    imageRow: {
+      flexDirection: 'row',
+      gap: s(10),
+      marginBottom: s(18)
+    },
+    imageSlot: { flex: 1 },
+    imageLabel: {
+      fontFamily: appFonts.body,
+      fontSize: tb(11),
+      color: figmaColors.gray,
+      marginBottom: s(6),
+      ...broadsheetAccent,
+      letterSpacing: 1
+    },
+    cardImage: {
       width: '100%',
-      height: s(280),
-      marginBottom: s(16),
+      aspectRatio: 3 / 4,
       borderRadius: s(12),
-      backgroundColor: figmaColors.divider
+      backgroundColor: figmaColors.divider,
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight
+    },
+    actions: { gap: s(10), marginBottom: s(22) },
+    secondaryBtn: {
+      minHeight: s(48),
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      borderRadius: s(12),
+      backgroundColor: figmaColors.cream,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: s(8)
+    },
+    secondaryBtnText: {
+      fontFamily: appFonts.body,
+      fontSize: tb(16),
+      color: figmaColors.charcoal,
+      ...broadsheetAccent,
+      letterSpacing: 0.8
+    },
+    sectionTitle: {
+      fontFamily: appFonts.display,
+      fontSize: t(26),
+      color: figmaColors.charcoal,
+      marginBottom: s(12)
     },
     detailsCard: {
       borderWidth: 1,
@@ -163,15 +341,24 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       marginBottom: s(20),
       backgroundColor: figmaColors.cream
     },
-    sectionTitle: {
-      fontFamily: 'EBGaramond_700Bold',
-      fontSize: t(20),
-      color: figmaColors.charcoal,
-      marginBottom: s(12)
+    detailRow: { marginBottom: s(12) },
+    detailLabel: {
+      fontFamily: appFonts.body,
+      fontSize: tb(11),
+      color: figmaColors.gray,
+      marginBottom: s(4),
+      ...broadsheetAccent,
+      letterSpacing: 0.8
+    },
+    detailValue: {
+      fontFamily: appFonts.body,
+      fontSize: tb(17),
+      lineHeight: tb(24),
+      color: figmaColors.charcoal
     },
     empty: {
-      fontFamily: 'EBGaramond_400Regular',
-      fontSize: t(16),
+      fontFamily: appFonts.body,
+      fontSize: tb(17),
       color: figmaColors.gray
     },
     assetRow: {
@@ -186,19 +373,19 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       backgroundColor: figmaColors.cream
     },
     assetId: {
-      fontFamily: 'EBGaramond_700Bold',
-      fontSize: t(16),
+      fontFamily: appFonts.body,
+      fontSize: tb(17),
       color: figmaColors.charcoal
     },
     assetDate: {
-      fontFamily: 'EBGaramond_400Regular',
-      fontSize: t(14),
+      fontFamily: appFonts.body,
+      fontSize: tb(15),
       color: figmaColors.gray,
       marginTop: s(4)
     },
     assetLink: {
-      fontFamily: 'EBGaramond_600SemiBold',
-      fontSize: t(14),
+      fontFamily: appFonts.body,
+      fontSize: tb(15),
       color: figmaColors.bronze
     }
   });

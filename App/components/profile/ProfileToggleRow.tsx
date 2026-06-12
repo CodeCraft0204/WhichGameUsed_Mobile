@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { appFonts } from '@/constants/appFonts';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { figmaColors } from '@/constants/figmaColors';
 
@@ -51,12 +52,12 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       gap: s(2)
     },
     label: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(19),
       color: figmaColors.charcoal
     },
     hint: {
-      fontFamily: 'EBGaramond_600SemiBold',
+      fontFamily: appFonts.body,
       fontSize: t(17),
       lineHeight: t(22),
       color: figmaColors.textMuted

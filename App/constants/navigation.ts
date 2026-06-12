@@ -57,3 +57,20 @@ export function databaseRequestCardHref(params?: {
 export function submissionDetailHref(id: string): Href {
   return { pathname: '/authenticate/submission/[id]', params: { id } } as unknown as Href;
 }
+
+export function databaseWishlistHref(): Href {
+  return '/database/wishlist' as unknown as Href;
+}
+
+export function databaseWishlistAddHref(params?: {
+  query?: string;
+  returnTo?: string;
+}): Href {
+  return {
+    pathname: '/database/wishlist-add',
+    params: {
+      ...(params?.query ? { query: params.query } : {}),
+      ...(params?.returnTo ? { returnTo: params.returnTo } : {})
+    }
+  } as unknown as Href;
+}

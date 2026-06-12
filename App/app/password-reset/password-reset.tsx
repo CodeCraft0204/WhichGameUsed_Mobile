@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { appFonts } from '@/constants/appFonts';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -140,7 +141,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       backgroundColor: figmaColors.borderLight
     },
     orText: {
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(13),
       color: figmaColors.gray
     },
@@ -152,7 +153,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       marginTop: s(20)
     },
     backText: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(16),
       lineHeight: t(22),
       color: figmaColors.accent

@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { appFonts } from '@/constants/appFonts';
 import React, { useMemo } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { GoogleBrandIcon } from '@/components/auth/GoogleBrandIcon';
@@ -65,7 +66,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       backgroundColor: figmaColors.inputBg
     },
     label: {
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(authLayout.socialLabelSize),
       lineHeight: t(22),
       color: figmaColors.charcoal

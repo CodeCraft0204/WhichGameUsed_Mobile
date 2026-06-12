@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { appFonts } from '@/constants/appFonts';
 import React, { useMemo } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { authIcons, passwordRequirements } from '@/constants/authContent';
@@ -72,7 +73,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       marginBottom: s(4)
     },
     title: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(17),
       lineHeight: t(24),
       color: figmaColors.charcoal,
@@ -99,14 +100,14 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       borderColor: figmaColors.accent
     },
     rule: {
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(14),
       lineHeight: t(20),
       color: figmaColors.gray,
       flex: 1
     },
     ruleMet: {
-      fontFamily: 'Inter_700Bold',
+      fontFamily: appFonts.body,
       color: figmaColors.charcoal
     },
     illustration: {

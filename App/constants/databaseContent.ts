@@ -1,11 +1,6 @@
 import { figmaIcons } from '@/constants/figmaIcons';
 
-/** Figma MCP assets + copy for Database screen (node 1:251). */
-export const databaseCopy = {
-  searchPlaceholder: 'Search players, teams, sets, years…',
-  searchEmpty: 'No matching cards in the catalog.',
-  searchResultsTitle: 'SEARCH RESULTS'
-} as const;
+export { databaseCopy } from '@/constants/databaseCopy';
 
 export const databaseIcons = {
   hero: require('@/assets/figma/database/hero_archive.png'),
@@ -114,4 +109,4 @@ export const databaseRecentRecords: DatabaseRecord[] = [
   }
 ];
 
-export const databaseSportTabs = ['ALL', 'BASEBALL', 'BASKETBALL', 'FOOTBALL', 'PLAYERS'] as const;
+export { databaseSportTabs } from '@/constants/databaseFilters';

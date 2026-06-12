@@ -1,4 +1,5 @@
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { appFonts } from '@/constants/appFonts';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { AuthErrorBanner } from '@/components/auth/AuthErrorBanner';
@@ -203,13 +204,13 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       justifyContent: 'center'
     },
     forgotText: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(16),
       lineHeight: t(24),
       color: figmaColors.accent
     },
     reauthHint: {
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(14),
       lineHeight: t(20),
       color: figmaColors.gray,

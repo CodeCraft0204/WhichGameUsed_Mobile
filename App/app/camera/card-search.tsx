@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { appFonts } from '@/constants/appFonts';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -14,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { cameraCopy } from '@/constants/cameraCopy';
 import { databaseCopy } from '@/constants/databaseCopy';
 import { figmaColors } from '@/constants/figmaColors';
-import { databaseRequestCardHref } from '@/constants/navigation';
+import { databaseWishlistAddHref } from '@/constants/navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import { searchCameraCardCatalog, type CameraCardSearchResult } from '@/lib/camera-card-catalog';
 
@@ -97,7 +98,7 @@ export default function CameraCardSearchScreen() {
                 style={styles.requestBtn}
                 onPress={() =>
                   router.push(
-                    databaseRequestCardHref({ query: debouncedQuery, returnTo: 'camera' })
+                    databaseWishlistAddHref({ query: debouncedQuery, returnTo: 'camera' })
                   )
                 }
               >
@@ -113,7 +114,7 @@ export default function CameraCardSearchScreen() {
               <Pressable
                 onPress={() =>
                   router.push(
-                    databaseRequestCardHref({ query: debouncedQuery, returnTo: 'camera' })
+                    databaseWishlistAddHref({ query: debouncedQuery, returnTo: 'camera' })
                   )
                 }
               >
@@ -154,13 +155,13 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       paddingVertical: s(12)
     },
     cancel: {
-      fontFamily: 'EBGaramond_600SemiBold',
+      fontFamily: appFonts.body,
       fontSize: t(16),
       color: figmaColors.charcoal
     },
     title: {
       flex: 1,
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(18),
       color: figmaColors.charcoal,
       textAlign: 'center'
@@ -174,7 +175,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       borderRadius: s(10),
       paddingHorizontal: s(14),
       paddingVertical: s(12),
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(16),
       color: figmaColors.charcoal,
       backgroundColor: figmaColors.cream
@@ -183,7 +184,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     error: {
       marginHorizontal: s(16),
       marginBottom: s(8),
-      fontFamily: 'EBGaramond_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(14),
       color: figmaColors.error,
       textAlign: 'center'
@@ -191,7 +192,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     list: { paddingHorizontal: s(16), paddingBottom: s(24) },
     emptyWrap: { marginTop: s(24), gap: s(16), alignItems: 'center' },
     empty: {
-      fontFamily: 'EBGaramond_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(16),
       color: figmaColors.gray,
       textAlign: 'center'
@@ -204,7 +205,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       paddingVertical: s(12)
     },
     requestBtnText: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(15),
       color: figmaColors.charcoal
     },
@@ -217,12 +218,12 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       gap: s(8)
     },
     footerHint: {
-      fontFamily: 'EBGaramond_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(14),
       color: figmaColors.gray
     },
     requestLink: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(15),
       color: figmaColors.bronze
     },
@@ -241,12 +242,12 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     rowText: { flex: 1, gap: s(4) },
     rowTitle: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(16),
       color: figmaColors.charcoal
     },
     rowDesc: {
-      fontFamily: 'EBGaramond_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(14),
       lineHeight: t(18),
       color: figmaColors.gray

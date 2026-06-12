@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { appFonts } from '@/constants/appFonts';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { figmaColors } from '@/constants/figmaColors';
 import { useAuthLayout } from '@/hooks/useAuthLayout';
@@ -46,13 +47,13 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       marginBottom: s(4)
     },
     link: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(15),
       lineHeight: t(20),
       color: figmaColors.accent
     },
     dot: {
-      fontFamily: 'EBGaramond_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(15),
       color: figmaColors.gray
     }

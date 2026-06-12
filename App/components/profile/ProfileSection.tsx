@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View, type ViewProps } from 'react-native';
+import { appFonts } from '@/constants/appFonts';
 import { figmaColors } from '@/constants/figmaColors';
 
 type ProfileSectionProps = ViewProps & {
@@ -31,7 +32,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       gap: s(14)
     },
     title: {
-      fontFamily: 'PermanentMarker_400Regular',
+      fontFamily: appFonts.display,
       fontSize: t(24),
       color: figmaColors.charcoal,
       letterSpacing: 0.4

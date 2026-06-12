@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { appFonts } from '@/constants/appFonts';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { authIcons } from '@/constants/authContent';
 import { figmaColors } from '@/constants/figmaColors';
@@ -74,13 +75,13 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       gap: s(6)
     },
     title: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(19),
       lineHeight: t(26),
       color: figmaColors.charcoal
     },
     body: {
-      fontFamily: 'EBGaramond_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(17),
       lineHeight: t(24),
       color: figmaColors.gray
@@ -91,7 +92,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       alignItems: 'center'
     },
     linkPrefix: {
-      fontFamily: 'EBGaramond_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(17),
       lineHeight: t(24),
       color: figmaColors.gray
@@ -100,7 +101,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       justifyContent: 'center'
     },
     link: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(17),
       lineHeight: t(24),
       color: figmaColors.accent,

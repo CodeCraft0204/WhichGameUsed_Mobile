@@ -1,4 +1,5 @@
 import React from 'react';
+import { appFonts } from '@/constants/appFonts';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { discussionClipLayout, discussionIcons, type DiscussionThread } from '@/constants/discussionContent';
 import { figmaColors } from '@/constants/figmaColors';
@@ -122,7 +123,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       minWidth: 0
     },
     title: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(17),
       lineHeight: t(22),
       color: figmaColors.charcoal
@@ -143,12 +144,12 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       maxWidth: '72%'
     },
     categoryText: {
-      fontFamily: 'Inter_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(9),
       color: figmaColors.gray
     },
     authorText: {
-      fontFamily: 'EBGaramond_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(13),
       color: figmaColors.gray,
       flexShrink: 1
@@ -173,7 +174,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       paddingRight: s(2)
     },
     commentCount: {
-      fontFamily: 'EBGaramond_600SemiBold',
+      fontFamily: appFonts.body,
       fontSize: t(14),
       color: figmaColors.gray
     }

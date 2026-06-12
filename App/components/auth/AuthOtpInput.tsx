@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { appFonts } from '@/constants/appFonts';
 import {
   Pressable,
   StyleSheet,
@@ -220,7 +221,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       borderWidth: 2
     },
     cellText: {
-      fontFamily: 'Inter_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(authLayout.fieldFontSize),
       lineHeight: t(24),
       color: figmaColors.charcoal,

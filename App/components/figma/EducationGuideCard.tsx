@@ -1,4 +1,5 @@
 import React from 'react';
+import { appFonts } from '@/constants/appFonts';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { educationIcons, type EducationGuide } from '@/constants/educationContent';
 import { figmaColors } from '@/constants/figmaColors';
@@ -56,7 +57,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     pdfLabel: {
       marginTop: s(2),
-      fontFamily: 'Inter_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(8),
       lineHeight: t(9),
       color: figmaColors.accent,
@@ -75,21 +76,21 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     title: {
       marginTop: s(8),
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(22),
       lineHeight: t(28),
       color: figmaColors.charcoal
     },
     description: {
       marginTop: s(8),
-      fontFamily: 'EBGaramond_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(17),
       lineHeight: t(21),
       color: figmaColors.gray
     },
     meta: {
       marginTop: s(10),
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(13),
       color: figmaColors.gray
     }

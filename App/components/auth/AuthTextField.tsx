@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { appFonts } from '@/constants/appFonts';
 import React, { useMemo, useState } from 'react';
 import {
   Pressable,
@@ -87,7 +88,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     input: {
       flex: 1,
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(authLayout.fieldFontSize),
       lineHeight: t(24),
       color: figmaColors.charcoal,

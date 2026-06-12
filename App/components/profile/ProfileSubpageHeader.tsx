@@ -1,4 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
+import { appFonts } from '@/constants/appFonts';
+import { bodyText, broadsheetAccent } from '@/constants/appTypography';
 import React, { useMemo } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { figmaColors } from '@/constants/figmaColors';
@@ -43,6 +45,8 @@ export function ProfileSubpageHeader({
 }
 
 function createStyles(s: (n: number) => number, t: (n: number) => number) {
+  const tb = (n: number) => bodyText(t, n);
+
   return StyleSheet.create({
     wrap: {
       marginBottom: s(18)
@@ -56,7 +60,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       marginLeft: s(-8)
     },
     title: {
-      fontFamily: 'PermanentMarker_400Regular',
+      fontFamily: appFonts.display,
       fontSize: t(42),
       lineHeight: t(52),
       color: figmaColors.charcoal,
@@ -71,16 +75,17 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     subtitle: {
       marginTop: s(16),
-      fontFamily: 'EBGaramond_700Bold',
-      fontSize: t(22),
-      lineHeight: t(28),
-      color: figmaColors.gray
+      fontFamily: appFonts.body,
+      fontSize: tb(20),
+      lineHeight: tb(26),
+      color: figmaColors.gray,
+      ...broadsheetAccent
     },
     description: {
       marginTop: s(12),
-      fontFamily: 'EBGaramond_600SemiBold',
-      fontSize: t(20),
-      lineHeight: t(26),
+      fontFamily: appFonts.body,
+      fontSize: tb(20),
+      lineHeight: tb(26),
       color: figmaColors.textSecondary
     }
   });

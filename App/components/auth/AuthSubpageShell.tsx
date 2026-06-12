@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { appFonts } from '@/constants/appFonts';
 import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
 import {
@@ -98,14 +99,14 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     title: {
       flex: 1,
       flexShrink: 1,
-      fontFamily: 'PermanentMarker_400Regular',
+      fontFamily: appFonts.display,
       fontSize: t(24),
       lineHeight: t(30),
       color: figmaColors.black,
       letterSpacing: 0.5
     },
     subtitle: {
-      fontFamily: 'EBGaramond_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(16),
       lineHeight: t(22),
       color: figmaColors.gray,

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { appFonts } from '@/constants/appFonts';
 import { StyleSheet, Text, View } from 'react-native';
 import { figmaColors } from '@/constants/figmaColors';
 import { useAuthLayout } from '@/hooks/useAuthLayout';
@@ -48,7 +49,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       gap: s(6)
     },
     label: {
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(12),
       lineHeight: t(16),
       color: figmaColors.gray
@@ -73,7 +74,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       justifyContent: 'space-between'
     },
     endLabel: {
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(11),
       lineHeight: t(14),
       color: figmaColors.gray

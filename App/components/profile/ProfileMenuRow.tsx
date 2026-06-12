@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { appFonts } from '@/constants/appFonts';
 import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { figmaColors } from '@/constants/figmaColors';
@@ -71,7 +72,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       opacity: 0.85
     },
     label: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(19),
       color: figmaColors.charcoal
     },
@@ -84,7 +85,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       gap: s(6)
     },
     value: {
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(17),
       color: figmaColors.textMuted
     }

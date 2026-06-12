@@ -5,6 +5,8 @@ import {
   type DatabaseMetaIconKey,
   type DatabaseMetaItem
 } from '@/constants/databaseContent';
+import { appFonts } from '@/constants/appFonts';
+import { bodyText } from '@/constants/appTypography';
 import { figmaColors } from '@/constants/figmaColors';
 
 const metaIconSources: Record<DatabaseMetaIconKey, number> = {
@@ -28,6 +30,7 @@ type DatabaseRecordCardProps = {
   t: (n: number) => number;
 };
 
+/** Shared card layout — featured vs recent differs only in surface color. */
 export function DatabaseRecordCard({
   cardImage,
   imageUrl,
@@ -41,24 +44,31 @@ export function DatabaseRecordCard({
   t
 }: DatabaseRecordCardProps) {
   const styles = createStyles(s, t, variant);
-  const isFeatured = variant === 'featured';
 
   const content = (
     <>
-      <Image
-        source={imageUrl ? { uri: imageUrl } : cardImage}
-        style={styles.cardImage}
-        resizeMode="contain"
-      />
+      <View style={styles.imageWrap}>
+        <Image
+          source={imageUrl ? { uri: imageUrl } : cardImage}
+          style={styles.cardImage}
+          resizeMode="contain"
+        />
+      </View>
 
       <View style={styles.body}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.description}>{description}</Text>
+        <Text style={styles.title} numberOfLines={2}>
+          {title}
+        </Text>
+        <Text style={styles.description} numberOfLines={2}>
+          {description}
+        </Text>
         {tags.length > 0 && (
           <View style={styles.tagRow}>
             {tags.map((tag) => (
               <View key={tag} style={styles.tag}>
-                <Text style={styles.tagText}>{tag}</Text>
+                <Text style={styles.tagText} numberOfLines={1}>
+                  {tag}
+                </Text>
               </View>
             ))}
           </View>
@@ -71,7 +81,9 @@ export function DatabaseRecordCard({
           {meta.map((item) => (
             <View key={item.key} style={styles.metaRow}>
               <Image source={metaIconSources[item.icon]} style={styles.metaIcon} resizeMode="contain" />
-              <Text style={styles.metaText}>{item.label}</Text>
+              <Text style={styles.metaText} numberOfLines={2}>
+                {item.label}
+              </Text>
             </View>
           ))}
         </View>
@@ -93,49 +105,54 @@ export function DatabaseRecordCard({
 
 function createStyles(s: (n: number) => number, t: (n: number) => number, variant: 'featured' | 'recent') {
   const isFeatured = variant === 'featured';
+  const tb = (n: number) => bodyText(t, n);
 
   return StyleSheet.create({
     card: {
       backgroundColor: isFeatured ? figmaColors.cardFeaturedBg : figmaColors.cardRecentBg,
       borderWidth: 1,
       borderColor: isFeatured ? figmaColors.cardFeaturedBorder : figmaColors.cardRecentBorder,
-      borderRadius: s(isFeatured ? 16 : 14),
-      minHeight: s(isFeatured ? 185 : 120),
+      borderRadius: s(15),
+      minHeight: s(168),
       marginBottom: s(10),
       flexDirection: 'row',
       alignItems: 'stretch',
       paddingVertical: s(10),
       paddingLeft: s(10),
-      paddingRight: s(8)
+      paddingRight: s(6)
+    },
+    imageWrap: {
+      width: s(128),
+      alignItems: 'center',
+      justifyContent: 'center'
     },
     cardImage: {
-      width: s(isFeatured ? 151 : 140),
-      height: s(isFeatured ? 154 : 91),
-      alignSelf: 'center'
+      width: s(128),
+      height: s(132)
     },
     body: {
       flex: 1,
       paddingHorizontal: s(8),
       justifyContent: 'center',
-      gap: s(6),
+      gap: s(5),
       minWidth: 0
     },
     title: {
-      fontFamily: 'EBGaramond_700Bold',
-      fontSize: t(isFeatured ? 20 : 16),
-      lineHeight: t(isFeatured ? 27 : 22),
+      fontFamily: appFonts.body,
+      fontSize: tb(18),
+      lineHeight: tb(24),
       color: figmaColors.charcoal
     },
     description: {
-      fontFamily: isFeatured ? 'EBGaramond_700Bold' : 'EBGaramond_400Regular',
-      fontSize: t(isFeatured ? 15 : 14),
-      lineHeight: t(isFeatured ? 20 : 18),
+      fontFamily: appFonts.body,
+      fontSize: tb(15),
+      lineHeight: tb(20),
       color: figmaColors.gray
     },
     tagRow: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      gap: s(6),
+      gap: s(5),
       marginTop: s(2)
     },
     tag: {
@@ -143,16 +160,17 @@ function createStyles(s: (n: number) => number, t: (n: number) => number, varian
       borderWidth: 1,
       borderColor: figmaColors.tagBorder,
       borderRadius: s(7),
-      paddingHorizontal: s(8),
-      paddingVertical: s(4)
+      paddingHorizontal: s(7),
+      paddingVertical: s(3),
+      maxWidth: '100%'
     },
     tagText: {
-      fontFamily: 'Inter_700Bold',
-      fontSize: t(10),
+      fontFamily: appFonts.body,
+      fontSize: tb(11),
       color: figmaColors.gray
     },
     metaColumn: {
-      width: s(isFeatured ? 148 : 128),
+      width: s(132),
       flexDirection: 'row',
       alignItems: 'stretch',
       position: 'relative'
@@ -161,28 +179,30 @@ function createStyles(s: (n: number) => number, t: (n: number) => number, varian
       width: 1,
       backgroundColor: figmaColors.metaDivider,
       marginVertical: s(4),
-      marginRight: s(10)
+      marginRight: s(8)
     },
     metaContent: {
       flex: 1,
       justifyContent: 'center',
-      gap: s(isFeatured ? 8 : 10),
-      paddingRight: s(12)
+      gap: s(8),
+      paddingRight: s(10),
+      minWidth: 0
     },
     metaRow: {
       flexDirection: 'row',
-      alignItems: 'center',
-      gap: s(6)
+      alignItems: 'flex-start',
+      gap: s(5)
     },
     metaIcon: {
-      width: s(20),
-      height: s(20)
+      width: s(18),
+      height: s(18),
+      marginTop: s(1)
     },
     metaText: {
       flex: 1,
-      fontFamily: 'EBGaramond_400Regular',
-      fontSize: t(14),
-      lineHeight: t(16),
+      fontFamily: appFonts.body,
+      fontSize: tb(13),
+      lineHeight: tb(16),
       color: figmaColors.gray
     },
     cardChevron: {

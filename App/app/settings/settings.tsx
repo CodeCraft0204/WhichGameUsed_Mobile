@@ -1,4 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
+import { appFonts } from '@/constants/appFonts';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -256,7 +257,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       gap: s(16)
     },
     savingHint: {
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(16),
       color: figmaColors.textMuted
     },
@@ -269,7 +270,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       marginBottom: s(14)
     },
     bannerErrorText: {
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(17),
       color: figmaColors.error
     },
@@ -282,7 +283,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       marginBottom: s(14)
     },
     bannerSuccessText: {
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(17),
       color: figmaColors.success
     }

@@ -1,4 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { appFonts } from '@/constants/appFonts';
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AuthErrorBanner } from '@/components/auth/AuthErrorBanner';
@@ -183,7 +184,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       backgroundColor: figmaColors.borderLight
     },
     orText: {
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(13),
       color: figmaColors.gray
     },
@@ -192,7 +193,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       paddingVertical: s(8)
     },
     backLinkText: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(16),
       lineHeight: t(22),
       color: figmaColors.accent

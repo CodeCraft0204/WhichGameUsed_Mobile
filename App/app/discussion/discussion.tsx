@@ -1,4 +1,5 @@
-﻿import React, { useMemo } from 'react';
+import React, { useMemo } from 'react';
+import { appFonts } from '@/constants/appFonts';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { DiscussionThreadCard } from '@/components/figma/DiscussionThreadCard';
 import { DiscussionTopicCard } from '@/components/figma/DiscussionTopicCard';
@@ -144,7 +145,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       gap: s(14)
     },
     viewAllText: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: 15,
       color: figmaColors.gray
     },

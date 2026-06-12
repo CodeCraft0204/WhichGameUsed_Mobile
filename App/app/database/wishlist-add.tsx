@@ -9,6 +9,7 @@ import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader'
 import { databaseCopy } from '@/constants/databaseCopy';
 import { figmaColors } from '@/constants/figmaColors';
 import { useAuth } from '@/context/AuthContext';
+import { databaseWishlistHref } from '@/constants/navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import { addRequestedCardToWishlist } from '@/lib/wishlist';
 
@@ -29,16 +30,7 @@ function Field({
 }) {
   return (
     <View style={{ marginBottom: 14 }}>
-      <Text
-        style={{
-          fontFamily: appFonts.body,
-          fontSize: 12,
-          color: figmaColors.gray,
-          marginBottom: 6
-        }}
-      >
-        {label}
-      </Text>
+      <Text style={fieldStyles.label}>{label}</Text>
       <TextInput
         value={value}
         onChangeText={onChangeText}
@@ -46,24 +38,34 @@ function Field({
         placeholderTextColor={figmaColors.textMuted}
         keyboardType={keyboardType}
         multiline={multiline}
-        style={{
-          borderWidth: 1,
-          borderColor: figmaColors.borderLight,
-          borderRadius: 10,
-          paddingHorizontal: 14,
-          paddingVertical: multiline ? 12 : 10,
-          fontFamily: appFonts.body,
-          fontSize: 16,
-          color: figmaColors.charcoal,
-          backgroundColor: figmaColors.cream,
-          minHeight: multiline ? 88 : undefined
-        }}
+        style={[fieldStyles.input, multiline && fieldStyles.inputMulti]}
       />
     </View>
   );
 }
 
-export default function RequestCardScreen() {
+const fieldStyles = {
+  label: {
+    fontFamily: appFonts.body,
+    fontSize: 12,
+    color: figmaColors.gray,
+    marginBottom: 6
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: figmaColors.borderLight,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontFamily: appFonts.body,
+    fontSize: 16,
+    color: figmaColors.charcoal,
+    backgroundColor: figmaColors.cream
+  },
+  inputMulti: { minHeight: 88, textAlignVertical: 'top' as const }
+};
+
+export default function WishlistAddScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ query?: string; returnTo?: string }>();
   const { user } = useAuth();
@@ -83,6 +85,14 @@ export default function RequestCardScreen() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+
+  const goBack = () => {
+    if (params.returnTo === 'camera') {
+      router.replace('/camera/card-search');
+      return;
+    }
+    router.back();
+  };
 
   const handleSubmit = async () => {
     if (!user) {
@@ -111,20 +121,12 @@ export default function RequestCardScreen() {
     setDone(true);
   };
 
-  const goBack = () => {
-    if (params.returnTo === 'camera') {
-      router.replace('/camera/card-search');
-      return;
-    }
-    router.back();
-  };
-
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <ProfileSubpageHeader
-          title={databaseCopy.requestCardTitle}
-          subtitle={databaseCopy.requestCardSubtitle}
+          title={databaseCopy.wishlistRequestTitle}
+          subtitle={databaseCopy.wishlistRequestSubtitle}
           s={s}
           t={t}
           onBack={goBack}
@@ -132,12 +134,13 @@ export default function RequestCardScreen() {
 
         {!user ? (
           <View style={styles.signInCard}>
-            <Text style={styles.signInText}>{databaseCopy.requestSignIn}</Text>
+            <Text style={styles.signInText}>{databaseCopy.wishlistSignIn}</Text>
             <AuthPrimaryButton label="SIGN IN" onPress={() => router.replace('/sign-in/sign-in')} />
           </View>
         ) : done ? (
           <View style={styles.successCard}>
-            <Text style={styles.successText}>{databaseCopy.requestSuccess}</Text>
+            <Text style={styles.successText}>{databaseCopy.wishlistRequestSuccess}</Text>
+            <AuthPrimaryButton label="VIEW WISHLIST" onPress={() => router.replace(databaseWishlistHref())} />
             <AuthPrimaryButton label="DONE" onPress={goBack} />
           </View>
         ) : (
@@ -164,7 +167,7 @@ export default function RequestCardScreen() {
             />
             {error ? <AuthErrorBanner message={error} /> : null}
             <AuthPrimaryButton
-              label={loading ? 'SUBMITTING…' : databaseCopy.requestSubmit}
+              label={loading ? 'SAVING…' : databaseCopy.wishlistRequestSubmit}
               onPress={() => void handleSubmit()}
               disabled={loading}
             />
@@ -185,7 +188,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: t(18),
       color: figmaColors.gray
     },
-    successCard: { gap: s(16), marginTop: s(8) },
+    successCard: { gap: s(12), marginTop: s(8) },
     successText: {
       fontFamily: appFonts.body,
       fontSize: t(18),

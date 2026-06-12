@@ -1,4 +1,5 @@
-﻿import React, { useMemo } from 'react';
+import React, { useMemo } from 'react';
+import { appFonts } from '@/constants/appFonts';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { EducationGuideCard } from '@/components/figma/EducationGuideCard';
 import { EducationVideoCard } from '@/components/figma/EducationVideoCard';
@@ -176,7 +177,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       borderColor: figmaColors.tabActiveBorder
     },
     tabText: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(13),
       lineHeight: t(16),
       color: figmaColors.tabText,
@@ -186,7 +187,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       color: figmaColors.tabTextActive
     },
     viewAllText: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: 15,
       color: figmaColors.gray
     },

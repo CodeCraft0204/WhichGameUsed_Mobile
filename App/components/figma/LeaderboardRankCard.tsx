@@ -1,4 +1,5 @@
 import React from 'react';
+import { appFonts } from '@/constants/appFonts';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import type { LeaderboardRank } from '@/constants/leaderboardContent';
 import { figmaColors } from '@/constants/figmaColors';
@@ -72,7 +73,7 @@ function createStyles(
       flexShrink: 0
     },
     rankText: {
-      fontFamily: 'Inter_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(16),
       color: figmaColors.charcoal
     },
@@ -98,13 +99,13 @@ function createStyles(
       paddingRight: s(6)
     },
     name: {
-      fontFamily: 'Inter_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(18),
       lineHeight: t(22),
       color: figmaColors.charcoal
     },
     role: {
-      fontFamily: 'Inter_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(13),
       lineHeight: t(16),
       color: figmaColors.gray
@@ -121,13 +122,13 @@ function createStyles(
       flexShrink: 0
     },
     pointsValue: {
-      fontFamily: 'Inter_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(18),
       lineHeight: t(22),
       color: figmaColors.charcoal
     },
     pointsLabel: {
-      fontFamily: 'Inter_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(12),
       lineHeight: t(14),
       color: figmaColors.gray

@@ -1,6 +1,9 @@
-﻿import { useFocusEffect, useRouter } from 'expo-router';
+﻿import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { DatabaseChipRow } from '@/components/database/DatabaseChipRow';
+import { DatabaseStatsBar } from '@/components/database/DatabaseStatsBar';
 import { DatabaseRecordCard } from '@/components/figma/DatabaseRecordCard';
 import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
@@ -10,18 +13,21 @@ import {
   databaseFeaturedRecords,
   databaseIcons,
   databaseRecentRecords,
-  databaseSportTabs,
   type DatabaseMetaItem,
   type DatabaseRecord
 } from '@/constants/databaseContent';
+import { appFonts } from '@/constants/appFonts';
+import { bodyText } from '@/constants/appTypography';
 import { databaseCopy } from '@/constants/databaseCopy';
+import { databaseSportTabs } from '@/constants/databaseFilters';
 import { figmaColors } from '@/constants/figmaColors';
 import { figmaSharedIcons } from '@/constants/figmaShared';
-import { databaseCardHref, databaseSearchHref } from '@/constants/navigation';
+import { databaseCardHref, databaseSearchHref, databaseWishlistHref } from '@/constants/navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import {
   cardDescription,
   cardToTags,
+  getCatalogStats,
   listCatalogCards,
   type CardSummary,
   type DatabaseSportFilter
@@ -54,20 +60,25 @@ export default function DatabaseScreen() {
   const router = useRouter();
   const { s, t } = useFigmaLayout();
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
-  const styles = useMemo(() => createLocalStyles(s), [s]);
+  const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
 
   const [activeSport, setActiveSport] = useState<DatabaseSportFilter>('ALL');
   const [featured, setFeatured] = useState<LiveRecord[]>([]);
   const [recent, setRecent] = useState<LiveRecord[]>([]);
   const [usingLiveData, setUsingLiveData] = useState(false);
+  const [totalCards, setTotalCards] = useState(0);
+  const [authenticatedCards, setAuthenticatedCards] = useState(0);
 
   const loadCards = useCallback((sport: DatabaseSportFilter) => {
     void Promise.all([
-      listCatalogCards({ sport, authenticatedOnly: true, limit: 4 }),
-      listCatalogCards({ sport, limit: 8 })
-    ]).then(([featuredResult, recentResult]) => {
+      listCatalogCards({ sport, authenticatedOnly: true, limit: 4, sort: 'auth_desc' }),
+      listCatalogCards({ sport, limit: 8, sort: 'year_desc' }),
+      getCatalogStats({ sport })
+    ]).then(([featuredResult, recentResult, statsResult]) => {
       const hasLive = featuredResult.items.length > 0 || recentResult.items.length > 0;
       setUsingLiveData(hasLive);
+      setTotalCards(statsResult.stats.totalCards);
+      setAuthenticatedCards(statsResult.stats.authenticatedCards);
 
       if (featuredResult.items.length > 0) {
         setFeatured(
@@ -125,20 +136,23 @@ export default function DatabaseScreen() {
     <FigmaScreen
       backgroundColor={figmaColors.background}
       bottomNav={<FigmaDatabaseBottomNav active="database" />}
-      scrollProps={{ contentContainerStyle: page.scrollContent }}
+      scrollProps={{ contentContainerStyle: page.scrollContent, keyboardShouldPersistTaps: 'handled' }}
     >
-      <View style={[page.headerSection, styles.headerSection]}>
+      <View style={page.headerSection}>
         <Text style={page.title}>DATABASE</Text>
         <Image source={figmaSharedIcons.titleBrush} style={page.titleBrush} resizeMode="stretch" />
-        <Text style={page.subtitle}>A HISTORY OF HISTORY.</Text>
-        <Text style={page.description}>
+
+        <Text style={[page.subtitle, styles.subtitle]}>A HISTORY OF HISTORY.</Text>
+        <Text style={[page.description, styles.description]}>
           Browse authenticated cards, patch examples, provenance notes, and research evidence from across
           the hobby.
         </Text>
+
         <Image source={databaseIcons.hero} style={styles.heroImage} resizeMode="contain" />
         <FigmaUtilityBar s={s} />
 
-        <Pressable onPress={() => openSearch()} accessibilityRole="search">
+        <Pressable onPress={() => openSearch()} accessibilityRole="search" style={styles.searchRow}>
+          <Ionicons name="search" size={s(20)} color={figmaColors.gray} />
           <TextInput
             style={styles.searchInput}
             placeholder={databaseCopy.searchPlaceholder}
@@ -146,25 +160,34 @@ export default function DatabaseScreen() {
             editable={false}
             pointerEvents="none"
           />
+          <Pressable onPress={() => router.push(databaseWishlistHref())} hitSlop={10}>
+            <Ionicons name="heart-outline" size={s(22)} color={figmaColors.charcoal} />
+          </Pressable>
         </Pressable>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={page.tabRow}>
-          {databaseSportTabs.map((tab) => (
-            <Pressable
-              key={tab}
-              style={[page.tabButton, activeSport === tab && page.tabButtonActive]}
-              onPress={() => setActiveSport(tab)}
-            >
-              <Text style={[page.tabText, activeSport === tab && page.tabTextActive]}>{tab}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+        <DatabaseChipRow
+          label={databaseCopy.browseBySport}
+          options={databaseSportTabs.map((key) => ({ key, label: key }))}
+          value={activeSport}
+          onChange={setActiveSport}
+          s={s}
+          t={t}
+        />
       </View>
 
+      {(usingLiveData || totalCards > 0) && (
+        <DatabaseStatsBar
+          totalCards={totalCards}
+          authenticatedCards={authenticatedCards}
+          s={s}
+          t={t}
+        />
+      )}
+
       <View style={page.sectionHeaderRow}>
-        <Text style={page.sectionTitle}>FEATURED RECORDS</Text>
+        <Text style={page.sectionTitle}>{databaseCopy.featuredRecords}</Text>
         <Pressable style={page.viewAllRow} onPress={() => openSearch({ authenticated: true })}>
-          <Text style={styles.viewAllText}>{databaseCopy.viewAll}</Text>
+          <Text style={page.viewAllText}>{databaseCopy.viewAll}</Text>
           <Image source={databaseIcons.sectionChevron} style={page.sectionChevron} resizeMode="contain" />
         </Pressable>
       </View>
@@ -190,9 +213,9 @@ export default function DatabaseScreen() {
       ))}
 
       <View style={page.sectionHeaderRow}>
-        <Text style={page.sectionTitle}>RECENTLY ADDED</Text>
+        <Text style={page.sectionTitle}>{databaseCopy.recentlyAdded}</Text>
         <Pressable style={page.viewAllRow} onPress={() => openSearch()}>
-          <Text style={styles.viewAllText}>{databaseCopy.viewAll}</Text>
+          <Text style={page.viewAllText}>{databaseCopy.viewAll}</Text>
           <Image source={databaseIcons.sectionChevron} style={page.sectionChevron} resizeMode="contain" />
         </Pressable>
       </View>
@@ -210,84 +233,80 @@ export default function DatabaseScreen() {
           description={record.description}
           tags={record.tags}
           meta={record.meta}
-          variant="featured"
+          variant="recent"
           s={s}
           t={t}
           onPress={record.cardId ? () => openCard(record.cardId) : undefined}
         />
       ))}
 
-      <View style={styles.ctaCard}>
-        <Image source={databaseIcons.ctaRecords} style={page.ctaIcon} resizeMode="contain" />
-        <View style={page.ctaTextWrap}>
-          <Text style={styles.ctaTitle}>AUTHENTICATION TAKES OBSESSION.</Text>
-          <Text style={styles.ctaBody}>
-            Learn how to authenticate game-used cards, contribute to the conversation, and win monthly
-            prizes.
-          </Text>
-        </View>
-        <Image source={databaseIcons.ctaArrow} style={page.ctaArrow} resizeMode="contain" />
-      </View>
+      <Pressable style={styles.browseCta} onPress={() => openSearch()}>
+        <Text style={styles.browseCtaText}>Open full catalog search</Text>
+        <Ionicons name="arrow-forward" size={s(18)} color={figmaColors.cream} />
+      </Pressable>
     </FigmaScreen>
   );
 }
 
-function createLocalStyles(s: (n: number) => number) {
+function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
+  const tb = (n: number) => bodyText(t, n);
+
   return StyleSheet.create({
-    headerSection: {
-      minHeight: s(420)
-    },
+    subtitle: { marginTop: s(20) },
+    description: { marginTop: s(16) },
     heroImage: {
       position: 'absolute',
-      right: s(100),
-      top: s(28),
-      width: s(329),
-      height: s(300)
+      right: s(90),
+      top: s(32),
+      width: s(300),
+      height: s(320),
+      zIndex: 0,
+      pointerEvents: 'none'
     },
-    searchInput: {
-      marginTop: s(8),
+    searchRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(10),
+      marginTop: s(12),
       marginBottom: s(4),
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
-      borderRadius: s(10),
+      borderRadius: s(12),
       paddingHorizontal: s(14),
-      paddingVertical: s(12),
-      fontFamily: 'Inter_400Regular',
-      fontSize: 15,
-      color: figmaColors.charcoal,
-      backgroundColor: figmaColors.cream
+      paddingVertical: s(4),
+      backgroundColor: figmaColors.cream,
+      zIndex: 2
     },
-    viewAllText: {
-      fontFamily: 'EBGaramond_700Bold',
-      fontSize: 15,
-      color: figmaColors.gray
+    searchInput: {
+      flex: 1,
+      paddingVertical: s(12),
+      fontFamily: appFonts.body,
+      fontSize: tb(18),
+      color: figmaColors.charcoal
     },
     sectionEmpty: {
-      fontFamily: 'EBGaramond_400Regular',
-      fontSize: 16,
+      fontFamily: appFonts.body,
+      fontSize: tb(18),
+      lineHeight: tb(26),
       color: figmaColors.gray,
       marginBottom: s(12)
     },
-    ctaCard: {
-      minHeight: s(108),
+    browseCta: {
+      marginTop: s(12),
+      marginBottom: s(8),
+      minHeight: s(52),
       borderRadius: s(12),
-      backgroundColor: figmaColors.ctaBackground,
+      backgroundColor: figmaColors.charcoal,
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: s(12),
-      marginTop: s(8)
+      justifyContent: 'center',
+      gap: s(8),
+      paddingHorizontal: s(16)
     },
-    ctaTitle: {
-      fontFamily: 'PermanentMarker_400Regular',
-      fontSize: 17,
-      color: figmaColors.charcoal,
-      marginBottom: s(4)
-    },
-    ctaBody: {
-      fontFamily: 'EBGaramond_700Bold',
-      fontSize: 18,
-      lineHeight: 20,
-      color: figmaColors.gray
+    browseCtaText: {
+      fontFamily: appFonts.body,
+      fontSize: tb(18),
+      color: figmaColors.cream
     }
   });
 }

@@ -1,4 +1,5 @@
 import * as ImagePicker from 'expo-image-picker';
+import { appFonts } from '@/constants/appFonts';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -231,13 +232,13 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       alignItems: 'center'
     },
     title: {
-      fontFamily: 'PermanentMarker_400Regular',
+      fontFamily: appFonts.display,
       fontSize: t(24),
       color: figmaColors.black,
       textAlign: 'center'
     },
     subtitle: {
-      fontFamily: 'EBGaramond_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(17),
       lineHeight: t(24),
       color: figmaColors.gray,
@@ -252,7 +253,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       borderColor: figmaColors.borderLight
     },
     linkedBannerText: {
-      fontFamily: 'EBGaramond_600SemiBold',
+      fontFamily: appFonts.body,
       fontSize: t(15),
       color: figmaColors.charcoal,
       textAlign: 'center'
@@ -273,7 +274,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       borderRadius: s(6)
     },
     proofLabel: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(16),
       color: figmaColors.accent
     },
@@ -284,7 +285,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       borderColor: figmaColors.inputBorder,
       backgroundColor: figmaColors.inputBg,
       padding: s(14),
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(15),
       color: figmaColors.charcoal
     },
@@ -300,13 +301,13 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     improveRowPressed: { opacity: 0.88 },
     improveRowDisabled: { opacity: 0.45 },
     improveLabel: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(15),
       color: figmaColors.accent
     },
     linkPress: { alignItems: 'center', paddingVertical: s(8) },
     link: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(16),
       color: figmaColors.accent,
       textDecorationLine: 'underline'

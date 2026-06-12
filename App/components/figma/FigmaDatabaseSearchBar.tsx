@@ -1,4 +1,5 @@
 import React from 'react';
+import { appFonts } from '@/constants/appFonts';
 import { Image, StyleSheet, TextInput, View } from 'react-native';
 import { databaseCopy } from '@/constants/databaseContent';
 import { figmaColors } from '@/constants/figmaColors';
@@ -57,7 +58,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     input: {
       flex: 1,
-      fontFamily: 'EBGaramond_600SemiBold',
+      fontFamily: appFonts.body,
       fontSize: t(16),
       lineHeight: t(22),
       color: figmaColors.charcoal,

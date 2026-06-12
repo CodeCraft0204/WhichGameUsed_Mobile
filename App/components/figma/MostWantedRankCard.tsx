@@ -1,4 +1,5 @@
 import React from 'react';
+import { appFonts } from '@/constants/appFonts';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import {
   mostWantedIconSizes,
@@ -52,7 +53,7 @@ function VoteColumn({
         <VoteIcon icon={icon} s={s} />
         <Text
           style={{
-            fontFamily: 'Inter_700Bold',
+            fontFamily: appFonts.body,
             fontSize: t(13),
             lineHeight: t(15),
             color: figmaColors.gray
@@ -144,7 +145,7 @@ function createStyles(
       flexShrink: 0
     },
     rankText: {
-      fontFamily: 'Inter_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(16),
       color: figmaColors.charcoal
     },
@@ -162,13 +163,13 @@ function createStyles(
       paddingRight: s(6)
     },
     title: {
-      fontFamily: 'Inter_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(18),
       lineHeight: t(22),
       color: figmaColors.charcoal
     },
     subtitle: {
-      fontFamily: 'Inter_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(13),
       lineHeight: t(16),
       color: figmaColors.gray
@@ -186,7 +187,7 @@ function createStyles(
     },
     bountyText: {
       flex: 1,
-      fontFamily: 'Inter_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(9),
       lineHeight: t(11),
       color: figmaColors.gray

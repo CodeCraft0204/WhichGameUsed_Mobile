@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { appFonts } from '@/constants/appFonts';
 import React, { useMemo } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
@@ -103,7 +104,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       marginBottom: s(8)
     },
     step: {
-      fontFamily: 'EBGaramond_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(17),
       lineHeight: t(24),
       color: figmaColors.gray
@@ -113,7 +114,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       paddingVertical: s(12)
     },
     libraryText: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(16),
       color: figmaColors.accent,
       textDecorationLine: 'underline'
@@ -127,7 +128,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       backgroundColor: figmaColors.ctaBackground
     },
     signInText: {
-      fontFamily: 'EBGaramond_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(16),
       lineHeight: t(22),
       color: figmaColors.gray,

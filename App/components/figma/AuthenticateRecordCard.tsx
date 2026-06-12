@@ -1,4 +1,6 @@
 import React from 'react';
+import { appFonts } from '@/constants/appFonts';
+import { bodyText } from '@/constants/appTypography';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   authenticateIcons,
@@ -131,6 +133,8 @@ export function AuthenticateScannedCard({
 }
 
 function createDraftStyles(s: (n: number) => number, t: (n: number) => number) {
+  const tb = (n: number) => bodyText(t, n);
+
   return StyleSheet.create({
     card: {
       backgroundColor: figmaColors.cardFeaturedBg,
@@ -158,15 +162,15 @@ function createDraftStyles(s: (n: number) => number, t: (n: number) => number) {
       minWidth: 0
     },
     title: {
-      fontFamily: 'EBGaramond_700Bold',
-      fontSize: t(20),
-      lineHeight: t(27),
+      fontFamily: appFonts.body,
+      fontSize: tb(20),
+      lineHeight: tb(27),
       color: figmaColors.charcoal
     },
     description: {
-      fontFamily: 'EBGaramond_700Bold',
-      fontSize: t(15),
-      lineHeight: t(20),
+      fontFamily: appFonts.body,
+      fontSize: tb(15),
+      lineHeight: tb(20),
       color: figmaColors.gray
     },
     tagRow: {
@@ -184,8 +188,8 @@ function createDraftStyles(s: (n: number) => number, t: (n: number) => number) {
       paddingVertical: s(4)
     },
     tagText: {
-      fontFamily: 'Inter_700Bold',
-      fontSize: t(10),
+      fontFamily: appFonts.body,
+      fontSize: tb(10),
       color: figmaColors.gray
     },
     metaColumn: {
@@ -217,9 +221,9 @@ function createDraftStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     metaText: {
       flex: 1,
-      fontFamily: 'EBGaramond_400Regular',
-      fontSize: t(14),
-      lineHeight: t(16),
+      fontFamily: appFonts.body,
+      fontSize: tb(14),
+      lineHeight: tb(16),
       color: figmaColors.gray
     },
     metaTextAccent: {
@@ -237,6 +241,8 @@ function createDraftStyles(s: (n: number) => number, t: (n: number) => number) {
 }
 
 function createScannedStyles(s: (n: number) => number, t: (n: number) => number) {
+  const tb = (n: number) => bodyText(t, n);
+
   return StyleSheet.create({
     card: {
       backgroundColor: figmaColors.cardRecentBg,
@@ -264,9 +270,9 @@ function createScannedStyles(s: (n: number) => number, t: (n: number) => number)
       minWidth: 0
     },
     title: {
-      fontFamily: 'EBGaramond_700Bold',
-      fontSize: t(16),
-      lineHeight: t(22),
+      fontFamily: appFonts.body,
+      fontSize: tb(16),
+      lineHeight: tb(22),
       color: figmaColors.charcoal
     },
     tagRow: {
@@ -283,8 +289,8 @@ function createScannedStyles(s: (n: number) => number, t: (n: number) => number)
       paddingVertical: s(4)
     },
     tagText: {
-      fontFamily: 'Inter_700Bold',
-      fontSize: t(10),
+      fontFamily: appFonts.body,
+      fontSize: tb(10),
       color: figmaColors.gray
     },
     metaColumn: {
@@ -315,9 +321,9 @@ function createScannedStyles(s: (n: number) => number, t: (n: number) => number)
     },
     metaText: {
       flex: 1,
-      fontFamily: 'EBGaramond_400Regular',
-      fontSize: t(14),
-      lineHeight: t(16),
+      fontFamily: appFonts.body,
+      fontSize: tb(14),
+      lineHeight: tb(16),
       color: figmaColors.gray
     },
     cardChevron: {

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { appFonts } from '@/constants/appFonts';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { figmaColors } from '@/constants/figmaColors';
 import { profileInitials } from '@/lib/profile';
@@ -65,7 +66,7 @@ function createStyles(size: number) {
       backgroundColor: figmaColors.surfaceMuted
     },
     initials: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: Math.round(size * 0.34),
       color: figmaColors.charcoal
     }

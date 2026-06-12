@@ -1,4 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { appFonts } from '@/constants/appFonts';
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { AuthPrimaryButton } from '@/components/auth/AuthPrimaryButton';
@@ -67,7 +68,7 @@ export default function CommunityStandardsScreen() {
 function createStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
     version: {
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(13),
       lineHeight: t(18),
       color: figmaColors.gray,
@@ -78,19 +79,19 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       paddingBottom: s(4)
     },
     sectionTitle: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(20),
       lineHeight: t(26),
       color: figmaColors.charcoal
     },
     paragraph: {
-      fontFamily: 'EBGaramond_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(17),
       lineHeight: t(24),
       color: figmaColors.gray
     },
     readOnlyNote: {
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(13),
       lineHeight: t(18),
       color: figmaColors.gray,

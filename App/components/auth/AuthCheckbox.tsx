@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { appFonts } from '@/constants/appFonts';
 import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { authLayout } from '@/constants/authLayout';
@@ -62,7 +63,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       justifyContent: 'center'
     },
     label: {
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: labelSize,
       lineHeight: labelLine,
       color: figmaColors.gray

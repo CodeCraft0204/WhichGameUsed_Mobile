@@ -1,4 +1,5 @@
 import React from 'react';
+import { appFonts } from '@/constants/appFonts';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { educationIcons, type EducationVideo } from '@/constants/educationContent';
 import { figmaColors } from '@/constants/figmaColors';
@@ -108,20 +109,20 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       paddingRight: s(4)
     },
     title: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(17),
       marginRight: s(20),
       lineHeight: t(22),
       color: figmaColors.charcoal
     },
     channel: {
-      fontFamily: 'EBGaramond_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(13),
       lineHeight: t(16),
       color: figmaColors.gray
     },
     duration: {
-      fontFamily: 'EBGaramond_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(13),
       lineHeight: t(16),
       color: figmaColors.gray
@@ -138,7 +139,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       gap: s(8)
     },
     platform: {
-      fontFamily: 'EBGaramond_600SemiBold',
+      fontFamily: appFonts.body,
       fontSize: t(14),
       lineHeight: t(16),
       color: figmaColors.gray,

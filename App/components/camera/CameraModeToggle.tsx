@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { type CameraMode } from '@/constants/cameraContent';
+import { appFonts } from '@/constants/appFonts';
 import { figmaColors } from '@/constants/figmaColors';
 
 type CameraModeToggleProps = {
@@ -79,7 +80,7 @@ const styles = StyleSheet.create({
     backgroundColor: figmaColors.cream
   },
   label: {
-    fontFamily: 'PermanentMarker_400Regular',
+    fontFamily: appFonts.display,
     color: 'rgba(245,245,240,0.55)',
     textAlign: 'center'
   },

@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { appFonts } from '@/constants/appFonts';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
@@ -175,13 +176,13 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     infoText: {
       flex: 1,
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(14),
       lineHeight: t(20),
       color: figmaColors.gray
     },
     fieldLabel: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(17),
       lineHeight: t(22),
       color: figmaColors.charcoal,
@@ -205,13 +206,13 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       backgroundColor: figmaColors.charcoal
     },
     chipText: {
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(13),
       color: figmaColors.gray
     },
     chipTextSelected: {
       color: figmaColors.cream,
-      fontFamily: 'Inter_700Bold'
+      fontFamily: appFonts.body
     },
     messageInput: {
       minHeight: s(120),
@@ -221,7 +222,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       backgroundColor: figmaColors.inputBg,
       paddingHorizontal: s(14),
       paddingVertical: s(12),
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(15),
       lineHeight: t(22),
       color: figmaColors.charcoal
@@ -238,12 +239,12 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       gap: s(2)
     },
     directEmailLabel: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(16),
       color: figmaColors.charcoal
     },
     directEmailValue: {
-      fontFamily: 'Inter_500Medium',
+      fontFamily: appFonts.body,
       fontSize: t(15),
       color: figmaColors.accent,
       textDecorationLine: 'underline'

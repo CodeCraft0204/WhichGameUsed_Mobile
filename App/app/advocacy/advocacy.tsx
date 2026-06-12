@@ -1,4 +1,6 @@
-﻿import React, { useMemo } from 'react';
+import React, { useMemo } from 'react';
+import { appFonts } from '@/constants/appFonts';
+import { bodyText } from '@/constants/appTypography';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { FigmaHubBottomNav } from '@/components/figma/FigmaHubBottomNav';
 import { FigmaUtilityBar } from '@/components/figma/FigmaUtilityBar';
@@ -128,6 +130,8 @@ export default function AdvocacyScreen() {
 }
 
 function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
+  const tb = (n: number) => bodyText(t, n);
+
   return StyleSheet.create({
     heroImage: {
       position: 'absolute',
@@ -178,16 +182,16 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     cardTitle: {
       marginTop: s(2),
-      fontFamily: 'EBGaramond_700Bold',
-      fontSize: t(22),
-      lineHeight: t(26),
+      fontFamily: appFonts.body,
+      fontSize: tb(22),
+      lineHeight: tb(26),
       color: figmaColors.charcoal
     },
     cardDescription: {
       marginTop: s(6),
-      fontFamily: 'EBGaramond_400Regular',
-      fontSize: t(17),
-      lineHeight: t(21),
+      fontFamily: appFonts.body,
+      fontSize: tb(17),
+      lineHeight: tb(21),
       color: figmaColors.gray
     },
     progressTrack: {
@@ -204,8 +208,8 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     goalText: {
       marginTop: s(8),
-      fontFamily: 'Inter_700Bold',
-      fontSize: t(15),
+      fontFamily: appFonts.body,
+      fontSize: tb(15),
       color: figmaColors.gray
     },
     cardRight: {
@@ -218,14 +222,14 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       gap: s(4)
     },
     signatureNumber: {
-      fontFamily: 'EBGaramond_600SemiBold',
-      fontSize: t(32),
-      lineHeight: t(46),
+      fontFamily: appFonts.body,
+      fontSize: tb(32),
+      lineHeight: tb(46),
       color: figmaColors.charcoal
     },
     signatureLabel: {
-      fontFamily: 'EBGaramond_700Bold',
-      fontSize: t(14),
+      fontFamily: appFonts.body,
+      fontSize: tb(14),
       color: figmaColors.gray,
       marginBottom: s(8)
     },
@@ -240,8 +244,8 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       justifyContent: 'center'
     },
     signButtonText: {
-      fontFamily: 'EBGaramond_700Bold',
-      fontSize: t(14),
+      fontFamily: appFonts.body,
+      fontSize: tb(14),
       color: figmaColors.buttonPrimaryText
     }
   });

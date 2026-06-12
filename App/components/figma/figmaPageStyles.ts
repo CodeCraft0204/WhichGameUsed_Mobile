@@ -1,9 +1,13 @@
 import { StyleSheet } from 'react-native';
+import { appFonts } from '@/constants/appFonts';
+import { bodyText, broadsheetAccent } from '@/constants/appTypography';
 import { figmaColors } from '@/constants/figmaColors';
 import { figmaNavTheme } from '@/constants/figmaNavTheme';
 
 /** Typography and spacing aligned with the advocacy screen (810 design width). */
 export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) => number) {
+  const tb = (n: number) => bodyText(t, n);
+
   return StyleSheet.create({
     scrollContent: {
       paddingHorizontal: s(20),
@@ -15,10 +19,10 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
       minHeight: s(420)
     },
     title: {
-      fontFamily: 'PermanentMarker_400Regular',
+      fontFamily: appFonts.display,
       marginTop: s(16),
-      fontSize: t(50),
-      lineHeight: t(80),
+      fontSize: t(52),
+      lineHeight: t(82),
       color: figmaColors.charcoal,
       letterSpacing: 0.6,
       transform: [{ rotate: '-4deg' }],
@@ -32,17 +36,18 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
     },
     subtitle: {
       marginTop: s(26),
-      fontFamily: 'EBGaramond_700Bold',
-      fontSize: t(20),
-      lineHeight: t(26),
+      fontFamily: appFonts.body,
+      fontSize: tb(22),
+      lineHeight: tb(28),
       color: figmaColors.gray,
-      width: s(340)
+      width: s(340),
+      ...broadsheetAccent
     },
     description: {
       marginTop: s(24),
-      fontFamily: 'EBGaramond_600SemiBold',
-      fontSize: t(20),
-      lineHeight: t(26),
+      fontFamily: appFonts.body,
+      fontSize: tb(22),
+      lineHeight: tb(28),
       color: figmaColors.gray,
       width: s(380)
     },
@@ -68,8 +73,8 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
       borderColor: figmaColors.tabActiveBorder
     },
     tabText: {
-      fontFamily: 'EBGaramond_700Bold',
-      fontSize: t(16),
+      fontFamily: appFonts.body,
+      fontSize: tb(18),
       color: figmaColors.tabText
     },
     tabTextActive: {
@@ -86,15 +91,17 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
       paddingTop: s(10)
     },
     sectionTitle: {
-      fontFamily: 'PermanentMarker_400Regular',
+      fontFamily: appFonts.display,
       marginVertical: s(16),
-      fontSize: t(26),
+      fontSize: t(28),
       color: figmaColors.charcoal
     },
     viewAllText: {
-      fontFamily: 'EBGaramond_700Bold',
-      fontSize: t(18),
-      color: figmaColors.gray
+      fontFamily: appFonts.body,
+      fontSize: tb(19),
+      color: figmaColors.gray,
+      ...broadsheetAccent,
+      letterSpacing: 0.8
     },
     viewAllRow: {
       flexDirection: 'row',
@@ -126,15 +133,15 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
       paddingHorizontal: s(8)
     },
     ctaTitle: {
-      fontFamily: 'PermanentMarker_400Regular',
+      fontFamily: appFonts.display,
       fontSize: t(18),
       color: figmaColors.charcoal,
       marginBottom: s(4)
     },
     ctaBody: {
-      fontFamily: 'EBGaramond_700Bold',
-      fontSize: t(21),
-      lineHeight: t(24),
+      fontFamily: appFonts.body,
+      fontSize: tb(21),
+      lineHeight: tb(24),
       color: figmaColors.gray
     },
     ctaArrow: {
@@ -152,6 +159,11 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
       paddingTop: s(figmaNavTheme.barPaddingTop),
       paddingBottom: s(figmaNavTheme.barPaddingBottom),
       paddingHorizontal: s(figmaNavTheme.barPaddingHorizontal)
+    },
+    bottomNavIconsOnly: {
+      minHeight: s(figmaNavTheme.barMinHeightIconsOnly),
+      paddingTop: s(figmaNavTheme.barPaddingIconsOnlyTop),
+      paddingBottom: s(figmaNavTheme.barPaddingIconsOnlyBottom)
     },
     navSlot: {
       flex: 1,
@@ -175,9 +187,9 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
       height: s(figmaNavTheme.iconSize)
     },
     navText: {
-      fontFamily: 'Inter_700Bold',
-      fontSize: t(figmaNavTheme.labelFontSize),
-      lineHeight: t(figmaNavTheme.labelLineHeight),
+      fontFamily: appFonts.body,
+      fontSize: tb(figmaNavTheme.labelFontSize),
+      lineHeight: tb(figmaNavTheme.labelLineHeight),
       color: figmaNavTheme.label,
       textAlign: 'center',
       width: '100%'

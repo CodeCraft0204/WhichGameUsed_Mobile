@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader';
 import { databaseCopy } from '@/constants/databaseCopy';
+import { appFonts } from '@/constants/appFonts';
 import { figmaColors } from '@/constants/figmaColors';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import { signedSubmissionImageUrl } from '@/lib/submission-storage';
@@ -137,8 +138,8 @@ export default function SubmissionDetailScreen() {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <View style={{ marginBottom: 12 }}>
-      <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 12, color: figmaColors.gray }}>{label}</Text>
-      <Text style={{ fontFamily: 'EBGaramond_600SemiBold', fontSize: 18, color: figmaColors.charcoal }}>
+      <Text style={{ fontFamily: appFonts.body, fontSize: 12, color: figmaColors.gray }}>{label}</Text>
+      <Text style={{ fontFamily: appFonts.body, fontSize: 18, color: figmaColors.charcoal }}>
         {value}
       </Text>
     </View>
@@ -150,7 +151,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     safe: { flex: 1, backgroundColor: figmaColors.background },
     content: { paddingHorizontal: s(16), paddingBottom: s(32) },
     error: {
-      fontFamily: 'EBGaramond_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(14),
       color: figmaColors.error
     },
@@ -165,7 +166,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     photoGrid: { gap: s(16) },
     photoSlot: { gap: s(8) },
     photoLabel: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(16),
       color: figmaColors.charcoal
     },

@@ -10,13 +10,16 @@ export const figmaNavTheme = {
   iconInactive: figmaColors.navInactive,
   iconActive: figmaColors.bronze,
   /** Design width 810: icon 60×60, label Inter Bold 11 / 13 line-height */
-  iconSize: 52,
+  iconSize: 56,
   labelFontSize: 11,
   labelLineHeight: 13,
   barMinHeight: 120,
+  barMinHeightIconsOnly: 76,
   itemRadius: 10,
   itemGap: 5,
   barPaddingTop: 8,
   barPaddingBottom: 4,
+  barPaddingIconsOnlyTop: 10,
+  barPaddingIconsOnlyBottom: 10,
   barPaddingHorizontal: 4
 } as const;

@@ -1,4 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
+import { appFonts } from '@/constants/appFonts';
 import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AuthCheckbox } from '@/components/auth/AuthCheckbox';
@@ -250,13 +251,13 @@ function createLabelStyles(s: (n: number) => number, t: (n: number) => number) {
       flexShrink: 1
     },
     agreePrefix: {
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize,
       lineHeight,
       color: figmaColors.gray
     },
     agreeLink: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize,
       lineHeight,
       color: figmaColors.accent,

@@ -10,6 +10,7 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { appFonts } from '@/constants/appFonts';
 import { authIcons } from '@/constants/authContent';
 import { authLayout } from '@/constants/authLayout';
 import { figmaColors } from '@/constants/figmaColors';
@@ -114,7 +115,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       height: s(authLayout.heroHeight * 1.3),
     },
     title: {
-      fontFamily: 'PermanentMarker_400Regular',
+      fontFamily: appFonts.display,
       fontSize: t(authLayout.titleSize),
       lineHeight: t(authLayout.titleLineHeight),
       color: figmaColors.textPrimary,
@@ -130,7 +131,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       marginBottom: s(14)
     },
     subtitle: {
-      fontFamily: 'EBGaramond_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(authLayout.subtitleSize),
       lineHeight: t(authLayout.subtitleLineHeight),
       color: figmaColors.gray,
@@ -146,7 +147,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       paddingHorizontal: s(8)
     },
     footerNote: {
-      fontFamily: 'EBGaramond_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(authLayout.footerNoteSize),
       lineHeight: t(22),
       color: figmaColors.gray,

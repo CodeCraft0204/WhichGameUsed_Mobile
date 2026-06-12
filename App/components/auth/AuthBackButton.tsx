@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { appFonts } from '@/constants/appFonts';
 import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { figmaColors } from '@/constants/figmaColors';
@@ -31,7 +32,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       marginBottom: s(8)
     },
     label: {
-      fontFamily: 'EBGaramond_600SemiBold',
+      fontFamily: appFonts.body,
       fontSize: t(18),
       lineHeight: t(24),
       color: figmaColors.accent

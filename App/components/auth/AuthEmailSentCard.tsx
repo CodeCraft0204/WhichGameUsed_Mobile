@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { appFonts } from '@/constants/appFonts';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { authIcons } from '@/constants/authContent';
 import { figmaColors } from '@/constants/figmaColors';
@@ -62,7 +63,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       height: s(240),
     },
     title: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(22),
       lineHeight: t(28),
       color: figmaColors.charcoal,
@@ -70,7 +71,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       marginBottom: s(8)
     },
     body: {
-      fontFamily: 'EBGaramond_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(17),
       lineHeight: t(24),
       color: figmaColors.gray,
@@ -87,7 +88,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       maxWidth: '100%'
     },
     email: {
-      fontFamily: 'Inter_500Medium',
+      fontFamily: appFonts.body,
       fontSize: t(15),
       lineHeight: t(22),
       color: figmaColors.charcoal,
@@ -95,7 +96,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     hint: {
       marginTop: s(14),
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(13),
       lineHeight: t(18),
       color: figmaColors.gray,

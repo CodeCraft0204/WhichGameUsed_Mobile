@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { appFonts } from '@/constants/appFonts';
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 import { figmaColors } from '@/constants/figmaColors';
@@ -57,12 +58,12 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       gap: s(4)
     },
     label: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(19),
       color: figmaColors.charcoal
     },
     hint: {
-      fontFamily: 'EBGaramond_600SemiBold',
+      fontFamily: appFonts.body,
       fontSize: t(17),
       lineHeight: t(22),
       color: figmaColors.textMuted
@@ -84,7 +85,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     input: {
       flex: 1,
-      fontFamily: 'Inter_400Regular',
+      fontFamily: appFonts.body,
       fontSize: t(18),
       color: figmaColors.charcoal,
       paddingVertical: s(12)

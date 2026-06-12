@@ -1,4 +1,5 @@
-﻿import React, { useMemo } from 'react';
+import React, { useMemo } from 'react';
+import { appFonts } from '@/constants/appFonts';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaHubBottomNav } from '@/components/figma/FigmaHubBottomNav';
@@ -152,7 +153,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       borderColor: figmaColors.tabActiveBorder
     },
     tabText: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: t(13),
       lineHeight: t(16),
       color: figmaColors.tabText,
@@ -162,7 +163,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       color: figmaColors.tabTextActive
     },
     viewAllText: {
-      fontFamily: 'EBGaramond_700Bold',
+      fontFamily: appFonts.body,
       fontSize: 15,
       color: figmaColors.gray
     },
