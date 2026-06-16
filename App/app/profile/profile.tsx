@@ -35,13 +35,14 @@ function isValidUsername(value: string): boolean {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, refreshProfile } = useAuth();
+  const { user, refreshProfile, signOut } = useAuth();
   const { s, t } = useFigmaLayout(1);
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -177,6 +178,18 @@ export default function ProfileScreen() {
     await refreshProfile();
   };
 
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await signOut();
+      router.replace('/sign-in/sign-in');
+    } finally {
+      setSigningOut(false);
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.loading}>
@@ -200,7 +213,7 @@ export default function ProfileScreen() {
         <ProfileAvatar
           url={avatarUrl}
           name={nameLabel}
-          size={s(112)}
+          size={s(350)}
           onPress={() => void handlePickAvatar()}
           disabled={uploading}
         />
@@ -303,15 +316,29 @@ export default function ProfileScreen() {
 
       <Pressable
         onPress={() => void handleSave()}
-        disabled={!dirty || saving}
+        disabled={!dirty || saving || signingOut}
         style={({ pressed }) => [
           styles.saveBtn,
-          (!dirty || saving) && styles.saveBtnDisabled,
-          pressed && dirty && !saving && styles.saveBtnPressed
+          (!dirty || saving || signingOut) && styles.saveBtnDisabled,
+          pressed && dirty && !saving && !signingOut && styles.saveBtnPressed
         ]}
       >
         <Text style={styles.saveBtnText}>
           {saving ? profileCopy.actions.saving : profileCopy.actions.save}
+        </Text>
+      </Pressable>
+
+      <Pressable
+        onPress={() => void handleSignOut()}
+        disabled={signingOut}
+        style={({ pressed }) => [
+          styles.signOutBtn,
+          signingOut && styles.saveBtnDisabled,
+          pressed && !signingOut && styles.saveBtnPressed
+        ]}
+      >
+        <Text style={styles.signOutBtnText}>
+          {signingOut ? profileCopy.actions.signingOut : profileCopy.actions.signOut}
         </Text>
       </Pressable>
     </FigmaScreen>
@@ -438,6 +465,23 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: t(22),
       color: figmaColors.buttonPrimaryText,
       letterSpacing: 0.4
+    },
+    signOutBtn: {
+      marginTop: s(12),
+      minHeight: s(52),
+      borderRadius: s(12),
+      backgroundColor: figmaColors.errorBg,
+      borderWidth: 1,
+      borderColor: figmaColors.errorBorder,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: s(20)
+    },
+    signOutBtnText: {
+      fontFamily: appFonts.display,
+      fontSize: t(18),
+      color: figmaColors.error,
+      letterSpacing: 0.3
     }
   });
 }

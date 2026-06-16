@@ -29,7 +29,9 @@ export const profileCopy = {
   actions: {
     save: 'SAVE CHANGES',
     saving: 'SAVING…',
-    saved: 'Profile updated.'
+    saved: 'Profile updated.',
+    signOut: 'SIGN OUT',
+    signingOut: 'SIGNING OUT…'
   },
   validation: {
     username: 'Username must be 3–24 characters (letters, numbers, underscores).'

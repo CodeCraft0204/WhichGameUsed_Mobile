@@ -68,9 +68,9 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       transform: [{ rotate: '-3deg' }]
     },
     brush: {
-      width: s(300),
-      height: s(28),
-      marginTop: s(-10),
+      width: s(450),
+      height: s(35),
+      marginTop: s(10),
       marginLeft: s(2)
     },
     subtitle: {
