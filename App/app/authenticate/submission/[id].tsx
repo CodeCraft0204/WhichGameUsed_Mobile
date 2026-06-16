@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -18,10 +19,13 @@ import { figmaColors } from '@/constants/figmaColors';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import { signedSubmissionImageUrl } from '@/lib/submission-storage';
 import {
+  cancelSubmission,
+  canCancelSubmission,
   getSubmissionWithItems,
   getSubmissionWithUploads,
   linkedCardTitleFromItems,
   statusLabel,
+  type SubmissionStatus,
   type SubmissionUploadRow
 } from '@/lib/submissions';
 
@@ -52,6 +56,7 @@ export default function SubmissionDetailScreen() {
   const styles = useMemo(() => createStyles(s, t), [s, t]);
 
   const [status, setStatus] = useState<string>('—');
+  const [rawStatus, setRawStatus] = useState<SubmissionStatus | null>(null);
   const [submittedAt, setSubmittedAt] = useState<string | null>(null);
   const [userNotes, setUserNotes] = useState<string | null>(null);
   const [adminNotes, setAdminNotes] = useState<string | null>(null);
@@ -59,6 +64,7 @@ export default function SubmissionDetailScreen() {
   const [photos, setPhotos] = useState<PhotoSlot[]>([]);
   const [preview, setPreview] = useState<PhotoSlot | null>(null);
   const [loading, setLoading] = useState(true);
+  const [cancelBusy, setCancelBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -79,6 +85,7 @@ export default function SubmissionDetailScreen() {
       }
 
       const submission = detail.submission;
+      setRawStatus(submission.status);
       setStatus(statusLabel(submission.status));
       setSubmittedAt(submission.submitted_at);
       setUserNotes(submission.user_notes);
@@ -92,6 +99,33 @@ export default function SubmissionDetailScreen() {
       active = false;
     };
   }, [id]);
+
+  const handleCancel = async () => {
+    if (!id || typeof id !== 'string' || !rawStatus) return;
+    if (!canCancelSubmission(rawStatus)) return;
+    Alert.alert('Cancel submission?', 'This will mark the submission as cancelled.', [
+      { text: 'Keep submission', style: 'cancel' },
+      {
+        text: 'Cancel submission',
+        style: 'destructive',
+        onPress: () => {
+          void (async () => {
+            setCancelBusy(true);
+            const { error: cancelError, cancelled } = await cancelSubmission(id);
+            setCancelBusy(false);
+            if (cancelError) {
+              setError(cancelError);
+              return;
+            }
+            if (cancelled) {
+              setRawStatus('cancelled');
+              setStatus(statusLabel('cancelled'));
+            }
+          })();
+        }
+      }
+    ]);
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -117,6 +151,18 @@ export default function SubmissionDetailScreen() {
             <Row label={databaseCopy.yourNotes} value={userNotes?.trim() || '—'} />
             <Row label={databaseCopy.adminNotes} value={adminNotes?.trim() || '—'} />
           </View>
+        ) : null}
+
+        {!loading && !error && rawStatus && canCancelSubmission(rawStatus) ? (
+          <Pressable
+            style={({ pressed }) => [styles.cancelBtn, pressed && !cancelBusy && styles.cancelBtnPressed]}
+            disabled={cancelBusy}
+            onPress={() => void handleCancel()}
+          >
+            <Text style={styles.cancelBtnText}>
+              {cancelBusy ? databaseCopy.cancellingSubmission : databaseCopy.cancelSubmission}
+            </Text>
+          </Pressable>
         ) : null}
 
         {photos.length > 0 ? (
@@ -190,5 +236,24 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       backgroundColor: figmaColors.divider
     },
     photoPlaceholder: { opacity: 0.4 }
+    ,
+    cancelBtn: {
+      marginBottom: s(18),
+      minHeight: s(48),
+      borderRadius: s(12),
+      borderWidth: 1,
+      borderColor: figmaColors.errorBorder,
+      backgroundColor: figmaColors.errorBg,
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    cancelBtnPressed: {
+      opacity: 0.9
+    },
+    cancelBtnText: {
+      fontFamily: appFonts.accent,
+      fontSize: t(16),
+      color: figmaColors.error
+    }
   });
 }

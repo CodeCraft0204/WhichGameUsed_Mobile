@@ -1,8 +1,8 @@
 ﻿import { useFocusEffect, useRouter } from 'expo-router';
 import { appFonts } from '@/constants/appFonts';
-import React, { useCallback, useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { AuthenticateDraftCard, AuthenticateScannedCard } from '@/components/figma/AuthenticateRecordCard';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AuthenticateDraftCard } from '@/components/figma/AuthenticateRecordCard';
 import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
@@ -29,13 +29,26 @@ export default function AuthenticateScreen() {
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
   const [activeTab, setActiveTab] = useState(0);
   const [liveSubmissions, setLiveSubmissions] = useState<SubmissionWithItems[]>([]);
+  const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const loadedOnceRef = useRef(false);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
+      if (!loadedOnceRef.current && liveSubmissions.length === 0) {
+        setLoading(true);
+      }
+      setError(null);
       void listMySubmissionsWithItems().then(({ items, error }) => {
-        if (active && !error) setLiveSubmissions(items);
+        if (!active) return;
+        if (error) setError(error);
+        else {
+          setLiveSubmissions(items);
+          loadedOnceRef.current = true;
+        }
+        setLoading(false);
       });
       void countUnreadNotifications().then((count) => {
         if (active) setUnreadCount(count);
@@ -43,85 +56,120 @@ export default function AuthenticateScreen() {
       return () => {
         active = false;
       };
-    }, [])
+    }, [liveSubmissions.length])
   );
 
   const pending = liveSubmissions.filter(
-    (s) => s.status === 'draft' || s.status === 'pending_admin_review' || s.status === 'needs_more_info'
+    (submission) => submission.status === 'draft'
+  );
+  const inProgress = liveSubmissions.filter(
+    (submission) =>
+      submission.status === 'pending_admin_review' ||
+      submission.status === 'needs_more_info' ||
+      submission.status === 'pending_payment'
   );
   const completed = liveSubmissions.filter(
-    (s) => s.status === 'approved' || s.status === 'rejected' || s.status === 'completed'
+    (submission) =>
+      submission.status === 'approved' ||
+      submission.status === 'rejected' ||
+      submission.status === 'completed' ||
+      submission.status === 'cancelled'
   );
 
-  const showPending = activeTab !== 2;
-  const showCompleted = activeTab !== 1;
+  const activeList = activeTab === 0 ? pending : activeTab === 1 ? inProgress : completed;
+  const activeSectionTitle =
+    activeTab === 0 ? 'YOUR SUBMISSIONS' : activeTab === 1 ? 'IN PROGRESS' : 'REVIEWED';
+  const activeEmptyCopy =
+    activeTab === 0
+      ? databaseCopy.submissionEmptyPending
+      : activeTab === 1
+        ? 'No submissions in progress right now.'
+        : databaseCopy.submissionEmptyReviewed;
 
   return (
     <FigmaScreen
       backgroundColor={figmaColors.background}
       bottomNav={<FigmaDatabaseBottomNav active="authenticate" />}
-      scrollProps={{ contentContainerStyle: page.scrollContent }}
+      scrollable={false}
     >
-      <FigmaPageHeader
-        title="AUTHENTICATE"
-        subtitle="SUBMIT YOUR CARDS WITHOUT SUBMITTING YOUR CARDS."
-        description="Scan your collection of game-used cards. If your card has been authenticated in our database, simply submit for authentication and we will mail you a tamper-proof QR-linked label for FREE."
-        heroSource={authenticateIcons.main}
-        s={s}
-        page={page}
-      >
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[page.tabRow, styles.tabRow]}
-        >
-          {authenticateTabs.map((tab, index) => (
-            <Pressable
-              key={tab}
-              style={[page.tabButton, index === activeTab && page.tabButtonActive]}
-              onPress={() => setActiveTab(index)}
+      <View style={styles.page}>
+        <View style={[page.scrollContent, styles.fixedTop]}>
+          <FigmaPageHeader
+            title="AUTHENTICATE"
+            subtitle="SUBMIT YOUR CARDS WITHOUT SUBMITTING YOUR CARDS."
+            description="Scan your collection of game-used cards. If your card has been authenticated in our database, simply submit for authentication and we will mail you a tamper-proof QR-linked label for FREE."
+            heroSource={authenticateIcons.main}
+            s={s}
+            page={page}
+          />
+          <View style={styles.stickyToolbar}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={[page.tabRow, styles.tabRow]}
             >
-              <Text style={[page.tabText, index === activeTab && page.tabTextActive]}>{tab}</Text>
+              {authenticateTabs.map((tab, index) => (
+                <Pressable
+                  key={tab}
+                  style={[page.tabButton, index === activeTab && page.tabButtonActive]}
+                  onPress={() => setActiveTab(index)}
+                >
+                  <Text style={[page.tabText, index === activeTab && page.tabTextActive]}>{tab}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+
+        <ScrollView
+          style={styles.contentScroll}
+          contentContainerStyle={[page.scrollContent, styles.contentScrollBody]}
+          showsVerticalScrollIndicator={false}
+        >
+          {unreadCount > 0 ? (
+            <Pressable style={styles.noticeRow} onPress={() => router.push(databaseNotificationsHref())}>
+              <Text style={styles.noticeText}>
+                {unreadCount} new notification{unreadCount === 1 ? '' : 's'}
+              </Text>
             </Pressable>
-          ))}
-        </ScrollView>
-      </FigmaPageHeader>
+          ) : null}
 
-      {unreadCount > 0 ? (
-        <Pressable style={styles.noticeRow} onPress={() => router.push(databaseNotificationsHref())}>
-          <Text style={styles.noticeText}>
-            {unreadCount} new notification{unreadCount === 1 ? '' : 's'}
-          </Text>
-        </Pressable>
-      ) : null}
-
-      {showPending ? (
-        <>
           <View style={page.sectionHeaderRow}>
-            <Text style={page.sectionTitle}>YOUR SUBMISSIONS</Text>
+            <Text style={page.sectionTitle}>{activeSectionTitle}</Text>
+            {!loading ? (
+              <Text style={page.viewAllText}>{databaseCopy.resultsCount(activeList.length)}</Text>
+            ) : null}
           </View>
 
-          {pending.length > 0 ? (
-            pending.map((row) => {
+          {loading ? (
+            <View style={styles.sectionLoader}>
+              <ActivityIndicator size="small" color={figmaColors.charcoal} />
+              <Text style={styles.loadingText}>Loading submissions…</Text>
+            </View>
+          ) : error ? (
+            <Text style={styles.errorText}>{error}</Text>
+          ) : activeList.length > 0 ? (
+            activeList.map((row, idx) => {
               const linkedTitle = linkedCardTitleFromItems(row.items);
               return (
                 <AuthenticateDraftCard
                   key={row.id}
-                  cardImage={databaseIcons.recordMantle}
-                  title={
-                    linkedTitle
-                      ? `${linkedTitle}\n${statusLabel(row.status)}`
-                      : `Card submission\n${statusLabel(row.status)}`
-                  }
+                  cardImage={idx % 2 === 0 ? databaseIcons.recordMantle : databaseIcons.recordJordan}
+                  imageUrl={row.preview_image_url}
+                  title={linkedTitle ? linkedTitle : `Card submission`}
                   description={row.user_notes?.trim() || 'Submitted from mobile capture.'}
-                  tags={['MOBILE', row.status.toUpperCase()]}
+                  tags={['MOBILE', statusLabel(row.status).toUpperCase()]}
                   meta={[
+                    {
+                      key: 'status',
+                      icon: 'clock',
+                      label: statusLabel(row.status),
+                      accent: row.status === 'approved' || row.status === 'completed'
+                    },
                     {
                       key: 'date',
                       icon: 'calendar',
-                      label: row.submitted_at
-                        ? new Date(row.submitted_at).toLocaleDateString()
-                        : 'Draft'
+                      label: row.submitted_at ? new Date(row.submitted_at).toLocaleDateString() : 'Draft'
                     }
                   ]}
                   s={s}
@@ -131,52 +179,22 @@ export default function AuthenticateScreen() {
               );
             })
           ) : (
-            <Text style={styles.emptyText}>{databaseCopy.submissionEmptyPending}</Text>
+            <Text style={styles.emptyText}>{activeEmptyCopy}</Text>
           )}
-        </>
-      ) : null}
 
-      {showCompleted ? (
-        <>
-          <View style={page.sectionHeaderRow}>
-            <Text style={page.sectionTitle}>REVIEWED</Text>
+          <ScanSubmitButton s={s} t={t} onPress={() => router.push('/create/create')} />
+
+          <View style={styles.ctaCard}>
+            <Image source={authenticateIcons.ctaIcon} style={page.ctaIcon} resizeMode="contain" />
+            <View style={page.ctaTextWrap}>
+              <Text style={styles.ctaTitle}>LET THE GAMES BEGIN.</Text>
+              <Text style={styles.ctaBody}>
+                Scan your cards, see the evidence, and submit for a FREE tamper-proof QR-linked label.
+              </Text>
+            </View>
+            <Image source={authenticateIcons.sectionChevron} style={page.ctaArrow} resizeMode="contain" />
           </View>
-
-          {completed.length > 0 ? (
-            completed.map((row) => {
-              const linkedTitle = linkedCardTitleFromItems(row.items);
-              return (
-                <AuthenticateScannedCard
-                  key={row.id}
-                  cardImage={databaseIcons.recordJordan}
-                  title={linkedTitle ? `${linkedTitle}` : `Submission ${statusLabel(row.status)}`}
-                  tags={[row.status.toUpperCase()]}
-                  scannedAt={
-                    row.submitted_at ? new Date(row.submitted_at).toLocaleDateString() : '�'
-                  }
-                  s={s}
-                  t={t}
-                  onPress={() => router.push(submissionDetailHref(row.id))}
-                />
-              );
-            })
-          ) : (
-            <Text style={styles.emptyText}>{databaseCopy.submissionEmptyReviewed}</Text>
-          )}
-        </>
-      ) : null}
-
-      <ScanSubmitButton s={s} t={t} onPress={() => router.push('/create/create')} />
-
-      <View style={styles.ctaCard}>
-        <Image source={authenticateIcons.ctaIcon} style={page.ctaIcon} resizeMode="contain" />
-        <View style={page.ctaTextWrap}>
-          <Text style={styles.ctaTitle}>LET THE GAMES BEGIN.</Text>
-          <Text style={styles.ctaBody}>
-            Scan your cards, see the evidence, and submit for a FREE tamper-proof QR-linked label.
-          </Text>
-        </View>
-        <Image source={authenticateIcons.sectionChevron} style={page.ctaArrow} resizeMode="contain" />
+        </ScrollView>
       </View>
     </FigmaScreen>
   );
@@ -184,14 +202,23 @@ export default function AuthenticateScreen() {
 
 function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
+    page: { flex: 1 },
+    fixedTop: {
+      paddingBottom: 0
+    },
+    stickyToolbar: {
+      backgroundColor: figmaColors.background,
+      paddingBottom: s(8),
+      zIndex: 2
+    },
+    contentScroll: { flex: 1 },
+    contentScrollBody: {
+      paddingTop: s(8),
+      paddingBottom: s(16)
+    },
     tabRow: {
       flexWrap: 'nowrap',
       gap: s(14)
-    },
-    viewAllText: {
-      fontFamily: appFonts.body,
-      fontSize: 15,
-      color: figmaColors.gray
     },
     ctaCard: {
       minHeight: s(108),
@@ -219,6 +246,23 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: 16,
       lineHeight: 22,
       color: figmaColors.gray,
+      marginBottom: s(12)
+    },
+    sectionLoader: {
+      paddingVertical: s(28),
+      alignItems: 'center',
+      gap: s(10),
+      marginBottom: s(12)
+    },
+    loadingText: {
+      fontFamily: appFonts.body,
+      fontSize: 16,
+      color: figmaColors.gray
+    },
+    errorText: {
+      fontFamily: appFonts.body,
+      fontSize: 16,
+      color: figmaColors.error,
       marginBottom: s(12)
     },
     noticeRow: {

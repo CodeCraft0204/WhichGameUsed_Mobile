@@ -17,13 +17,14 @@ const metaIconSources: Record<AuthenticateMetaIconKey, number> = {
 };
 
 type AuthenticateDraftCardProps = AuthenticateDraftRecord & {
+  imageUrl?: string | null;
   onPress?: () => void;
   s: (n: number) => number;
   t: (n: number) => number;
 };
 
 export function AuthenticateDraftCard({
-  cardImage,
+  imageUrl,
   title,
   description,
   tags,
@@ -36,7 +37,13 @@ export function AuthenticateDraftCard({
 
   const content = (
     <>
-      <Image source={cardImage} style={styles.cardImage} resizeMode="contain" />
+      {imageUrl ? (
+        <Image source={{ uri: imageUrl }} style={styles.cardImage} resizeMode="cover" />
+      ) : (
+        <View style={styles.imagePlaceholder}>
+          <Text style={styles.imagePlaceholderText}>NO IMAGE</Text>
+        </View>
+      )}
 
       <View style={styles.body}>
         <Text style={styles.title}>{title}</Text>
@@ -77,13 +84,14 @@ export function AuthenticateDraftCard({
 }
 
 type AuthenticateScannedCardProps = AuthenticateScannedRecord & {
+  imageUrl?: string | null;
   onPress?: () => void;
   s: (n: number) => number;
   t: (n: number) => number;
 };
 
 export function AuthenticateScannedCard({
-  cardImage,
+  imageUrl,
   title,
   tags,
   scannedAt,
@@ -95,7 +103,13 @@ export function AuthenticateScannedCard({
 
   const content = (
     <>
-      <Image source={cardImage} style={styles.cardImage} resizeMode="contain" />
+      {imageUrl ? (
+        <Image source={{ uri: imageUrl }} style={styles.cardImage} resizeMode="cover" />
+      ) : (
+        <View style={styles.imagePlaceholder}>
+          <Text style={styles.imagePlaceholderText}>NO IMAGE</Text>
+        </View>
+      )}
 
       <View style={styles.body}>
         <Text style={styles.title}>{title}</Text>
@@ -152,7 +166,24 @@ function createDraftStyles(s: (n: number) => number, t: (n: number) => number) {
     cardImage: {
       width: s(151),
       height: s(154),
-      alignSelf: 'center'
+      alignSelf: 'center',
+      borderRadius: s(8)
+    },
+    imagePlaceholder: {
+      width: s(151),
+      height: s(154),
+      alignSelf: 'center',
+      borderRadius: s(8),
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      backgroundColor: figmaColors.divider,
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    imagePlaceholderText: {
+      fontFamily: appFonts.accent,
+      fontSize: tb(12),
+      color: figmaColors.gray
     },
     body: {
       flex: 1,
@@ -260,7 +291,24 @@ function createScannedStyles(s: (n: number) => number, t: (n: number) => number)
     cardImage: {
       width: s(120),
       height: s(78),
-      alignSelf: 'center'
+      alignSelf: 'center',
+      borderRadius: s(8)
+    },
+    imagePlaceholder: {
+      width: s(120),
+      height: s(78),
+      alignSelf: 'center',
+      borderRadius: s(8),
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      backgroundColor: figmaColors.divider,
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    imagePlaceholderText: {
+      fontFamily: appFonts.accent,
+      fontSize: tb(10),
+      color: figmaColors.gray
     },
     body: {
       flex: 1,

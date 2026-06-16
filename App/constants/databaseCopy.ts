@@ -82,6 +82,8 @@ export const databaseCopy = {
   notificationsTitle: 'Notifications',
   notificationsEmpty: 'No notifications yet.',
   markAllRead: 'Mark all as read',
+  cancelSubmission: 'CANCEL SUBMISSION',
+  cancellingSubmission: 'CANCELLING…',
   recentlyAdded: 'RECENTLY ADDED',
   recentlyAuthenticated: 'RECENTLY AUTHENTICATED'
 } as const;

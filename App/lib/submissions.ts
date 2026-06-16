@@ -1,5 +1,6 @@
 import {
   bucketForFileKind,
+  signedSubmissionImageUrl,
   type SubmissionFileKind,
   uploadSubmissionImage
 } from '@/lib/submission-storage';
@@ -202,6 +203,7 @@ async function registerUpload(
  * Create a draft submission, upload photos, and submit for admin review.
  */
 export type SubmissionWithItems = SubmissionRow & {
+  preview_image_url?: string | null;
   items: {
     id: string;
     card_id: string | null;
@@ -217,15 +219,47 @@ export async function listMySubmissionsWithItems(
 
   const enriched: SubmissionWithItems[] = [];
   for (const submission of items) {
-    const { data: itemRows, error: itemError } = await supabase
-      .from('submission_items')
-      .select('id, card_id, cards(title)')
-      .eq('submission_id', submission.id);
+    const [{ data: itemRows, error: itemError }, { data: uploadRows, error: uploadError }] =
+      await Promise.all([
+        supabase
+          .from('submission_items')
+          .select('id, card_id, cards(title)')
+          .eq('submission_id', submission.id),
+        supabase
+          .from('submission_uploads')
+          .select('file_kind, file_assets(bucket_name, file_path)')
+          .eq('submission_id', submission.id)
+      ]);
 
     if (itemError) return { items: [], error: itemError.message };
+    if (uploadError) return { items: [], error: uploadError.message };
+
+    let previewImageUrl: string | null = null;
+    const uploads = (uploadRows ?? []) as {
+      file_kind: string;
+      file_assets:
+        | { bucket_name: string; file_path: string }
+        | { bucket_name: string; file_path: string }[]
+        | null;
+    }[];
+    const previewUpload =
+      uploads.find((u) => u.file_kind === 'submission_front') ??
+      uploads.find((u) => u.file_kind === 'submission_back') ??
+      uploads.find((u) => u.file_kind === 'ownership_proof') ??
+      uploads[0];
+    const previewFile = Array.isArray(previewUpload?.file_assets)
+      ? previewUpload?.file_assets[0] ?? null
+      : previewUpload?.file_assets ?? null;
+    if (previewFile) {
+      previewImageUrl = await signedSubmissionImageUrl(
+        previewFile.bucket_name,
+        previewFile.file_path
+      );
+    }
 
     enriched.push({
       ...submission,
+      preview_image_url: previewImageUrl,
       items: (itemRows ?? []) as SubmissionWithItems['items']
     });
   }
@@ -328,4 +362,49 @@ export function statusLabel(status: SubmissionStatus): string {
 
 export function bucketForKind(kind: SubmissionFileKind): string {
   return bucketForFileKind(kind);
+}
+
+const CANCELLABLE_STATUSES: SubmissionStatus[] = [
+  'draft',
+  'pending_payment',
+  'pending_admin_review',
+  'needs_more_info'
+];
+
+export function canCancelSubmission(status: SubmissionStatus): boolean {
+  return CANCELLABLE_STATUSES.includes(status);
+}
+
+export async function cancelSubmission(
+  submissionId: string
+): Promise<{ cancelled: boolean; error: string | null }> {
+  const { data: row, error: getError } = await supabase
+    .from('submissions')
+    .select('status')
+    .eq('id', submissionId)
+    .maybeSingle();
+  if (getError) return { cancelled: false, error: getError.message };
+  if (!row) return { cancelled: false, error: 'Submission not found.' };
+
+  const current = (row as { status: SubmissionStatus }).status;
+  if (!canCancelSubmission(current)) {
+    return { cancelled: false, error: 'This submission can no longer be cancelled.' };
+  }
+
+  const [{ error: subError }, { error: itemError }] = await Promise.all([
+    supabase
+      .from('submissions')
+      .update({ status: 'cancelled' })
+      .eq('id', submissionId)
+      .in('status', CANCELLABLE_STATUSES),
+    supabase
+      .from('submission_items')
+      .update({ status: 'cancelled' })
+      .eq('submission_id', submissionId)
+      .in('status', CANCELLABLE_STATUSES)
+  ]);
+
+  if (subError) return { cancelled: false, error: subError.message };
+  if (itemError) return { cancelled: false, error: itemError.message };
+  return { cancelled: true, error: null };
 }
