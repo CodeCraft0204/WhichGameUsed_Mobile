@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { resolveCardImageUrl } from '@/lib/card-images';
+import { getCachedCatalogList, setCachedCatalogList } from '@/lib/catalog-cache';
 
 export type CardSummary = {
   id: string;
@@ -14,6 +15,7 @@ export type CardSummary = {
   manufacturer_name: string | null;
   memorabilia_type: string | null;
   authenticated_count: number;
+  published_at: string | null;
   imageUrl: string | null;
 };
 
@@ -27,7 +29,7 @@ export type CatalogStats = {
 };
 
 const SUMMARY_COLUMNS =
-  'id, title, card_number, player_name, team_name, product_name, product_full_name, year, sport_name, manufacturer_name, memorabilia_type, authenticated_count';
+  'id, title, card_number, player_name, team_name, product_name, product_full_name, year, sport_name, manufacturer_name, memorabilia_type, authenticated_count, published_at';
 
 type CardImageIds = {
   front: string | null;
@@ -112,7 +114,8 @@ export type CatalogSort =
   | 'title_desc'
   | 'year_desc'
   | 'year_asc'
-  | 'auth_desc';
+  | 'auth_desc'
+  | 'published_desc';
 
 export type CatalogListOptions = {
   query?: string;
@@ -135,10 +138,29 @@ export type AuthenticatedAssetSummary = {
   verification_url: string | null;
 };
 
+function escapeIlike(term: string): string {
+  return term.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+}
+
 function ilikePattern(q: string): string {
-  const pattern = `%${q.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_')}%`;
+  return `%${escapeIlike(q.trim())}%`;
+}
+
+/** Quoted pattern for PostgREST `.or('col.ilike.value,...')` filter strings. */
+function postgrestOrIlikeValue(term: string): string {
+  const pattern = ilikePattern(term);
   return `"${pattern.replace(/"/g, '""')}"`;
 }
+
+const SPORT_FILTER_NAMES: Record<
+  Exclude<DatabaseSportFilter, 'ALL' | 'PLAYERS'>,
+  string
+> = {
+  BASEBALL: 'Baseball',
+  BASKETBALL: 'Basketball',
+  FOOTBALL: 'Football',
+  HOCKEY: 'Hockey'
+};
 
 // Supabase query builder types widen on each filter; keep this helper loosely typed.
 function applyCatalogFilters(request: any, options: CatalogListOptions): any {
@@ -149,8 +171,7 @@ function applyCatalogFilters(request: any, options: CatalogListOptions): any {
     if (sport === 'PLAYERS') {
       q = q.not('player_name', 'is', null);
     } else {
-      const name = sport.charAt(0) + sport.slice(1).toLowerCase();
-      q = q.ilike('sport_name', ilikePattern(name));
+      q = q.eq('sport_name', SPORT_FILTER_NAMES[sport]);
     }
   }
 
@@ -162,7 +183,7 @@ function applyCatalogFilters(request: any, options: CatalogListOptions): any {
 
   const search = query?.trim() ?? '';
   if (search) {
-    const pat = ilikePattern(search);
+    const pat = postgrestOrIlikeValue(search);
     q = q.or(
       `title.ilike.${pat},card_number.ilike.${pat},player_name.ilike.${pat},team_name.ilike.${pat},product_name.ilike.${pat},manufacturer_name.ilike.${pat}`
     );
@@ -186,6 +207,10 @@ function applySort(request: any, sort: CatalogSort = 'title_asc'): any {
     case 'auth_desc':
       return request
         .order('authenticated_count', { ascending: false })
+        .order('title', { ascending: true });
+    case 'published_desc':
+      return request
+        .order('published_at', { ascending: false, nullsFirst: false })
         .order('title', { ascending: true });
     case 'title_asc':
     default:
@@ -228,6 +253,9 @@ export async function listCatalogCards(
 ): Promise<{ items: CardSummary[]; error: string | null }> {
   const { limit = 20, offset = 0, sort = 'title_asc' } = options;
 
+  const cached = await getCachedCatalogList({ ...options, limit, offset, sort });
+  if (cached) return { items: cached, error: null };
+
   let request = supabase.from('card_public_summary').select(SUMMARY_COLUMNS);
   request = applyCatalogFilters(request, options);
   request = applySort(request, sort);
@@ -238,6 +266,7 @@ export async function listCatalogCards(
 
   const rows = (data ?? []) as Omit<CardSummary, 'imageUrl'>[];
   const items = await attachImageUrls(rows);
+  if (!error) void setCachedCatalogList({ ...options, limit, offset, sort }, items);
   return { items, error: null };
 }
 
@@ -248,11 +277,21 @@ export async function searchApprovedCards(
   return listCatalogCards({ query, limit });
 }
 
+export async function listTrendingCards(
+  limit = 4,
+  sport?: DatabaseSportFilter
+): Promise<{ items: CardSummary[]; error: string | null }> {
+  return listCatalogCards({ sport, authenticatedOnly: true, limit, sort: 'auth_desc' });
+}
+
 export async function listRecentCards(
   limit = 8,
   sport?: DatabaseSportFilter
 ): Promise<{ items: CardSummary[]; error: string | null }> {
-  return listCatalogCards({ sport, limit });
+  const primary = await listCatalogCards({ sport, limit, sort: 'published_desc' });
+  if (!primary.error) return primary;
+  if (!/published_at/i.test(primary.error)) return primary;
+  return listCatalogCards({ sport, limit, sort: 'year_desc' });
 }
 
 export async function listAuthenticatedAssetsForCard(
@@ -267,6 +306,22 @@ export async function listAuthenticatedAssetsForCard(
 
   if (error) return { items: [], error: error.message };
   return { items: (data ?? []) as AuthenticatedAssetSummary[], error: null };
+}
+
+export async function getAuthenticatedAssetById(
+  assetId: string
+): Promise<{
+  asset: (AuthenticatedAssetSummary & { card_id: string }) | null;
+  error: string | null;
+}> {
+  const { data, error } = await supabase
+    .from('authenticated_assets')
+    .select('id, asset_id, status, authenticated_at, verification_url, card_id')
+    .eq('id', assetId)
+    .maybeSingle();
+
+  if (error) return { asset: null, error: error.message };
+  return { asset: (data as AuthenticatedAssetSummary & { card_id: string }) ?? null, error: null };
 }
 
 export async function getCardById(

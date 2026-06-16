@@ -15,7 +15,7 @@ import { AuthPrimaryButton } from '@/components/auth/AuthPrimaryButton';
 import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader';
 import { databaseCopy } from '@/constants/databaseCopy';
 import { figmaColors } from '@/constants/figmaColors';
-import { databaseCardHref, databaseWishlistAddHref } from '@/constants/navigation';
+import { databaseCardHref, databaseWishlistAddHref, databaseRequestDetailHref, databaseMyRequestsHref } from '@/constants/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import { listMyWishlist, removeWishlistItem, wishlistItemTitle, type WishlistItemRow } from '@/lib/wishlist';
@@ -52,6 +52,10 @@ export default function WishlistScreen() {
   const openItem = (item: WishlistItemRow) => {
     if (item.card_id) {
       router.push(databaseCardHref(item.card_id));
+      return;
+    }
+    if (item.card_request_id) {
+      router.push(databaseRequestDetailHref(item.card_request_id));
     }
   };
 
@@ -69,6 +73,12 @@ export default function WishlistScreen() {
           t={t}
           onBack={() => router.back()}
         />
+
+        {user ? (
+          <Pressable style={styles.requestsLink} onPress={() => router.push(databaseMyRequestsHref())}>
+            <Text style={styles.requestsLinkText}>{databaseCopy.myRequestsTitle}</Text>
+          </Pressable>
+        ) : null}
 
         {!user ? (
           <View style={styles.signInCard}>
@@ -88,24 +98,28 @@ export default function WishlistScreen() {
             </Pressable>
           </View>
         ) : (
-          items.map((item) => (
-            <Pressable
-              key={item.id}
-              style={styles.row}
-              onPress={() => openItem(item)}
-              disabled={!item.card_id}
-            >
-              <View style={styles.rowBody}>
-                <Text style={styles.rowTitle}>{wishlistItemTitle(item)}</Text>
-                <Text style={styles.rowMeta}>
-                  {item.card_id ? 'In catalog' : 'Requested — pending review'}
-                </Text>
-              </View>
-              <Pressable onPress={() => void removeItem(item.id)} hitSlop={12}>
-                <Ionicons name="close-circle-outline" size={s(22)} color={figmaColors.gray} />
+          <>
+            {items.map((item) => (
+              <Pressable
+                key={item.id}
+                style={styles.row}
+                onPress={() => openItem(item)}
+              >
+                <View style={styles.rowBody}>
+                  <Text style={styles.rowTitle}>{wishlistItemTitle(item)}</Text>
+                  <Text style={styles.rowMeta}>
+                    {item.card_id ? 'In catalog' : 'Requested — pending review'}
+                  </Text>
+                </View>
+                <Pressable onPress={() => void removeItem(item.id)} hitSlop={12}>
+                  <Ionicons name="close-circle-outline" size={s(22)} color={figmaColors.gray} />
+                </Pressable>
               </Pressable>
+            ))}
+            <Pressable style={styles.addFooter} onPress={() => router.push(databaseWishlistAddHref())}>
+              <Text style={styles.addLink}>{databaseCopy.requestAddLink}</Text>
             </Pressable>
-          ))
+          </>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -144,6 +158,18 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     addLink: {
       fontFamily: appFonts.body,
       fontSize: t(17),
+      color: figmaColors.bronze
+    },
+    addFooter: {
+      alignItems: 'center',
+      paddingVertical: s(16)
+    },
+    requestsLink: {
+      marginBottom: s(12)
+    },
+    requestsLinkText: {
+      fontFamily: appFonts.body,
+      fontSize: t(16),
       color: figmaColors.bronze
     },
     row: {

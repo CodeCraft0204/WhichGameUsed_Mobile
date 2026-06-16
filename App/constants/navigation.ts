@@ -45,17 +45,34 @@ export function databaseRequestCardHref(params?: {
   query?: string;
   returnTo?: string;
 }): Href {
+  return databaseWishlistAddHref(params);
+}
+
+export function databaseMyRequestsHref(): Href {
+  return '/database/my-requests' as unknown as Href;
+}
+
+export function databaseRequestDetailHref(id: string): Href {
+  return { pathname: '/database/request/[id]', params: { id } } as unknown as Href;
+}
+
+export function authenticatedAssetHref(assetId: string): Href {
+  return { pathname: '/database/asset/[id]', params: { id: assetId } } as unknown as Href;
+}
+
+export function createWithLinkedCardHref(cardId: string, cardTitle: string): Href {
   return {
-    pathname: '/database/request-card',
-    params: {
-      ...(params?.query ? { query: params.query } : {}),
-      ...(params?.returnTo ? { returnTo: params.returnTo } : {})
-    }
+    pathname: '/camera/camera',
+    params: { linkedCardKey: cardId, linkedCardTitle: cardTitle }
   } as unknown as Href;
 }
 
 export function submissionDetailHref(id: string): Href {
   return { pathname: '/authenticate/submission/[id]', params: { id } } as unknown as Href;
+}
+
+export function databaseNotificationsHref(): Href {
+  return '/database/notifications' as unknown as Href;
 }
 
 export function databaseWishlistHref(): Href {

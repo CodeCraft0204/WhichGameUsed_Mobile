@@ -6,7 +6,8 @@ export const databaseSportTabs: DatabaseSportFilter[] = [
   'BASEBALL',
   'BASKETBALL',
   'FOOTBALL',
-  'HOCKEY'
+  'HOCKEY',
+  'PLAYERS'
 ];
 
 export type YearRangeKey =
@@ -36,6 +37,7 @@ export const databaseYearRanges: YearRangeOption[] = [
 export const catalogSortOptions: { key: CatalogSort; label: string }[] = [
   { key: 'title_asc', label: 'Title A–Z' },
   { key: 'title_desc', label: 'Title Z–A' },
+  { key: 'published_desc', label: 'Recently published' },
   { key: 'year_desc', label: 'Year (newest)' },
   { key: 'year_asc', label: 'Year (oldest)' },
   { key: 'auth_desc', label: 'Most authenticated' }

@@ -56,6 +56,24 @@ export async function listMyWishlist(): Promise<{
   return { items: (data ?? []) as WishlistItemRow[], error: null };
 }
 
+export async function getWishlistEntryForCard(
+  cardId: string
+): Promise<{ itemId: string | null; error: string | null }> {
+  const { data, error } = await supabase
+    .from('wish_list_items')
+    .select('id')
+    .eq('card_id', cardId)
+    .maybeSingle();
+
+  if (error) return { itemId: null, error: error.message };
+  return { itemId: (data?.id as string | undefined) ?? null, error: null };
+}
+
+export async function removeWishlistByCardId(cardId: string): Promise<{ error: string | null }> {
+  const { error } = await supabase.from('wish_list_items').delete().eq('card_id', cardId);
+  return { error: error?.message ?? null };
+}
+
 export async function isCardOnWishlist(cardId: string): Promise<boolean> {
   const { data, error } = await supabase
     .from('wish_list_items')

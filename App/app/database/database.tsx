@@ -1,5 +1,5 @@
 ﻿import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -31,6 +31,8 @@ import {
   cardToTags,
   getCatalogStats,
   listCatalogCards,
+  listRecentCards,
+  listTrendingCards,
   type CardSummary,
   type DatabaseSportFilter
 } from '@/lib/cards';
@@ -63,6 +65,7 @@ function cardToLiveRecord(card: CardSummary, cardImage: number): LiveRecord {
 
 export default function DatabaseScreen() {
   const router = useRouter();
+  const { id: focusCardId } = useLocalSearchParams<{ id?: string }>();
   const { s, t } = useFigmaLayout();
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
@@ -83,6 +86,12 @@ export default function DatabaseScreen() {
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [query]);
+
+  useEffect(() => {
+    if (typeof focusCardId === 'string' && focusCardId.length > 0) {
+      router.push(databaseCardHref(focusCardId));
+    }
+  }, [focusCardId, router]);
 
   useEffect(() => {
     let cancelled = false;
@@ -112,12 +121,13 @@ export default function DatabaseScreen() {
         }
 
         const [featuredResult, recentResult, statsResult] = await Promise.all([
-          listCatalogCards({ sport, authenticatedOnly: true, limit: 4, sort: 'auth_desc' }),
-          listCatalogCards({ sport, limit: 8, sort: 'year_desc' }),
+          listTrendingCards(4, sport),
+          listRecentCards(8, sport),
           getCatalogStats({ sport })
         ]);
         if (cancelled) return;
 
+        const listError = featuredResult.error ?? recentResult.error ?? statsResult.error;
         setTotalCards(statsResult.stats.totalCards);
         setAuthenticatedCards(statsResult.stats.authenticatedCards);
         setSearchResults([]);
@@ -127,6 +137,9 @@ export default function DatabaseScreen() {
         setRecent(
           recentResult.items.map((card) => cardToLiveRecord(card, databaseIcons.recentKobe))
         );
+        if (listError && featuredResult.items.length === 0 && recentResult.items.length === 0) {
+          console.warn('[database] catalog list failed:', listError);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -259,7 +272,7 @@ export default function DatabaseScreen() {
           ) : (
             <>
               <View style={page.sectionHeaderRow}>
-                <Text style={page.sectionTitle}>{databaseCopy.featuredRecords}</Text>
+                <Text style={page.sectionTitle}>{databaseCopy.trending}</Text>
                 <Pressable style={page.viewAllRow} onPress={() => openSearch({ authenticated: true })}>
                   <Text style={page.viewAllText}>{databaseCopy.viewAll}</Text>
                   <Image source={databaseIcons.sectionChevron} style={page.sectionChevron} resizeMode="contain" />

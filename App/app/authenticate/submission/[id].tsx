@@ -3,12 +3,14 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ImagePreviewModal } from '@/components/database/ImagePreviewModal';
 import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader';
 import { databaseCopy } from '@/constants/databaseCopy';
 import { appFonts } from '@/constants/appFonts';
@@ -55,6 +57,7 @@ export default function SubmissionDetailScreen() {
   const [adminNotes, setAdminNotes] = useState<string | null>(null);
   const [linkedTitle, setLinkedTitle] = useState<string | null>(null);
   const [photos, setPhotos] = useState<PhotoSlot[]>([]);
+  const [preview, setPreview] = useState<PhotoSlot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -122,7 +125,9 @@ export default function SubmissionDetailScreen() {
               <View key={photo.label} style={styles.photoSlot}>
                 <Text style={styles.photoLabel}>{photo.label}</Text>
                 {photo.url ? (
-                  <Image source={{ uri: photo.url }} style={styles.photo} resizeMode="cover" />
+                  <Pressable onPress={() => setPreview(photo)}>
+                    <Image source={{ uri: photo.url }} style={styles.photo} resizeMode="cover" />
+                  </Pressable>
                 ) : (
                   <View style={[styles.photo, styles.photoPlaceholder]} />
                 )}
@@ -131,6 +136,14 @@ export default function SubmissionDetailScreen() {
           </View>
         ) : null}
       </ScrollView>
+      {preview?.url ? (
+        <ImagePreviewModal
+          visible
+          uri={preview.url}
+          label={preview.label}
+          onClose={() => setPreview(null)}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

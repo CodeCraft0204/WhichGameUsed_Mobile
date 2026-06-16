@@ -23,6 +23,7 @@ export type CardRequestRow = {
   notes: string | null;
   status: CardRequestStatus;
   accepted_card_id: string | null;
+  review_notes: string | null;
   created_at: string;
 };
 
@@ -66,6 +67,21 @@ export async function createCardRequest(
   return { requestId: data.id as string, error: null };
 }
 
+export async function getCardRequestById(
+  id: string
+): Promise<{ request: CardRequestRow | null; error: string | null }> {
+  const { data, error } = await supabase
+    .from('card_requests')
+    .select(
+      'id, requested_by, player_name, team_name, manufacturer_name, product_year, product_name, card_number, card_title, memorabilia_type, source_url, notes, status, accepted_card_id, review_notes, created_at'
+    )
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) return { request: null, error: error.message };
+  return { request: (data as CardRequestRow) ?? null, error: null };
+}
+
 export async function listMyCardRequests(): Promise<{
   items: CardRequestRow[];
   error: string | null;
@@ -73,7 +89,7 @@ export async function listMyCardRequests(): Promise<{
   const { data, error } = await supabase
     .from('card_requests')
     .select(
-      'id, requested_by, player_name, team_name, manufacturer_name, product_year, product_name, card_number, card_title, memorabilia_type, source_url, notes, status, accepted_card_id, created_at'
+      'id, requested_by, player_name, team_name, manufacturer_name, product_year, product_name, card_number, card_title, memorabilia_type, source_url, notes, status, accepted_card_id, review_notes, created_at'
     )
     .order('created_at', { ascending: false });
 

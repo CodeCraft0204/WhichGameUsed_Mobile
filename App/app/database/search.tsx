@@ -34,7 +34,7 @@ import {
   type YearRangeKey
 } from '@/constants/databaseFilters';
 import { figmaColors } from '@/constants/figmaColors';
-import { databaseCardHref, databaseWishlistHref } from '@/constants/navigation';
+import { databaseCardHref, databaseWishlistAddHref, databaseWishlistHref } from '@/constants/navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import {
   cardDescription,
@@ -90,60 +90,70 @@ export default function DatabaseSearchScreen() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [results, setResults] = useState<CardSummary[]>([]);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [totalCards, setTotalCards] = useState(0);
   const [authenticatedCards, setAuthenticatedCards] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    const yearBounds = yearRangeToBounds(filters.yearRange);
-    const listOpts = {
-      query: debouncedQuery,
-      sport: filters.sport,
-      authenticatedOnly: filters.authenticatedOnly,
-      memorabiliaType: filters.memorabiliaType,
-      sort: filters.sort,
-      ...yearBounds,
-      limit: PAGE_SIZE
-    };
+  const loadData = useCallback(
+    async (append = false, startOffset = 0) => {
+      if (append) setLoadingMore(true);
+      else setLoading(true);
 
-    const [cardsRes, statsRes, wishRes] = await Promise.all([
-      listCatalogCards(listOpts),
-      getCatalogStats({
+      const yearBounds = yearRangeToBounds(filters.yearRange);
+      const listOpts = {
         query: debouncedQuery,
         sport: filters.sport,
         authenticatedOnly: filters.authenticatedOnly,
         memorabiliaType: filters.memorabiliaType,
-        ...yearBounds
-      }),
-      listMyWishlist()
-    ]);
+        sort: filters.sort,
+        ...yearBounds,
+        limit: PAGE_SIZE,
+        offset: startOffset
+      };
 
-    setResults(cardsRes.items);
-    setError(cardsRes.error ?? statsRes.error);
-    setTotalCards(statsRes.stats.totalCards);
-    setAuthenticatedCards(statsRes.stats.authenticatedCards);
-    setWishlistCount(wishRes.items.length);
-    setLoading(false);
-  }, [
-    debouncedQuery,
-    filters.sport,
-    filters.yearRange,
-    filters.authenticatedOnly,
-    filters.memorabiliaType,
-    filters.sort
-  ]);
+      const [cardsRes, statsRes, wishRes] = await Promise.all([
+        listCatalogCards(listOpts),
+        getCatalogStats({
+          query: debouncedQuery,
+          sport: filters.sport,
+          authenticatedOnly: filters.authenticatedOnly,
+          memorabiliaType: filters.memorabiliaType,
+          ...yearBounds
+        }),
+        listMyWishlist()
+      ]);
+
+      setResults((prev) => (append ? [...prev, ...cardsRes.items] : cardsRes.items));
+      setError(cardsRes.error ?? statsRes.error);
+      setTotalCards(statsRes.stats.totalCards);
+      setAuthenticatedCards(statsRes.stats.authenticatedCards);
+      setWishlistCount(wishRes.items.length);
+      setLoading(false);
+      setLoadingMore(false);
+    },
+    [
+      debouncedQuery,
+      filters.sport,
+      filters.yearRange,
+      filters.authenticatedOnly,
+      filters.memorabiliaType,
+      filters.sort
+    ]
+  );
+
+  useEffect(() => {
+    void loadData(false, 0);
+  }, [loadData]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query), 300);
     return () => clearTimeout(timer);
   }, [query]);
 
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
+  const hasMore = results.length < totalCards;
 
   const applyFilters = () => {
     setFilters((prev) => ({
@@ -248,13 +258,40 @@ export default function DatabaseSearchScreen() {
         ListHeaderComponent={listHeader}
         ListEmptyComponent={
           !loading ? (
-            <Text style={styles.empty}>
-              {debouncedQuery.trim() ? 'No matching cards in the catalog.' : databaseCopy.recentEmpty}
-            </Text>
+            <View style={styles.emptyWrap}>
+              <Text style={styles.empty}>
+                {debouncedQuery.trim() ? databaseCopy.searchEmpty : databaseCopy.recentEmpty}
+              </Text>
+              {debouncedQuery.trim() ? (
+                <Pressable
+                  onPress={() =>
+                    router.push(databaseWishlistAddHref({ query: debouncedQuery.trim() }))
+                  }
+                >
+                  <Text style={styles.emptyLink}>
+                    {databaseCopy.cardNotFound} {databaseCopy.requestAddLink}
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
           ) : null
         }
         ListFooterComponent={
-          loading ? <ActivityIndicator style={styles.loader} color={figmaColors.charcoal} /> : null
+          loading && results.length === 0 ? (
+            <ActivityIndicator style={styles.loader} color={figmaColors.charcoal} />
+          ) : hasMore ? (
+            <Pressable
+              style={styles.loadMore}
+              disabled={loadingMore}
+              onPress={() => void loadData(true, results.length)}
+            >
+              {loadingMore ? (
+                <ActivityIndicator color={figmaColors.charcoal} />
+              ) : (
+                <Text style={styles.loadMoreText}>{databaseCopy.loadMore}</Text>
+              )}
+            </Pressable>
+          ) : null
         }
         renderItem={({ item, index }) => (
           <DatabaseRecordCard
@@ -342,8 +379,29 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: tb(17),
       lineHeight: tb(24),
       color: figmaColors.gray,
-      textAlign: 'center',
-      marginTop: s(24)
+      textAlign: 'center'
+    },
+    emptyWrap: {
+      alignItems: 'center',
+      gap: s(12),
+      marginTop: s(24),
+      paddingHorizontal: s(12)
+    },
+    emptyLink: {
+      fontFamily: appFonts.body,
+      fontSize: tb(16),
+      color: figmaColors.bronze,
+      textAlign: 'center'
+    },
+    loadMore: {
+      alignItems: 'center',
+      paddingVertical: s(20)
+    },
+    loadMoreText: {
+      fontFamily: appFonts.accent,
+      fontSize: tb(15),
+      color: figmaColors.charcoal,
+      letterSpacing: 0.8
     }
   });
 }

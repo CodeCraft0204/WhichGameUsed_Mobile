@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { appFonts } from '@/constants/appFonts';
 import { bodyText, broadsheetAccent } from '@/constants/appTypography';
-import * as Linking from 'expo-linking';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
@@ -19,6 +18,7 @@ import { databaseIcons } from '@/constants/databaseContent';
 import { databaseCopy } from '@/constants/databaseCopy';
 import { figmaColors } from '@/constants/figmaColors';
 import { useAuth } from '@/context/AuthContext';
+import { authenticatedAssetHref, createWithLinkedCardHref } from '@/constants/navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import {
   getCardById,
@@ -26,8 +26,11 @@ import {
   type AuthenticatedAssetSummary,
   type CardDetail
 } from '@/lib/cards';
-import { absolutePortalUrl } from '@/lib/portal-url';
-import { addCardToWishlist, isCardOnWishlist } from '@/lib/wishlist';
+import {
+  addCardToWishlist,
+  getWishlistEntryForCard,
+  removeWishlistByCardId
+} from '@/lib/wishlist';
 
 function DetailRow({
   label,
@@ -65,33 +68,36 @@ export default function CardDetailScreen() {
     if (!id || typeof id !== 'string') return;
     let active = true;
     setLoading(true);
-    void Promise.all([getCardById(id), listAuthenticatedAssetsForCard(id), isCardOnWishlist(id)]).then(
-      ([cardResult, assetsResult, wishlisted]) => {
+    void Promise.all([
+      getCardById(id),
+      listAuthenticatedAssetsForCard(id),
+      getWishlistEntryForCard(id)
+    ]).then(([cardResult, assetsResult, wishEntry]) => {
         if (!active) return;
         setCard(cardResult.card);
         setAssets(assetsResult.items);
-        setOnWishlist(wishlisted);
-        setError(cardResult.error ?? assetsResult.error);
+        setOnWishlist(!!wishEntry.itemId);
+        setError(cardResult.error ?? assetsResult.error ?? wishEntry.error);
         setLoading(false);
-      }
-    );
+      });
     return () => {
       active = false;
     };
   }, [id]);
-
-  const openVerification = (asset: AuthenticatedAssetSummary) => {
-    const url = absolutePortalUrl(asset.verification_url);
-    if (url) void Linking.openURL(url);
-  };
 
   const toggleWishlist = async () => {
     if (!user) {
       router.replace('/sign-in/sign-in');
       return;
     }
-    if (!card || onWishlist || wishBusy) return;
+    if (!card || wishBusy) return;
     setWishBusy(true);
+    if (onWishlist) {
+      const { error: wishError } = await removeWishlistByCardId(card.id);
+      setWishBusy(false);
+      if (!wishError) setOnWishlist(false);
+      return;
+    }
     const { error: wishError } = await addCardToWishlist(user.id, card.id);
     setWishBusy(false);
     if (!wishError) setOnWishlist(true);
@@ -145,13 +151,17 @@ export default function CardDetailScreen() {
 
             <View style={styles.actions}>
               <AuthPrimaryButton
-                label={onWishlist ? databaseCopy.onWishlist : databaseCopy.addToWishlist}
+                label={
+                  onWishlist ? databaseCopy.removeFromWishlist : databaseCopy.addToWishlist
+                }
                 onPress={() => void toggleWishlist()}
-                disabled={onWishlist || wishBusy}
+                disabled={wishBusy}
               />
               <Pressable
                 style={styles.secondaryBtn}
-                onPress={() => router.push('/create/create')}
+                onPress={() =>
+                  router.push(createWithLinkedCardHref(card.id, card.title))
+                }
               >
                 <Ionicons name="scan-outline" size={s(18)} color={figmaColors.charcoal} />
                 <Text style={styles.secondaryBtnText}>{databaseCopy.authenticateSimilar}</Text>
@@ -187,7 +197,7 @@ export default function CardDetailScreen() {
                 <Pressable
                   key={asset.id}
                   style={styles.assetRow}
-                  onPress={() => openVerification(asset)}
+                  onPress={() => router.push(authenticatedAssetHref(asset.id))}
                 >
                   <View>
                     <Text style={styles.assetId}>

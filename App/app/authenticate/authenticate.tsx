@@ -12,8 +12,9 @@ import { authenticateIcons, authenticateTabs } from '@/constants/authenticateCon
 import { databaseCopy } from '@/constants/databaseCopy';
 import { databaseIcons } from '@/constants/databaseContent';
 import { figmaColors } from '@/constants/figmaColors';
-import { submissionDetailHref } from '@/constants/navigation';
+import { submissionDetailHref, databaseNotificationsHref } from '@/constants/navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
+import { countUnreadNotifications } from '@/lib/notifications';
 import {
   linkedCardTitleFromItems,
   listMySubmissionsWithItems,
@@ -28,12 +29,16 @@ export default function AuthenticateScreen() {
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
   const [activeTab, setActiveTab] = useState(0);
   const [liveSubmissions, setLiveSubmissions] = useState<SubmissionWithItems[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
       void listMySubmissionsWithItems().then(({ items, error }) => {
         if (active && !error) setLiveSubmissions(items);
+      });
+      void countUnreadNotifications().then((count) => {
+        if (active) setUnreadCount(count);
       });
       return () => {
         active = false;
@@ -81,6 +86,14 @@ export default function AuthenticateScreen() {
           ))}
         </ScrollView>
       </FigmaPageHeader>
+
+      {unreadCount > 0 ? (
+        <Pressable style={styles.noticeRow} onPress={() => router.push(databaseNotificationsHref())}>
+          <Text style={styles.noticeText}>
+            {unreadCount} new notification{unreadCount === 1 ? '' : 's'}
+          </Text>
+        </Pressable>
+      ) : null}
 
       {showPending ? (
         <>
@@ -207,6 +220,20 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       lineHeight: 22,
       color: figmaColors.gray,
       marginBottom: s(12)
+    },
+    noticeRow: {
+      marginBottom: s(12),
+      paddingVertical: s(10),
+      paddingHorizontal: s(14),
+      borderRadius: s(10),
+      backgroundColor: figmaColors.successBg,
+      borderWidth: 1,
+      borderColor: figmaColors.success
+    },
+    noticeText: {
+      fontFamily: appFonts.body,
+      fontSize: 15,
+      color: figmaColors.charcoal
     }
   });
 }
