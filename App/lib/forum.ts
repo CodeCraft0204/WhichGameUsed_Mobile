@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { resolveProfileAvatarUrl } from '@/lib/profile';
 
 export type ForumSort = 'newest' | 'hottest' | 'all_time';
 
@@ -54,6 +55,25 @@ export type ForumThreadDetail = ForumThreadSummary & {
   user_vote: 'upvote' | 'downvote' | null;
 };
 
+type ProfileEmbed = {
+  display_name: string | null;
+  username: string | null;
+  avatar_url: string | null;
+};
+
+function normalizeProfileEmbed(profiles: unknown): ProfileEmbed | null {
+  if (!profiles) return null;
+  if (Array.isArray(profiles)) return (profiles[0] as ProfileEmbed | undefined) ?? null;
+  return profiles as ProfileEmbed;
+}
+
+function mapThreadRow(row: ForumThreadSummary): ForumThreadSummary {
+  return {
+    ...row,
+    author_avatar_url: resolveProfileAvatarUrl(row.author_avatar_url)
+  };
+}
+
 function sortThreads(items: ForumThreadSummary[], sort: ForumSort): ForumThreadSummary[] {
   const pinned = items.filter((row) => row.is_pinned);
   const rest = items.filter((row) => !row.is_pinned);
@@ -97,7 +117,7 @@ export async function listForumThreads(opts?: {
   const { data, error } = await q;
   if (error) return { items: [], error: error.message };
 
-  let items = (data ?? []) as ForumThreadSummary[];
+  let items = (data ?? []).map((row) => mapThreadRow(row as ForumThreadSummary));
   items = sortThreads(items, sort).slice(0, limit);
 
   const { data: userData } = await supabase.auth.getUser();
@@ -142,11 +162,7 @@ export async function getForumThread(threadId: string): Promise<{
   if (commentsError) return { thread: null, error: commentsError.message };
 
   const mappedComments: ForumComment[] = (comments ?? []).map((row) => {
-    const profile = row.profiles as {
-      display_name: string | null;
-      username: string | null;
-      avatar_url: string | null;
-    } | null;
+    const profile = normalizeProfileEmbed(row.profiles);
     return {
       id: row.id,
       thread_id: row.thread_id,
@@ -158,7 +174,7 @@ export async function getForumThread(threadId: string): Promise<{
       updated_at: row.updated_at,
       author_display_name: profile?.display_name ?? null,
       author_username: profile?.username ?? null,
-      author_avatar_url: profile?.avatar_url ?? null
+      author_avatar_url: resolveProfileAvatarUrl(profile?.avatar_url)
     };
   });
 
@@ -189,7 +205,7 @@ export async function getForumThread(threadId: string): Promise<{
 
   return {
     thread: {
-      ...(data as ForumThreadSummary),
+      ...mapThreadRow(data as ForumThreadSummary),
       comments: mappedComments,
       user_vote,
       saved
@@ -322,5 +338,8 @@ export async function searchForumThreads(
     .limit(limit);
 
   if (error) return { items: [], error: error.message };
-  return { items: (data ?? []) as ForumThreadSummary[], error: null };
+  return {
+    items: (data ?? []).map((row) => mapThreadRow(row as ForumThreadSummary)),
+    error: null
+  };
 }

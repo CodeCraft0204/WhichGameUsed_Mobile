@@ -1,10 +1,10 @@
 import React from 'react';
 import { appFonts } from '@/constants/appFonts';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import {
   discussionClipLayout,
-  discussionIcons,
-  defaultThreadAvatar
+  discussionIcons
 } from '@/constants/discussionContent';
 import { figmaColors } from '@/constants/figmaColors';
 
@@ -43,6 +43,7 @@ function ClippedThreadIcon({
 
 type DiscussionThreadCardProps = {
   avatarUrl?: string | null;
+  authorName: string;
   title: string;
   category: string;
   author: string;
@@ -55,6 +56,7 @@ type DiscussionThreadCardProps = {
 
 export function DiscussionThreadCard({
   avatarUrl,
+  authorName,
   title,
   category,
   author,
@@ -65,14 +67,11 @@ export function DiscussionThreadCard({
   t
 }: DiscussionThreadCardProps) {
   const styles = createStyles(s, t);
+  const avatarSize = s(76);
 
   const content = (
     <>
-      {avatarUrl ? (
-        <Image source={{ uri: avatarUrl }} style={styles.avatar} resizeMode="cover" />
-      ) : (
-        <Image source={defaultThreadAvatar} style={styles.avatar} resizeMode="cover" />
-      )}
+      <ProfileAvatar url={avatarUrl ?? null} name={authorName} size={avatarSize} />
 
       <View style={styles.body}>
         <Text style={styles.title}>{title}</Text>
@@ -135,13 +134,6 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       paddingVertical: s(10),
       paddingLeft: s(10),
       paddingRight: s(8)
-    },
-    avatar: {
-      width: s(76),
-      height: s(76),
-      borderRadius: s(38),
-      flexShrink: 0,
-      backgroundColor: figmaColors.surfaceHighlight
     },
     body: {
       flex: 1,

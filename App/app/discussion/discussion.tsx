@@ -158,20 +158,25 @@ export default function DiscussionScreen() {
       ) : threads.length === 0 ? (
         <Text style={styles.emptyText}>No threads yet. Start the conversation.</Text>
       ) : (
-        threads.map((thread) => (
-          <DiscussionThreadCard
-            key={thread.id}
-            avatarUrl={thread.author_avatar_url}
-            title={thread.title}
-            category={thread.topic_title}
-            author={thread.author_display_name || thread.author_username || 'Collector'}
-            comments={formatCommentCount(thread.comment_count)}
-            saved={thread.saved}
-            s={s}
-            t={t}
-            onPress={() => router.push(discussionThreadHref(thread.id))}
-          />
-        ))
+        threads.map((thread) => {
+          const authorName =
+            thread.author_display_name || thread.author_username || 'Collector';
+          return (
+            <DiscussionThreadCard
+              key={thread.id}
+              avatarUrl={thread.author_avatar_url}
+              authorName={authorName}
+              title={thread.title}
+              category={thread.topic_title}
+              author={authorName}
+              comments={formatCommentCount(thread.comment_count)}
+              saved={thread.saved}
+              s={s}
+              t={t}
+              onPress={() => router.push(discussionThreadHref(thread.id))}
+            />
+          );
+        })
       )}
 
       <Pressable style={page.ctaCard} onPress={() => router.push(discussionCreateHref())}>

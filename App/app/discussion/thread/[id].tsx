@@ -4,7 +4,6 @@ import { appFonts } from '@/constants/appFonts';
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -13,10 +12,10 @@ import {
   View
 } from 'react-native';
 import { CommentComposer } from '@/components/discussion/CommentComposer';
+import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
-import { defaultThreadAvatar } from '@/constants/discussionContent';
 import { figmaColors } from '@/constants/figmaColors';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import {
@@ -137,11 +136,7 @@ export default function DiscussionThreadScreen() {
       </Pressable>
 
       <View style={styles.threadHeader}>
-        {thread.author_avatar_url ? (
-          <Image source={{ uri: thread.author_avatar_url }} style={styles.avatar} />
-        ) : (
-          <Image source={defaultThreadAvatar} style={styles.avatar} />
-        )}
+        <ProfileAvatar url={thread.author_avatar_url} name={author} size={s(56)} />
         <View style={styles.headerBody}>
           <Text style={styles.title}>{thread.title}</Text>
           <Text style={styles.meta}>
@@ -168,18 +163,31 @@ export default function DiscussionThreadScreen() {
 
       <Text style={styles.sectionTitle}>COMMENTS ({thread.comments.length})</Text>
 
-      {thread.comments.map((comment) => (
-        <View key={comment.id} style={styles.commentCard}>
-          <Text style={styles.commentMeta}>
-            {comment.author_display_name || comment.author_username || 'Collector'} ·{' '}
-            {new Date(comment.created_at).toLocaleString()}
-          </Text>
-          <Text style={styles.commentBody}>{comment.body}</Text>
-          <Pressable onPress={() => handleReport('forum_comment', comment.id)}>
-            <Text style={styles.reportLink}>Report</Text>
-          </Pressable>
-        </View>
-      ))}
+      {thread.comments.map((comment) => {
+        const commentAuthor =
+          comment.author_display_name || comment.author_username || 'Collector';
+        return (
+          <View key={comment.id} style={styles.commentCard}>
+            <View style={styles.commentHeader}>
+              <ProfileAvatar
+                url={comment.author_avatar_url}
+                name={commentAuthor}
+                size={s(40)}
+              />
+              <View style={styles.commentHeaderText}>
+                <Text style={styles.commentAuthor}>{commentAuthor}</Text>
+                <Text style={styles.commentMeta}>
+                  {new Date(comment.created_at).toLocaleString()}
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.commentBody}>{comment.body}</Text>
+            <Pressable onPress={() => handleReport('forum_comment', comment.id)}>
+              <Text style={styles.reportLink}>Report</Text>
+            </Pressable>
+          </View>
+        );
+      })}
 
       {thread.is_locked ? (
         <Text style={styles.lockedText}>This thread is locked — new replies are disabled.</Text>
@@ -211,11 +219,6 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       flexDirection: 'row',
       gap: s(12),
       marginBottom: s(12)
-    },
-    avatar: {
-      width: s(56),
-      height: s(56),
-      borderRadius: s(28)
     },
     headerBody: { flex: 1, minWidth: 0 },
     title: {
@@ -269,11 +272,26 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       marginBottom: s(8),
       backgroundColor: figmaColors.cardFeaturedBg
     },
+    commentHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(10),
+      marginBottom: s(8)
+    },
+    commentHeaderText: {
+      flex: 1,
+      minWidth: 0
+    },
+    commentAuthor: {
+      fontFamily: appFonts.body,
+      fontSize: t(14),
+      color: figmaColors.charcoal
+    },
     commentMeta: {
       fontFamily: appFonts.body,
       fontSize: t(12),
       color: figmaColors.gray,
-      marginBottom: s(6)
+      marginTop: s(2)
     },
     commentBody: {
       fontFamily: appFonts.body,

@@ -127,6 +127,17 @@ export function profileInitials(name: string): string {
     .toUpperCase();
 }
 
+/** Normalize avatar_url from profiles — supports full URLs and avatars bucket paths. */
+export function resolveProfileAvatarUrl(url: string | null | undefined): string | null {
+  const trimmed = url?.trim();
+  if (!trimmed) return null;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+
+  const path = trimmed.replace(/^\/+/, '');
+  const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+  return data.publicUrl || null;
+}
+
 export function normalizeUsername(value: string): string {
   return value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
 }
