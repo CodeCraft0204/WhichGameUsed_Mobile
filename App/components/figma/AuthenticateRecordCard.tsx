@@ -40,9 +40,12 @@ export function AuthenticateDraftCard({
       {imageUrl ? (
         <Image source={{ uri: imageUrl }} style={styles.cardImage} resizeMode="cover" />
       ) : (
-        <View style={styles.imagePlaceholder}>
-          <Text style={styles.imagePlaceholderText}>NO IMAGE</Text>
-        </View>
+        <Image
+          source={authenticateIcons.cardPlaceholder}
+          style={styles.cardImage}
+          resizeMode="cover"
+          accessibilityLabel="No submission image"
+        />
       )}
 
       <View style={styles.body}>
@@ -106,9 +109,12 @@ export function AuthenticateScannedCard({
       {imageUrl ? (
         <Image source={{ uri: imageUrl }} style={styles.cardImage} resizeMode="cover" />
       ) : (
-        <View style={styles.imagePlaceholder}>
-          <Text style={styles.imagePlaceholderText}>NO IMAGE</Text>
-        </View>
+        <Image
+          source={authenticateIcons.cardPlaceholder}
+          style={styles.cardImage}
+          resizeMode="cover"
+          accessibilityLabel="No submission image"
+        />
       )}
 
       <View style={styles.body}>
@@ -168,22 +174,6 @@ function createDraftStyles(s: (n: number) => number, t: (n: number) => number) {
       height: s(154),
       alignSelf: 'center',
       borderRadius: s(8)
-    },
-    imagePlaceholder: {
-      width: s(151),
-      height: s(154),
-      alignSelf: 'center',
-      borderRadius: s(8),
-      borderWidth: 1,
-      borderColor: figmaColors.borderLight,
-      backgroundColor: figmaColors.divider,
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
-    imagePlaceholderText: {
-      fontFamily: appFonts.accent,
-      fontSize: tb(12),
-      color: figmaColors.gray
     },
     body: {
       flex: 1,
@@ -293,22 +283,6 @@ function createScannedStyles(s: (n: number) => number, t: (n: number) => number)
       height: s(78),
       alignSelf: 'center',
       borderRadius: s(8)
-    },
-    imagePlaceholder: {
-      width: s(120),
-      height: s(78),
-      alignSelf: 'center',
-      borderRadius: s(8),
-      borderWidth: 1,
-      borderColor: figmaColors.borderLight,
-      backgroundColor: figmaColors.divider,
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
-    imagePlaceholderText: {
-      fontFamily: appFonts.accent,
-      fontSize: tb(10),
-      color: figmaColors.gray
     },
     body: {
       flex: 1,

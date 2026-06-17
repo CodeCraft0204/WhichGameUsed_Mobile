@@ -8,6 +8,7 @@ export const authenticateIcons = {
   sectionChevron: require('@/assets/figma/authenticate/chevron.png'),
   ctaIcon: require('@/assets/figma/authenticate/cta_icon.png'),
   ctaArrow: require('@/assets/figma/authenticate/cta_arrow.png'),
+  cardPlaceholder: require('@/assets/authenticate/card-placeholder.png'),
   metaCalendar: figmaIcons.metaCalendar,
   metaClock: figmaIcons.hourglassPending,
   metaScan: figmaIcons.collectionChest,
