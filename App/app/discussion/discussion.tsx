@@ -1,33 +1,92 @@
-import React, { useMemo, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useMemo, useState } from 'react';
 import { appFonts } from '@/constants/appFonts';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
+} from 'react-native';
 import { DiscussionThreadCard } from '@/components/figma/DiscussionThreadCard';
-import { DiscussionTopicCard } from '@/components/figma/DiscussionTopicCard';
-import { chipOptionsFromLabels, FigmaChipRow } from '@/components/figma/FigmaChipRow';import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
+import { chipOptionsFromLabels, FigmaChipRow } from '@/components/figma/FigmaChipRow';
+import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
+import { DiscussionTopicCard } from '@/components/figma/DiscussionTopicCard';
 import {
   discussionIcons,
+  discussionSortFromTab,
   discussionTabs,
-  discussionThreads,
-  discussionTopics
+  formatCommentCount,
+  formatThreadCount,
+  topicIconBySlug,
+  type DiscussionTab
 } from '@/constants/discussionContent';
 import { figmaColors } from '@/constants/figmaColors';
-import { figmaSharedIcons } from '@/constants/figmaShared';
+import {
+  discussionCreateHref,
+  discussionThreadHref,
+  discussionTopicHref
+} from '@/constants/navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
+import { listForumThreads, listForumTopics, searchForumThreads } from '@/lib/forum';
 
 export default function DiscussionScreen() {
+  const router = useRouter();
   const { s, t } = useFigmaLayout();
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
-  const [activeTab, setActiveTab] = useState<(typeof discussionTabs)[number]>(discussionTabs[0]);
+  const [activeTab, setActiveTab] = useState<DiscussionTab>(discussionTabs[0]);
+  const [topics, setTopics] = useState<Awaited<ReturnType<typeof listForumTopics>>['items']>([]);
+  const [threads, setThreads] = useState<Awaited<ReturnType<typeof listForumThreads>>['items']>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+
+  const load = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
+    setError(null);
+
+    const sort = discussionSortFromTab(activeTab);
+    const trimmed = search.trim();
+    const [topicsRes, threadsRes] = await Promise.all([
+      listForumTopics(),
+      trimmed
+        ? searchForumThreads(trimmed, 20)
+        : listForumThreads({ sort, limit: 12 })
+    ]);
+
+    if (topicsRes.error) setError(topicsRes.error);
+    else setTopics(topicsRes.items);
+    if (threadsRes.error) setError(threadsRes.error);
+    else setThreads(threadsRes.items);
+
+    setLoading(false);
+    setRefreshing(false);
+  }, [activeTab, search]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load])
+  );
 
   return (
     <FigmaScreen
       backgroundColor={figmaColors.background}
       bottomNav={<FigmaDatabaseBottomNav active="discussion" />}
-      scrollProps={{ contentContainerStyle: page.scrollContent }}
+      scrollProps={{
+        contentContainerStyle: page.scrollContent,
+        refreshControl: <RefreshControl refreshing={refreshing} onRefresh={() => void load(true)} />
+      }}
     >
       <FigmaPageHeader
         title="DISCUSSION"
@@ -44,33 +103,78 @@ export default function DiscussionScreen() {
           s={s}
           t={t}
           style={styles.chipRow}
-        />      </FigmaPageHeader>
+        />
+      </FigmaPageHeader>
+
+      <View style={styles.searchRow}>
+        <TextInput
+          style={styles.searchInput}
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Search threads…"
+          placeholderTextColor={figmaColors.textMuted}
+          returnKeyType="search"
+          onSubmitEditing={() => void load()}
+        />
+        <Pressable style={styles.createButton} onPress={() => router.push(discussionCreateHref())}>
+          <Text style={styles.createButtonText}>NEW THREAD</Text>
+        </Pressable>
+      </View>
+
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
       <View style={page.sectionHeaderRow}>
         <Text style={page.sectionTitle}>TOPICS</Text>
-        <View style={page.viewAllRow}>
-          <Text style={styles.viewAllText}>VIEW ALL</Text>
-          <Image source={discussionIcons.sectionChevron} style={page.sectionChevron} resizeMode="contain" />
-        </View>
       </View>
 
-      {discussionTopics.map(({ key, ...topic }) => (
-        <DiscussionTopicCard key={key} {...topic} s={s} t={t} />
-      ))}
+      {loading && topics.length === 0 ? (
+        <ActivityIndicator color={figmaColors.charcoal} style={styles.loader} />
+      ) : (
+        topics.map((topic) => (
+          <DiscussionTopicCard
+            key={topic.id}
+            icon={topicIconBySlug[topic.slug] ?? discussionIcons.topicAskAnything}
+            title={topic.title}
+            description={topic.description ?? ''}
+            threadsLabel={formatThreadCount(topic.thread_count)}
+            activityLabel={
+              topic.last_activity_at
+                ? `Active ${new Date(topic.last_activity_at).toLocaleDateString()}`
+                : 'No activity yet'
+            }
+            s={s}
+            t={t}
+            onPress={() => router.push(discussionTopicHref(topic.slug))}
+          />
+        ))
+      )}
 
       <View style={[page.sectionHeaderRow, styles.sectionSpaced]}>
-        <Text style={page.sectionTitle}>ACTIVE THREADS</Text>
-        <View style={page.viewAllRow}>
-          <Text style={styles.viewAllText}>VIEW ALL</Text>
-          <Image source={discussionIcons.sectionChevron} style={page.sectionChevron} resizeMode="contain" />
-        </View>
+        <Text style={page.sectionTitle}>{search.trim() ? 'SEARCH RESULTS' : 'ACTIVE THREADS'}</Text>
       </View>
 
-      {discussionThreads.map(({ key, ...thread }) => (
-        <DiscussionThreadCard key={key} {...thread} s={s} t={t} />
-      ))}
+      {loading && threads.length === 0 ? (
+        <ActivityIndicator color={figmaColors.charcoal} style={styles.loader} />
+      ) : threads.length === 0 ? (
+        <Text style={styles.emptyText}>No threads yet. Start the conversation.</Text>
+      ) : (
+        threads.map((thread) => (
+          <DiscussionThreadCard
+            key={thread.id}
+            avatarUrl={thread.author_avatar_url}
+            title={thread.title}
+            category={thread.topic_title}
+            author={thread.author_display_name || thread.author_username || 'Collector'}
+            comments={formatCommentCount(thread.comment_count)}
+            saved={thread.saved}
+            s={s}
+            t={t}
+            onPress={() => router.push(discussionThreadHref(thread.id))}
+          />
+        ))
+      )}
 
-      <View style={page.ctaCard}>
+      <Pressable style={page.ctaCard} onPress={() => router.push(discussionCreateHref())}>
         <Image source={discussionIcons.ctaIcon} style={page.ctaIcon} resizeMode="contain" />
         <View style={page.ctaTextWrap}>
           <Text style={page.ctaTitle}>THREADING THE NEEDLE.</Text>
@@ -79,7 +183,7 @@ export default function DiscussionScreen() {
           </Text>
         </View>
         <Image source={discussionIcons.ctaArrow} style={page.ctaArrow} resizeMode="contain" />
-      </View>
+      </Pressable>
     </FigmaScreen>
   );
 }
@@ -90,13 +194,56 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       marginTop: s(20),
       marginBottom: 0
     },
-    viewAllText: {
+    searchRow: {
+      flexDirection: 'row',
+      gap: s(10),
+      marginBottom: s(12),
+      alignItems: 'center'
+    },
+    searchInput: {
+      flex: 1,
+      height: s(42),
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      borderRadius: s(21),
+      paddingHorizontal: s(14),
       fontFamily: appFonts.body,
-      fontSize: 15,
-      color: figmaColors.gray
+      fontSize: t(15),
+      color: figmaColors.charcoal,
+      backgroundColor: figmaColors.background
+    },
+    createButton: {
+      height: s(42),
+      borderRadius: s(21),
+      paddingHorizontal: s(14),
+      backgroundColor: figmaColors.buttonPrimaryBg,
+      borderWidth: 1,
+      borderColor: figmaColors.buttonPrimaryBorder,
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    createButtonText: {
+      fontFamily: appFonts.accent,
+      fontSize: t(11),
+      color: figmaColors.buttonPrimaryText
     },
     sectionSpaced: {
       marginTop: s(4)
+    },
+    loader: {
+      marginVertical: s(16)
+    },
+    emptyText: {
+      fontFamily: appFonts.body,
+      fontSize: t(15),
+      color: figmaColors.gray,
+      marginBottom: s(12)
+    },
+    errorText: {
+      fontFamily: appFonts.body,
+      fontSize: t(14),
+      color: figmaColors.error,
+      marginBottom: s(12)
     }
   });
 }

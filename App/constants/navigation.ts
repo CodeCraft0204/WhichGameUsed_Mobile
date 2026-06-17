@@ -91,3 +91,18 @@ export function databaseWishlistAddHref(params?: {
     }
   } as unknown as Href;
 }
+
+export function discussionTopicHref(slug: string): Href {
+  return { pathname: '/discussion/topic/[slug]', params: { slug } } as unknown as Href;
+}
+
+export function discussionThreadHref(id: string): Href {
+  return { pathname: '/discussion/thread/[id]', params: { id } } as unknown as Href;
+}
+
+export function discussionCreateHref(topicSlug?: string): Href {
+  return {
+    pathname: '/discussion/create',
+    params: topicSlug ? { topicSlug } : {}
+  } as unknown as Href;
+}

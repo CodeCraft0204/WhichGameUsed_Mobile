@@ -1,13 +1,12 @@
 import React from 'react';
 import { appFonts } from '@/constants/appFonts';
-import { Image, StyleSheet, Text, View } from 'react-native';
-import { discussionClipLayout, discussionIcons, type DiscussionThread } from '@/constants/discussionContent';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  discussionClipLayout,
+  discussionIcons,
+  defaultThreadAvatar
+} from '@/constants/discussionContent';
 import { figmaColors } from '@/constants/figmaColors';
-
-type DiscussionThreadCardProps = DiscussionThread & {
-  s: (n: number) => number;
-  t: (n: number) => number;
-};
 
 function ClippedThreadIcon({
   left,
@@ -42,20 +41,38 @@ function ClippedThreadIcon({
   );
 }
 
+type DiscussionThreadCardProps = {
+  avatarUrl?: string | null;
+  title: string;
+  category: string;
+  author: string;
+  comments: string;
+  saved?: boolean;
+  onPress?: () => void;
+  s: (n: number) => number;
+  t: (n: number) => number;
+};
+
 export function DiscussionThreadCard({
-  avatar,
+  avatarUrl,
   title,
   category,
   author,
   comments,
+  saved = false,
+  onPress,
   s,
   t
 }: DiscussionThreadCardProps) {
   const styles = createStyles(s, t);
 
-  return (
-    <View style={styles.card}>
-      <Image source={avatar} style={styles.avatar} resizeMode="cover" />
+  const content = (
+    <>
+      {avatarUrl ? (
+        <Image source={{ uri: avatarUrl }} style={styles.avatar} resizeMode="cover" />
+      ) : (
+        <Image source={defaultThreadAvatar} style={styles.avatar} resizeMode="cover" />
+      )}
 
       <View style={styles.body}>
         <Text style={styles.title}>{title}</Text>
@@ -87,10 +104,21 @@ export function DiscussionThreadCard({
             width={discussionClipLayout.threadBookmarkWidth}
             height={discussionClipLayout.threadBookmarkHeight}
           />
+          {saved ? <Text style={styles.savedMark}>★</Text> : null}
         </View>
       </View>
-    </View>
+    </>
   );
+
+  if (onPress) {
+    return (
+      <Pressable onPress={onPress} style={styles.card} accessibilityRole="button">
+        {content}
+      </Pressable>
+    );
+  }
+
+  return <View style={styles.card}>{content}</View>;
 }
 
 function createStyles(s: (n: number) => number, t: (n: number) => number) {
@@ -177,6 +205,11 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontFamily: appFonts.body,
       fontSize: t(14),
       color: figmaColors.gray
+    },
+    savedMark: {
+      fontFamily: appFonts.body,
+      fontSize: t(12),
+      color: figmaColors.bronze
     }
   });
 }

@@ -1,7 +1,7 @@
 import React from 'react';
 import { appFonts } from '@/constants/appFonts';
-import { Image, StyleSheet, Text, View } from 'react-native';
-import { discussionClipLayout, discussionIcons, type DiscussionTopic } from '@/constants/discussionContent';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { discussionClipLayout, discussionIcons } from '@/constants/discussionContent';
 import { figmaColors } from '@/constants/figmaColors';
 
 function ClippedThreadIcon({
@@ -37,7 +37,13 @@ function ClippedThreadIcon({
   );
 }
 
-type DiscussionTopicCardProps = DiscussionTopic & {
+type DiscussionTopicCardProps = {
+  icon: number;
+  title: string;
+  description: string;
+  threadsLabel: string;
+  activityLabel: string;
+  onPress?: () => void;
   s: (n: number) => number;
   t: (n: number) => number;
 };
@@ -46,16 +52,17 @@ export function DiscussionTopicCard({
   icon,
   title,
   description,
-  followers,
-  threads,
+  threadsLabel,
+  activityLabel,
+  onPress,
   s,
   t
 }: DiscussionTopicCardProps) {
   const styles = createStyles(s, t);
   const iconSize = s(86);
 
-  return (
-    <View style={styles.card}>
+  const content = (
+    <>
       <Image source={icon} style={[styles.topicIcon, { width: iconSize, height: iconSize }]} resizeMode="contain" />
 
       <View style={styles.body}>
@@ -68,7 +75,7 @@ export function DiscussionTopicCard({
         <View style={styles.metaContent}>
           <View style={styles.metaRow}>
             <Image source={discussionIcons.metaFollowers} style={styles.metaIcon} resizeMode="contain" />
-            <Text style={styles.metaText}>{followers}</Text>
+            <Text style={styles.metaText}>{threadsLabel}</Text>
           </View>
           <View style={styles.metaRow}>
             <ClippedThreadIcon
@@ -78,13 +85,23 @@ export function DiscussionTopicCard({
               width={discussionClipLayout.threadCommentWidth}
               height={discussionClipLayout.threadCommentHeight}
             />
-            <Text style={styles.metaText}>{threads}</Text>
+            <Text style={styles.metaText}>{activityLabel}</Text>
           </View>
         </View>
         <Image source={discussionIcons.cardChevron} style={styles.cardChevron} resizeMode="contain" />
       </View>
-    </View>
+    </>
   );
+
+  if (onPress) {
+    return (
+      <Pressable onPress={onPress} style={styles.card} accessibilityRole="button">
+        {content}
+      </Pressable>
+    );
+  }
+
+  return <View style={styles.card}>{content}</View>;
 }
 
 function createStyles(s: (n: number) => number, t: (n: number) => number) {
