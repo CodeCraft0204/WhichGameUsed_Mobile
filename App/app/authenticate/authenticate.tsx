@@ -3,6 +3,7 @@ import { appFonts } from '@/constants/appFonts';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AuthenticateDraftCard } from '@/components/figma/AuthenticateRecordCard';
+import { chipOptionsFromLabels, FigmaChipRow } from '@/components/figma/FigmaChipRow';
 import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
@@ -103,21 +104,14 @@ export default function AuthenticateScreen() {
             page={page}
           />
           <View style={styles.stickyToolbar}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={[page.tabRow, styles.tabRow]}
-            >
-              {authenticateTabs.map((tab, index) => (
-                <Pressable
-                  key={tab}
-                  style={[page.tabButton, index === activeTab && page.tabButtonActive]}
-                  onPress={() => setActiveTab(index)}
-                >
-                  <Text style={[page.tabText, index === activeTab && page.tabTextActive]}>{tab}</Text>
-                </Pressable>
-              ))}
-            </ScrollView>
+            <FigmaChipRow
+              options={chipOptionsFromLabels(authenticateTabs)}
+              value={authenticateTabs[activeTab]}
+              onChange={(tab) => setActiveTab(authenticateTabs.indexOf(tab))}
+              s={s}
+              t={t}
+              style={styles.chipRow}
+            />
           </View>
         </View>
 
@@ -216,9 +210,8 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       paddingTop: s(8),
       paddingBottom: s(16)
     },
-    tabRow: {
-      flexWrap: 'nowrap',
-      gap: s(14)
+    chipRow: {
+      marginVertical: 0
     },
     ctaCard: {
       minHeight: s(108),

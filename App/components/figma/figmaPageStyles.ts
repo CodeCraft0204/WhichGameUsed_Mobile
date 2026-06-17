@@ -49,35 +49,6 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
       lineHeight: tb(26),
       color: figmaColors.gray
     },
-    tabRow: {
-      marginTop: s(32),
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: s(18)
-    },
-    tabButton: {
-      minWidth: s(124),
-      height: s(42),
-      borderRadius: s(20),
-      borderWidth: 1,
-      borderColor: figmaColors.tabInactiveBorder,
-      backgroundColor: figmaColors.tabInactiveBg,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: s(12)
-    },
-    tabButtonActive: {
-      backgroundColor: figmaColors.tabActiveBg,
-      borderColor: figmaColors.tabActiveBorder
-    },
-    tabText: {
-      fontFamily: appFonts.body,
-      fontSize: tb(18),
-      color: figmaColors.tabText
-    },
-    tabTextActive: {
-      color: figmaColors.tabTextActive
-    },
     sectionHeaderRow: {
       marginBottom: s(5),
       flexDirection: 'row',

@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { appFonts } from '@/constants/appFonts';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { DiscussionThreadCard } from '@/components/figma/DiscussionThreadCard';
 import { DiscussionTopicCard } from '@/components/figma/DiscussionTopicCard';
-import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
+import { chipOptionsFromLabels, FigmaChipRow } from '@/components/figma/FigmaChipRow';import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
@@ -21,6 +21,7 @@ export default function DiscussionScreen() {
   const { s, t } = useFigmaLayout();
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
+  const [activeTab, setActiveTab] = useState<(typeof discussionTabs)[number]>(discussionTabs[0]);
 
   return (
     <FigmaScreen
@@ -36,18 +37,14 @@ export default function DiscussionScreen() {
         s={s}
         page={page}
       >
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[page.tabRow, styles.tabRow]}
-        >
-          {discussionTabs.map((tab, index) => (
-            <Pressable key={tab} style={[page.tabButton, index === 0 && page.tabButtonActive]}>
-              <Text style={[page.tabText, index === 0 && page.tabTextActive]}>{tab}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-      </FigmaPageHeader>
+        <FigmaChipRow
+          options={chipOptionsFromLabels(discussionTabs)}
+          value={activeTab}
+          onChange={setActiveTab}
+          s={s}
+          t={t}
+          style={styles.chipRow}
+        />      </FigmaPageHeader>
 
       <View style={page.sectionHeaderRow}>
         <Text style={page.sectionTitle}>TOPICS</Text>
@@ -89,9 +86,9 @@ export default function DiscussionScreen() {
 
 function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
-    tabRow: {
-      flexWrap: 'nowrap',
-      gap: s(14)
+    chipRow: {
+      marginTop: s(20),
+      marginBottom: 0
     },
     viewAllText: {
       fontFamily: appFonts.body,

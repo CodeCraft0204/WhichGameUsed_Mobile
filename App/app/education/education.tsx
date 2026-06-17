@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { appFonts } from '@/constants/appFonts';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { EducationGuideCard } from '@/components/figma/EducationGuideCard';
 import { EducationVideoCard } from '@/components/figma/EducationVideoCard';
+import { chipOptionsFromLabels, FigmaChipRow } from '@/components/figma/FigmaChipRow';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaHubBottomNav } from '@/components/figma/FigmaHubBottomNav';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
@@ -10,7 +11,6 @@ import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import {
   educationGuides,
   educationIcons,
-  educationTabRows,
   educationTabs,
   educationVideos
 } from '@/constants/educationContent';
@@ -22,6 +22,7 @@ export default function EducationScreen() {
   const { s, t } = useFigmaLayout();
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
+  const [activeTab, setActiveTab] = useState<(typeof educationTabs)[number]>(educationTabs[0]);
 
   return (
     <FigmaScreen
@@ -37,25 +38,14 @@ export default function EducationScreen() {
         s={s}
         page={page}
       >
-        <View style={styles.tabWrap}>
-          {educationTabRows.map((row, rowIndex) => (
-            <View key={`tab-row-${rowIndex}`} style={styles.tabRow}>
-              {row.map((tab) => {
-                const isActive = tab === educationTabs[0];
-
-                return (
-                  <Pressable
-                    key={tab}
-                    style={[styles.tabButton, isActive && styles.tabButtonActive]}
-                  >
-                    <Text style={[styles.tabText, isActive && styles.tabTextActive]}>{tab}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          ))}
-        </View>
-      </FigmaPageHeader>
+        <FigmaChipRow
+          options={chipOptionsFromLabels(educationTabs)}
+          value={activeTab}
+          onChange={setActiveTab}
+          s={s}
+          t={t}
+          style={styles.chipRow}
+        />      </FigmaPageHeader>
 
       <View style={page.sectionHeaderRow}>
         <Text style={page.sectionTitle}>FEATURED GUIDES (PDF)</Text>
@@ -97,43 +87,9 @@ export default function EducationScreen() {
 
 function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
-    tabWrap: {
-      marginTop: s(28),
-      width: '100%',
-      gap: s(10)
-    },
-    tabRow: {
-      flexDirection: 'row',
-      width: '100%',
-      gap: s(8)
-    },
-    tabButton: {
-      flexGrow: 1,
-      flexShrink: 1,
-      flexBasis: 0,
-      minWidth: 0,
-      height: s(42),
-      borderRadius: s(20),
-      borderWidth: 1,
-      borderColor: figmaColors.tabInactiveBorder,
-      backgroundColor: figmaColors.tabInactiveBg,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: s(8)
-    },
-    tabButtonActive: {
-      backgroundColor: figmaColors.tabActiveBg,
-      borderColor: figmaColors.tabActiveBorder
-    },
-    tabText: {
-      fontFamily: appFonts.body,
-      fontSize: t(13),
-      lineHeight: t(16),
-      color: figmaColors.tabText,
-      textAlign: 'center'
-    },
-    tabTextActive: {
-      color: figmaColors.tabTextActive
+    chipRow: {
+      marginTop: s(20),
+      marginBottom: 0
     },
     viewAllText: {
       fontFamily: appFonts.body,

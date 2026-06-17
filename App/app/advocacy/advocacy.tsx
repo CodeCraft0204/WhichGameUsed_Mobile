@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { appFonts } from '@/constants/appFonts';
 import { bodyText } from '@/constants/appTypography';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { chipOptionsFromLabels, FigmaChipRow } from '@/components/figma/FigmaChipRow';
 import { FigmaHubBottomNav } from '@/components/figma/FigmaHubBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
@@ -21,6 +22,8 @@ const icons = {
   ctaIcon: figmaIcons.megaphone,
   ctaArrow: require('@/assets/figma/advocacy/section_chevron.png')
 };
+
+const advocacyTabs = ['ALL', 'ACTIVE', 'WINS'] as const;
 
 const petitions = [
   {
@@ -56,6 +59,7 @@ export default function AdvocacyScreen() {
   const { s, t } = useFigmaLayout();
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
+  const [activeTab, setActiveTab] = useState<(typeof advocacyTabs)[number]>(advocacyTabs[0]);
 
   return (
     <FigmaScreen
@@ -70,18 +74,14 @@ export default function AdvocacyScreen() {
         s={s}
         page={page}
       >
-        <View style={page.tabRow}>
-          <Pressable style={[page.tabButton, page.tabButtonActive]}>
-            <Text style={[page.tabText, page.tabTextActive]}>ALL</Text>
-          </Pressable>
-          <Pressable style={page.tabButton}>
-            <Text style={page.tabText}>ACTIVE</Text>
-          </Pressable>
-          <Pressable style={page.tabButton}>
-            <Text style={page.tabText}>WINS</Text>
-          </Pressable>
-        </View>
-      </FigmaPageHeader>
+        <FigmaChipRow
+          options={chipOptionsFromLabels(advocacyTabs)}
+          value={activeTab}
+          onChange={setActiveTab}
+          s={s}
+          t={t}
+          style={styles.chipRow}
+        />      </FigmaPageHeader>
 
       <View style={page.sectionHeaderRow}>
         <Text style={page.sectionTitle}>ACTVE PETITONS</Text>
@@ -128,6 +128,10 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
   const tb = (n: number) => bodyText(t, n);
 
   return StyleSheet.create({
+    chipRow: {
+      marginTop: s(20),
+      marginBottom: 0
+    },
     utilityBar: {
       position: 'absolute',
       right: 0,
