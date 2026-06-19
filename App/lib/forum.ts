@@ -424,7 +424,16 @@ export async function createForumComment(input: {
     .select('id')
     .single();
 
-  if (error) return { commentId: null, error: error.message };
+  if (error) {
+    if (error.message.includes('forum_comments_body_check')) {
+      return {
+        commentId: null,
+        error:
+          'This reply is too short. Use at least one character — if the database is not updated yet, add a few words instead of a single emoji.'
+      };
+    }
+    return { commentId: null, error: error.message };
+  }
   return { commentId: data.id, error: null };
 }
 

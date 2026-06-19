@@ -1,9 +1,15 @@
 import React, { useMemo } from 'react';
 import { appFonts } from '@/constants/appFonts';
 import { formatVoteScore } from '@/constants/discussionContent';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-// Star/clap feature disabled for now.
-// import { ThreadClapButton } from '@/components/discussion/ThreadClapButton';
+import {
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type ViewStyle
+} from 'react-native';
 import { discussionIcons } from '@/constants/discussionContent';
 import { figmaColors } from '@/constants/figmaColors';
 
@@ -16,6 +22,7 @@ type ThreadEngagementBarProps = {
   onSave: () => void;
   onMore: () => void;
   disabled?: boolean;
+  style?: StyleProp<ViewStyle>;
   s: (n: number) => number;
   t: (n: number) => number;
 };
@@ -31,6 +38,7 @@ export function ThreadEngagementBar({
   onSave,
   onMore,
   disabled = false,
+  style,
   s,
   t
 }: ThreadEngagementBarProps) {
@@ -40,12 +48,7 @@ export function ThreadEngagementBar({
   const scoreLabel = formatVoteScore(voteScore);
 
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.row}
-      keyboardShouldPersistTaps="handled"
-    >
+    <View style={[styles.wrap, style]}>
       <View style={styles.voteCluster}>
         <Pressable
           style={[styles.voteButton, userVote === 'upvote' && styles.voteButtonActive]}
@@ -78,22 +81,6 @@ export function ThreadEngagementBar({
         </Pressable>
       </View>
 
-      {/*
-      <ThreadClapButton
-        totalClaps={totalClaps}
-        userClaps={userClaps}
-        maxed={clapMaxed}
-        active={userClaps > 0}
-        bubbles={clapBubbles}
-        onPressIn={onClapPressIn}
-        onPressOut={onClapPressOut}
-        disabled={disabled}
-        inline
-        s={s}
-        t={t}
-      />
-      */}
-
       <Pressable
         style={[styles.actionChip, saved && styles.actionChipActive]}
         onPress={onSave}
@@ -120,17 +107,20 @@ export function ThreadEngagementBar({
       >
         <Text style={styles.moreIcon}>⋯</Text>
       </Pressable>
-    </ScrollView>
+    </View>
   );
 }
 
 function createStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
-    row: {
+    wrap: {
       flexDirection: 'row',
       alignItems: 'center',
+      justifyContent: 'flex-start',
+      alignSelf: 'flex-start',
+      flexWrap: 'wrap',
       gap: s(6),
-      paddingBottom: s(16)
+      width: '100%'
     },
     voteCluster: {
       flexDirection: 'row',

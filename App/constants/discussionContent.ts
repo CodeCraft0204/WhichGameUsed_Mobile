@@ -1,4 +1,6 @@
+import { Platform, TextStyle } from 'react-native';
 import { figmaIcons } from '@/constants/figmaIcons';
+import { figmaColors } from '@/constants/figmaColors';
 
 /** Discussion screen assets (node 1:431). */
 export const discussionIcons = {
@@ -65,6 +67,53 @@ export function formatVoteScore(count: number): string {
   if (!Number.isFinite(count) || count === 0) return '0';
   return count > 0 ? `+${count}` : String(count);
 }
+
+/** Platform font stack that renders color emoji (custom serif fonts do not). */
+export function forumMessageFontFamily(): string | undefined {
+  return Platform.select({
+    ios: 'System',
+    android: 'sans-serif',
+    web: 'system-ui, -apple-system, "Segoe UI", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif',
+    default: 'System'
+  });
+}
+
+/** System / emoji-capable styles for posts, replies, and composer input. */
+export function forumUserTextStyle(
+  t: (n: number) => number,
+  size = 16,
+  lineHeight = 22
+): TextStyle {
+  return {
+    fontFamily: forumMessageFontFamily(),
+    fontSize: t(size),
+    lineHeight: t(lineHeight + 4),
+    color: figmaColors.charcoal
+  };
+}
+
+export function forumEmojiTextStyle(
+  t: (n: number) => number,
+  size = 24
+): TextStyle {
+  return {
+    fontFamily: forumMessageFontFamily(),
+    fontSize: t(size),
+    lineHeight: t(size + 8),
+    color: figmaColors.charcoal,
+    textAlign: 'center'
+  };
+}
+
+/** True when a reply is only emoji (e.g. 👍 or ❤️). */
+export function isForumEmojiOnly(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed) return false;
+  if (/[a-zA-Z0-9]/.test(trimmed)) return false;
+  return /\p{Extended_Pictographic}/u.test(trimmed);
+}
+
+export const forumQuickEmojis = ['👍', '❤️', '😂', '🔥', '🎉', '👀', '✅', '🙏'] as const;
 
 export const defaultThreadAvatar = discussionIcons.avatar1;
 

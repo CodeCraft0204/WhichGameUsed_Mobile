@@ -1,6 +1,15 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { appFonts } from '@/constants/appFonts';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { forumEmojiTextStyle, forumQuickEmojis, forumUserTextStyle } from '@/constants/discussionContent';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
+} from 'react-native';
 import { figmaColors } from '@/constants/figmaColors';
 
 type Props = {
@@ -22,10 +31,35 @@ export function CommentComposer({
   s,
   t
 }: Props) {
-  const styles = createStyles(s, t);
+  const styles = useMemo(() => createStyles(s, t), [s, t]);
+
+  function appendEmoji(emoji: string) {
+    onChangeText(`${value}${emoji}`);
+  }
 
   return (
     <View style={styles.wrap}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.emojiScroll}
+        contentContainerStyle={styles.emojiRow}
+        keyboardShouldPersistTaps="handled"
+      >
+        {forumQuickEmojis.map((emoji) => (
+          <Pressable
+            key={emoji}
+            style={styles.emojiButton}
+            onPress={() => appendEmoji(emoji)}
+            disabled={busy}
+            accessibilityRole="button"
+            accessibilityLabel={`Insert ${emoji}`}
+          >
+            <Text style={styles.emoji}>{emoji}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+
       <TextInput
         style={styles.input}
         value={value}
@@ -56,6 +90,28 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       gap: s(10),
       marginTop: s(12)
     },
+    emojiScroll: {
+      flexGrow: 0,
+      flexShrink: 0,
+      maxHeight: s(44)
+    },
+    emojiRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(6),
+      paddingVertical: s(2)
+    },
+    emojiButton: {
+      width: s(40),
+      height: s(40),
+      borderRadius: s(20),
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      backgroundColor: figmaColors.cardFeaturedBg,
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    emoji: forumEmojiTextStyle(t, 26),
     input: {
       minHeight: s(88),
       borderWidth: 1,
@@ -63,9 +119,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       borderRadius: s(12),
       paddingHorizontal: s(12),
       paddingVertical: s(10),
-      fontFamily: appFonts.body,
-      fontSize: t(15),
-      color: figmaColors.charcoal,
+      ...forumUserTextStyle(t, 16, 22),
       backgroundColor: figmaColors.background
     },
     button: {

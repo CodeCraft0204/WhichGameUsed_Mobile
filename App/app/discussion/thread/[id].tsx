@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { CommentComposer } from '@/components/discussion/CommentComposer';
 import { DiscussionMoreSheet } from '@/components/discussion/DiscussionMoreSheet';
+import { ForumUserText } from '@/components/discussion/ForumUserText';
 import {
   ReportContentSheet,
   type ReportSheetTarget
@@ -269,7 +270,7 @@ export default function DiscussionThreadScreen() {
       backgroundColor={figmaColors.background}
       bottomNav={<FigmaDatabaseBottomNav active="discussion" />}
       scrollProps={{
-        contentContainerStyle: page.scrollContent,
+        contentContainerStyle: [page.scrollContent, styles.scrollContent],
         refreshControl: <RefreshControl refreshing={loading} onRefresh={() => void load()} />
       }}
     >
@@ -290,7 +291,9 @@ export default function DiscussionThreadScreen() {
         </View>
       </View>
 
-      <Text style={styles.body}>{thread.body}</Text>
+      <ForumUserText t={t} style={styles.body}>
+        {thread.body}
+      </ForumUserText>
 
       <ThreadEngagementBar
         voteScore={thread.vote_score}
@@ -301,6 +304,7 @@ export default function DiscussionThreadScreen() {
         onSave={() => void handleSave()}
         onMore={openMoreMenu}
         disabled={busy}
+        style={styles.engagementBar}
         s={s}
         t={t}
       />
@@ -336,7 +340,9 @@ export default function DiscussionThreadScreen() {
                   <Text style={styles.commentMoreIcon}>⋯</Text>
                 </Pressable>
               </View>
-              <Text style={styles.commentBody}>{comment.body}</Text>
+              <ForumUserText t={t} variant="comment" style={styles.commentBody}>
+                {comment.body}
+              </ForumUserText>
             </View>
           );
         })
@@ -385,6 +391,10 @@ export default function DiscussionThreadScreen() {
 
 function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
+    scrollContent: {
+      flexGrow: 0,
+      alignItems: 'stretch'
+    },
     backText: {
       fontFamily: appFonts.body,
       fontSize: t(14),
@@ -424,17 +434,17 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       color: figmaColors.gray
     },
     body: {
-      fontFamily: appFonts.body,
-      fontSize: t(16),
-      lineHeight: t(22),
-      color: figmaColors.charcoal,
-      marginBottom: s(12)
+      marginBottom: s(10)
+    },
+    engagementBar: {
+      marginBottom: s(20)
     },
     sectionTitle: {
       fontFamily: appFonts.display,
       fontSize: t(18),
       color: figmaColors.charcoal,
-      marginBottom: s(10)
+      marginBottom: s(10),
+      marginTop: s(4)
     },
     emptyComments: {
       fontFamily: appFonts.body,
@@ -485,10 +495,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       marginTop: s(2)
     },
     commentBody: {
-      fontFamily: appFonts.body,
-      fontSize: t(15),
-      lineHeight: t(20),
-      color: figmaColors.charcoal
+      marginTop: s(0)
     },
     lockedText: {
       fontFamily: appFonts.body,

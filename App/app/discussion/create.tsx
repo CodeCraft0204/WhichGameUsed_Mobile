@@ -15,6 +15,7 @@ import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNa
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import { figmaColors } from '@/constants/figmaColors';
+import { forumUserTextStyle } from '@/constants/discussionContent';
 import { discussionThreadHref } from '@/constants/navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import { createForumThread, listForumTopics } from '@/lib/forum';
@@ -195,7 +196,8 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     bodyInput: {
       minHeight: s(160),
-      textAlignVertical: 'top'
+      textAlignVertical: 'top',
+      ...forumUserTextStyle(t, 15, 22)
     },
     submitButton: {
       height: s(44),
