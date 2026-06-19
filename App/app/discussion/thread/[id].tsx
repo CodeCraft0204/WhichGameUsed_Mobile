@@ -6,6 +6,7 @@ import {
   Alert,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   View
@@ -29,6 +30,7 @@ import {
 import { figmaColors } from '@/constants/figmaColors';
 import { discussionFeedPreferencesHref } from '@/constants/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { useForumThreadCommentsRealtime } from '@/hooks/useForumThreadCommentsRealtime';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 // Star/clap feature disabled in mobile UI.
 // import { useThreadClaps } from '@/hooks/useThreadClaps';
@@ -37,6 +39,7 @@ import {
   createForumComment,
   getForumThread,
   hideForumThreadLess,
+  listForumThreadComments,
   reportForumContent,
   toggleForumThreadSave,
   voteForumThread,
@@ -54,6 +57,7 @@ export default function DiscussionThreadScreen() {
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
   const [thread, setThread] = useState<ForumThreadDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reply, setReply] = useState('');
   const [busy, setBusy] = useState(false);
@@ -76,15 +80,31 @@ export default function DiscussionThreadScreen() {
   });
   */
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (opts?: { silent?: boolean }) => {
     if (!id) return;
-    setLoading(true);
-    setError(null);
+    if (!opts?.silent) {
+      setLoading(true);
+      setError(null);
+    }
     const { thread: data, error: err } = await getForumThread(id);
     if (err) setError(err);
     else setThread(data);
-    setLoading(false);
+    if (!opts?.silent) setLoading(false);
   }, [id]);
+
+  const refreshComments = useCallback(async () => {
+    if (!id) return;
+    const { comments, error: err } = await listForumThreadComments(id);
+    if (err) {
+      setError(err);
+      return;
+    }
+    setThread((prev) => (prev ? { ...prev, comments } : prev));
+  }, [id]);
+
+  useForumThreadCommentsRealtime(id, () => {
+    void refreshComments();
+  }, Boolean(thread));
 
   useFocusEffect(
     useCallback(() => {
@@ -117,7 +137,7 @@ export default function DiscussionThreadScreen() {
       return;
     }
     setReply('');
-    await load();
+    await refreshComments();
   }
 
   async function handleSave() {
@@ -269,99 +289,119 @@ export default function DiscussionThreadScreen() {
     <FigmaScreen
       backgroundColor={figmaColors.background}
       bottomNav={<FigmaDatabaseBottomNav active="discussion" />}
-      scrollProps={{
-        contentContainerStyle: [page.scrollContent, styles.scrollContent],
-        refreshControl: <RefreshControl refreshing={loading} onRefresh={() => void load()} />
-      }}
+      scrollable={false}
     >
-      <Pressable onPress={() => router.back()}>
-        <Text style={styles.backText}>← Back</Text>
-      </Pressable>
+      <View style={styles.page}>
+        <View style={[page.scrollContent, styles.postSection]}>
+          <Pressable onPress={() => router.back()}>
+            <Text style={styles.backText}>← Back</Text>
+          </Pressable>
 
-      <View style={styles.threadHeader}>
-        <ProfileAvatar url={thread.author_avatar_url} name={author} size={s(56)} />
-        <View style={styles.headerBody}>
-          <View style={styles.topicTag}>
-            <Text style={styles.topicTagText}>{thread.topic_title}</Text>
-          </View>
-          <Text style={styles.title}>{thread.title}</Text>
-          <Text style={styles.meta}>
-            by {author} · {new Date(thread.created_at).toLocaleDateString()}
-          </Text>
-        </View>
-      </View>
-
-      <ForumUserText t={t} style={styles.body}>
-        {thread.body}
-      </ForumUserText>
-
-      <ThreadEngagementBar
-        voteScore={thread.vote_score}
-        userVote={thread.user_vote}
-        onUpvote={() => handleVote('upvote')}
-        onDownvote={() => handleVote('downvote')}
-        saved={Boolean(thread.saved)}
-        onSave={() => void handleSave()}
-        onMore={openMoreMenu}
-        disabled={busy}
-        style={styles.engagementBar}
-        s={s}
-        t={t}
-      />
-
-      <Text style={styles.sectionTitle}>COMMENTS ({thread.comments.length})</Text>
-
-      {thread.comments.length === 0 ? (
-        <Text style={styles.emptyComments}>No replies yet — add the first comment below.</Text>
-      ) : (
-        thread.comments.map((comment) => {
-          const commentAuthor =
-            comment.author_display_name || comment.author_username || 'Collector';
-          return (
-            <View key={comment.id} style={styles.commentCard}>
-              <View style={styles.commentHeader}>
-                <ProfileAvatar
-                  url={comment.author_avatar_url}
-                  name={commentAuthor}
-                  size={s(40)}
-                />
-                <View style={styles.commentHeaderText}>
-                  <Text style={styles.commentAuthor}>{commentAuthor}</Text>
-                  <Text style={styles.commentMeta}>
-                    {new Date(comment.created_at).toLocaleString()}
-                  </Text>
-                </View>
-                <Pressable
-                  style={styles.commentMore}
-                  onPress={() => openCommentFlag(comment)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Comment options"
-                >
-                  <Text style={styles.commentMoreIcon}>⋯</Text>
-                </Pressable>
+          <View style={styles.threadHeader}>
+            <ProfileAvatar url={thread.author_avatar_url} name={author} size={s(56)} />
+            <View style={styles.headerBody}>
+              <View style={styles.topicTag}>
+                <Text style={styles.topicTagText}>{thread.topic_title}</Text>
               </View>
-              <ForumUserText t={t} variant="comment" style={styles.commentBody}>
-                {comment.body}
-              </ForumUserText>
+              <Text style={styles.title}>{thread.title}</Text>
+              <Text style={styles.meta}>
+                by {author} · {new Date(thread.created_at).toLocaleDateString()}
+              </Text>
             </View>
-          );
-        })
-      )}
+          </View>
 
-      {thread.is_locked ? (
-        <Text style={styles.lockedText}>This thread is locked — new replies are disabled.</Text>
-      ) : (
-        <CommentComposer
-          value={reply}
-          onChangeText={setReply}
-          onSubmit={() => void submitReply()}
-          busy={busy}
-          s={s}
-          t={t}
-        />
-      )}
+          <ForumUserText t={t} style={styles.body}>
+            {thread.body}
+          </ForumUserText>
 
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          <ThreadEngagementBar
+            voteScore={thread.vote_score}
+            userVote={thread.user_vote}
+            onUpvote={() => handleVote('upvote')}
+            onDownvote={() => handleVote('downvote')}
+            saved={Boolean(thread.saved)}
+            onSave={() => void handleSave()}
+            onMore={openMoreMenu}
+            disabled={busy}
+            style={styles.engagementBar}
+            s={s}
+            t={t}
+          />
+        </View>
+
+        <ScrollView
+          style={styles.commentsScroll}
+          contentContainerStyle={[page.scrollContent, styles.commentsScrollInner]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                void (async () => {
+                  setRefreshing(true);
+                  await load({ silent: true });
+                  setRefreshing(false);
+                })();
+              }}
+            />
+          }
+        >
+          <Text style={styles.sectionTitle}>COMMENTS ({thread.comments.length})</Text>
+
+          {thread.comments.length === 0 ? (
+            <Text style={styles.emptyComments}>No replies yet — add the first comment below.</Text>
+          ) : (
+            thread.comments.map((comment) => {
+              const commentAuthor =
+                comment.author_display_name || comment.author_username || 'Collector';
+              return (
+                <View key={comment.id} style={styles.commentCard}>
+                  <View style={styles.commentHeader}>
+                    <ProfileAvatar
+                      url={comment.author_avatar_url}
+                      name={commentAuthor}
+                      size={s(40)}
+                    />
+                    <View style={styles.commentHeaderText}>
+                      <Text style={styles.commentAuthor}>{commentAuthor}</Text>
+                      <Text style={styles.commentMeta}>
+                        {new Date(comment.created_at).toLocaleString()}
+                      </Text>
+                    </View>
+                    <Pressable
+                      style={styles.commentMore}
+                      onPress={() => openCommentFlag(comment)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Comment options"
+                    >
+                      <Text style={styles.commentMoreIcon}>⋯</Text>
+                    </Pressable>
+                  </View>
+                  <ForumUserText t={t} variant="comment" style={styles.commentBody}>
+                    {comment.body}
+                  </ForumUserText>
+                </View>
+              );
+            })
+          )}
+
+          {thread.is_locked ? (
+            <Text style={styles.lockedText}>This thread is locked — new replies are disabled.</Text>
+          ) : (
+            <CommentComposer
+              value={reply}
+              onChangeText={setReply}
+              onSubmit={() => void submitReply()}
+              busy={busy}
+              s={s}
+              t={t}
+            />
+          )}
+
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        </ScrollView>
+      </View>
 
       <DiscussionMoreSheet
         visible={moreOpen}
@@ -391,9 +431,21 @@ export default function DiscussionThreadScreen() {
 
 function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
-    scrollContent: {
-      flexGrow: 0,
-      alignItems: 'stretch'
+    page: {
+      flex: 1
+    },
+    postSection: {
+      flexShrink: 0,
+      paddingBottom: s(8),
+      borderBottomWidth: 1,
+      borderBottomColor: figmaColors.divider
+    },
+    commentsScroll: {
+      flex: 1
+    },
+    commentsScrollInner: {
+      paddingTop: s(12),
+      flexGrow: 0
     },
     backText: {
       fontFamily: appFonts.body,
@@ -437,14 +489,14 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       marginBottom: s(10)
     },
     engagementBar: {
-      marginBottom: s(20)
+      marginBottom: 0
     },
     sectionTitle: {
       fontFamily: appFonts.display,
       fontSize: t(18),
       color: figmaColors.charcoal,
       marginBottom: s(10),
-      marginTop: s(4)
+      marginTop: 0
     },
     emptyComments: {
       fontFamily: appFonts.body,

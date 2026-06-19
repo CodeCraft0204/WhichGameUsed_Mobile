@@ -297,31 +297,21 @@ export async function listSavedForumThreads(opts?: {
   return { items, error: null };
 }
 
-export async function getForumThread(threadId: string): Promise<{
-  thread: ForumThreadDetail | null;
-  error: string | null;
-}> {
-  const { data, error } = await supabase
-    .from('forum_threads_enriched')
-    .select('*')
-    .eq('id', threadId)
-    .maybeSingle();
-  if (error) return { thread: null, error: error.message };
-  if (!data) return { thread: null, error: 'Thread not found.' };
-
-  const { data: comments, error: commentsError } = await supabase
-    .from('forum_comments')
-    .select('id, thread_id, author_id, parent_comment_id, body, status, created_at, updated_at')
-    .eq('thread_id', threadId)
-    .is('deleted_at', null)
-    .eq('status', 'published')
-    .order('created_at', { ascending: true });
-
-  if (commentsError) return { thread: null, error: commentsError.message };
-
+async function mapForumCommentRows(
+  rows: Array<{
+    id: string;
+    thread_id: string;
+    author_id: string | null;
+    parent_comment_id: string | null;
+    body: string;
+    status: string;
+    created_at: string;
+    updated_at: string;
+  }>
+): Promise<ForumComment[]> {
   const authorIds = [
     ...new Set(
-      (comments ?? [])
+      rows
         .map((row) => row.author_id)
         .filter((authorId): authorId is string => Boolean(authorId))
     )
@@ -341,7 +331,7 @@ export async function getForumThread(threadId: string): Promise<{
     }
   }
 
-  const mappedComments: ForumComment[] = (comments ?? []).map((row) => {
+  return rows.map((row) => {
     const profile = row.author_id ? authorById.get(row.author_id) : null;
     return {
       id: row.id,
@@ -357,6 +347,75 @@ export async function getForumThread(threadId: string): Promise<{
       author_avatar_url: resolveProfileAvatarUrl(profile?.avatar_url)
     };
   });
+}
+
+export async function listForumThreadComments(threadId: string): Promise<{
+  comments: ForumComment[];
+  error: string | null;
+}> {
+  const { data: comments, error: commentsError } = await supabase
+    .from('forum_comments')
+    .select('id, thread_id, author_id, parent_comment_id, body, status, created_at, updated_at')
+    .eq('thread_id', threadId)
+    .is('deleted_at', null)
+    .eq('status', 'published')
+    .order('created_at', { ascending: true });
+
+  if (commentsError) return { comments: [], error: commentsError.message };
+
+  const mappedComments = await mapForumCommentRows(comments ?? []);
+  return { comments: mappedComments, error: null };
+}
+
+/** Live comment inserts/updates for an open thread detail screen. */
+export function subscribeForumThreadComments(
+  threadId: string,
+  onChange: () => void
+): () => void {
+  const channel = supabase
+    .channel(`forum-thread-comments:${threadId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'forum_comments',
+        filter: `thread_id=eq.${threadId}`
+      },
+      () => onChange()
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'forum_comments',
+        filter: `thread_id=eq.${threadId}`
+      },
+      () => onChange()
+    )
+    .subscribe();
+
+  return () => {
+    void supabase.removeChannel(channel);
+  };
+}
+
+export async function getForumThread(threadId: string): Promise<{
+  thread: ForumThreadDetail | null;
+  error: string | null;
+}> {
+  const { data, error } = await supabase
+    .from('forum_threads_enriched')
+    .select('*')
+    .eq('id', threadId)
+    .maybeSingle();
+  if (error) return { thread: null, error: error.message };
+  if (!data) return { thread: null, error: 'Thread not found.' };
+
+  const { comments: mappedComments, error: commentsError } =
+    await listForumThreadComments(threadId);
+  if (commentsError) return { thread: null, error: commentsError };
 
   const { data: userData } = await supabase.auth.getUser();
   const userId = userData.user?.id;
