@@ -202,7 +202,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     stickyToolbar: {
       backgroundColor: figmaColors.background,
-      paddingBottom: s(8),
+      paddingTop: s(15),
       zIndex: 2
     },
     contentScroll: { flex: 1 },

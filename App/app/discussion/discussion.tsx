@@ -251,30 +251,39 @@ export default function DiscussionScreen() {
         })
       )}
 
-      <Pressable style={styles.savedLinkRow} onPress={() => router.push(discussionSavedHref())}>
-        <Image
-          source={discussionIcons.threadBookmark}
-          style={styles.savedLinkIcon}
-          resizeMode="contain"
-        />
-        <Text style={styles.savedLinkText}>View saved threads</Text>
-        <Image source={discussionIcons.cardChevron} style={styles.savedLinkChevron} resizeMode="contain" />
-      </Pressable>
+      <View style={styles.quickLinksRow}>
+        <Pressable
+          style={styles.quickLinkCard}
+          onPress={() => router.push(discussionSavedHref())}
+          accessibilityRole="button"
+          accessibilityLabel="View saved threads"
+        >
+          <Image
+            source={discussionIcons.threadBookmark}
+            style={styles.quickLinkIcon}
+            resizeMode="contain"
+          />
+          <Text style={styles.quickLinkLabel} numberOfLines={2}>
+            Saved threads
+          </Text>
+        </Pressable>
 
-      <Pressable
-        style={styles.savedLinkRow}
-        onPress={() => router.push(discussionFeedPreferencesHref())}
-      >
-        <Image
-          source={discussionIcons.metaActivity}
-          style={styles.savedLinkIcon}
-          resizeMode="contain"
-        />
-        <Text style={styles.savedLinkText}>
-          {hiddenCount > 0 ? `Manage hidden content (${hiddenCount})` : 'Manage hidden content'}
-        </Text>
-        <Image source={discussionIcons.cardChevron} style={styles.savedLinkChevron} resizeMode="contain" />
-      </Pressable>
+        <Pressable
+          style={styles.quickLinkCard}
+          onPress={() => router.push(discussionFeedPreferencesHref())}
+          accessibilityRole="button"
+          accessibilityLabel="Manage hidden content"
+        >
+          <Image
+            source={discussionIcons.metaActivity}
+            style={styles.quickLinkIcon}
+            resizeMode="contain"
+          />
+          <Text style={styles.quickLinkLabel} numberOfLines={2}>
+            {hiddenCount > 0 ? `Hidden (${hiddenCount})` : 'Hidden content'}
+          </Text>
+        </Pressable>
+      </View>
 
       <Pressable style={page.ctaCard} onPress={() => router.push(discussionCreateHref())}>
         <Image source={discussionIcons.ctaIcon} style={page.ctaIcon} resizeMode="contain" />
@@ -384,33 +393,38 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       color: figmaColors.error,
       marginBottom: s(12)
     },
-    savedLinkRow: {
+    quickLinksRow: {
+      flexDirection: 'row',
+      gap: s(18),
+      marginTop: s(10)
+    },
+    quickLinkCard: {
+      flex: 1,
+      minWidth: 0,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: s(10),
+      gap: s(8),
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
       borderRadius: s(12),
-      backgroundColor: figmaColors.cardFeaturedBg,
+      backgroundColor: figmaColors.ctaBackground,
       paddingVertical: s(12),
-      paddingHorizontal: s(14),
-      marginTop: s(15)
+      paddingHorizontal: s(10)
     },
-    savedLinkIcon: {
-      width: s(14),
-      height: s(17),
-      opacity: 0.8
+    quickLinkIcon: {
+      width: s(16),
+      height: s(18),
+      opacity: 0.85,
+      flexShrink: 0
     },
-    savedLinkText: {
+    quickLinkLabel: {
       flex: 1,
+      minWidth: 0,
       fontFamily: appFonts.body,
+      textAlign: 'center',
       fontSize: t(15),
+      lineHeight: t(16),
       color: figmaColors.charcoal
-    },
-    savedLinkChevron: {
-      width: s(8),
-      height: s(12),
-      opacity: 0.5
     }
   });
 }

@@ -87,8 +87,7 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
       backgroundColor: figmaColors.ctaBackground,
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: s(12),
-      marginTop: s(18)
+      marginTop: s(10)
     },
     ctaIcon: {
       width: s(164),
