@@ -6,7 +6,6 @@ import {
   Image,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -22,7 +21,9 @@ import { DiscussionTopicCard } from '@/components/figma/DiscussionTopicCard';
 import {
   discussionIcons,
   discussionSortFromTab,
+  discussionTabHint,
   discussionTabs,
+  discussionThreadsSectionTitle,
   formatCommentCount,
   formatClapCount,
   formatThreadCount,
@@ -32,61 +33,89 @@ import {
 import { figmaColors } from '@/constants/figmaColors';
 import {
   discussionCreateHref,
+  discussionFeedPreferencesHref,
+  discussionSavedHref,
   discussionThreadHref,
   discussionTopicHref
 } from '@/constants/navigation';
+import { useAuth } from '@/context/AuthContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
-import { listForumThreads, listForumTopics, searchForumThreads } from '@/lib/forum';
+import { countForumFeedFilters, listForumThreads, listForumTopics, searchForumThreads } from '@/lib/forum';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
 export default function DiscussionScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const { s, t } = useFigmaLayout();
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
   const [activeTab, setActiveTab] = useState<DiscussionTab>(discussionTabs[0]);
   const [topics, setTopics] = useState<Awaited<ReturnType<typeof listForumTopics>>['items']>([]);
   const [threads, setThreads] = useState<Awaited<ReturnType<typeof listForumThreads>>['items']>([]);
-  const [loading, setLoading] = useState(true);
+  const [topicsLoading, setTopicsLoading] = useState(true);
+  const [threadsLoading, setThreadsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [hiddenCount, setHiddenCount] = useState(0);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search.trim()), SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [search]);
 
-  const load = useCallback(async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
-    setError(null);
+  const loadTopics = useCallback(async () => {
+    setTopicsLoading(true);
+    const { items, error: err } = await listForumTopics();
+    if (err) setError(err);
+    else setTopics(items);
+    setTopicsLoading(false);
+  }, []);
 
-    const sort = discussionSortFromTab(activeTab);
-    const trimmed = debouncedSearch;
-    const [topicsRes, threadsRes] = await Promise.all([
-      listForumTopics(),
-      trimmed
-        ? searchForumThreads(trimmed, { sort, limit: 20 })
-        : listForumThreads({ sort, limit: 12 })
-    ]);
+  const loadThreads = useCallback(
+    async (isRefresh = false) => {
+      if (isRefresh) setRefreshing(true);
+      else setThreadsLoading(true);
+      setError(null);
 
-    if (topicsRes.error) setError(topicsRes.error);
-    else setTopics(topicsRes.items);
-    if (threadsRes.error) setError(threadsRes.error);
-    else setThreads(threadsRes.items);
+      const sort = discussionSortFromTab(activeTab);
+      const trimmed = debouncedSearch;
+      const threadsRes = trimmed
+        ? await searchForumThreads(trimmed, { sort, limit: 20 })
+        : await listForumThreads({ sort, limit: 12 });
 
-    setLoading(false);
-    setRefreshing(false);
-  }, [activeTab, debouncedSearch]);
+      if (threadsRes.error) setError(threadsRes.error);
+      else setThreads(threadsRes.items);
+
+      setThreadsLoading(false);
+      setRefreshing(false);
+    },
+    [activeTab, debouncedSearch]
+  );
+
+  const loadAll = useCallback(
+    async (isRefresh = false) => {
+      const hiddenPromise = user
+        ? countForumFeedFilters().then((res) => setHiddenCount(res.count))
+        : Promise.resolve(setHiddenCount(0));
+      await Promise.all([loadTopics(), loadThreads(isRefresh), hiddenPromise]);
+    },
+    [loadTopics, loadThreads, user]
+  );
 
   useFocusEffect(
     useCallback(() => {
-      void load();
-    }, [load])
+      void loadAll();
+    }, [loadAll])
   );
+
+  useEffect(() => {
+    void loadThreads();
+  }, [activeTab, debouncedSearch, loadThreads]);
+
+  const sectionTitle = discussionThreadsSectionTitle(activeTab, Boolean(debouncedSearch));
 
   return (
     <FigmaScreen
@@ -94,7 +123,9 @@ export default function DiscussionScreen() {
       bottomNav={<FigmaDatabaseBottomNav active="discussion" />}
       scrollProps={{
         contentContainerStyle: page.scrollContent,
-        refreshControl: <RefreshControl refreshing={refreshing} onRefresh={() => void load(true)} />
+        refreshControl: (
+          <RefreshControl refreshing={refreshing} onRefresh={() => void loadAll(true)} />
+        )
       }}
     >
       <FigmaPageHeader
@@ -104,16 +135,24 @@ export default function DiscussionScreen() {
         heroSource={discussionIcons.hero}
         s={s}
         page={page}
-      >
-        <FigmaChipRow
-          options={chipOptionsFromLabels(discussionTabs)}
-          value={activeTab}
-          onChange={setActiveTab}
-          s={s}
-          t={t}
-          style={styles.chipRow}
-        />
-      </FigmaPageHeader>
+      />
+
+      <View style={styles.toolbarRow}>
+        <View style={styles.chipFlex}>
+          <FigmaChipRow
+            options={chipOptionsFromLabels(discussionTabs)}
+            value={activeTab}
+            onChange={setActiveTab}
+            s={s}
+            t={t}
+            style={styles.chipRow}
+          />
+        </View>
+      </View>
+
+      <Text style={styles.tabHint}>
+        {debouncedSearch ? 'Matching threads across all topics.' : discussionTabHint(activeTab)}
+      </Text>
 
       <View style={styles.searchRow}>
         <TextInput
@@ -123,10 +162,22 @@ export default function DiscussionScreen() {
           placeholder="Search threads…"
           placeholderTextColor={figmaColors.textMuted}
           returnKeyType="search"
-          onSubmitEditing={() => void load()}
+          clearButtonMode="while-editing"
         />
+        <Pressable
+          style={styles.savedButton}
+          onPress={() => router.push(discussionSavedHref())}
+          accessibilityRole="button"
+          accessibilityLabel="Saved threads"
+        >
+          <Image
+            source={discussionIcons.threadBookmark}
+            style={styles.savedIcon}
+            resizeMode="contain"
+          />
+        </Pressable>
         <Pressable style={styles.createButton} onPress={() => router.push(discussionCreateHref())}>
-          <Text style={styles.createButtonText}>NEW THREAD</Text>
+          <Text style={styles.createButtonText}>NEW</Text>
         </Pressable>
       </View>
 
@@ -136,7 +187,7 @@ export default function DiscussionScreen() {
         <Text style={page.sectionTitle}>TOPICS</Text>
       </View>
 
-      {loading && topics.length === 0 ? (
+      {topicsLoading && topics.length === 0 ? (
         <ActivityIndicator color={figmaColors.charcoal} style={styles.loader} />
       ) : (
         topics.map((topic) => (
@@ -159,13 +210,20 @@ export default function DiscussionScreen() {
       )}
 
       <View style={[page.sectionHeaderRow, styles.sectionSpaced]}>
-        <Text style={page.sectionTitle}>{debouncedSearch ? 'SEARCH RESULTS' : 'ACTIVE THREADS'}</Text>
+        <Text style={page.sectionTitle}>{sectionTitle}</Text>
+        {threadsLoading && threads.length > 0 ? (
+          <ActivityIndicator color={figmaColors.gray} size="small" />
+        ) : null}
       </View>
 
-      {loading && threads.length === 0 ? (
+      {threadsLoading && threads.length === 0 ? (
         <ActivityIndicator color={figmaColors.charcoal} style={styles.loader} />
       ) : threads.length === 0 ? (
-        <Text style={styles.emptyText}>No threads yet. Start the conversation.</Text>
+        <Text style={styles.emptyText}>
+          {debouncedSearch
+            ? 'No threads match your search.'
+            : 'No threads yet. Start the conversation.'}
+        </Text>
       ) : (
         threads.map((thread) => {
           const authorName =
@@ -189,6 +247,31 @@ export default function DiscussionScreen() {
         })
       )}
 
+      <Pressable style={styles.savedLinkRow} onPress={() => router.push(discussionSavedHref())}>
+        <Image
+          source={discussionIcons.threadBookmark}
+          style={styles.savedLinkIcon}
+          resizeMode="contain"
+        />
+        <Text style={styles.savedLinkText}>View saved threads</Text>
+        <Image source={discussionIcons.cardChevron} style={styles.savedLinkChevron} resizeMode="contain" />
+      </Pressable>
+
+      <Pressable
+        style={styles.savedLinkRow}
+        onPress={() => router.push(discussionFeedPreferencesHref())}
+      >
+        <Image
+          source={discussionIcons.metaActivity}
+          style={styles.savedLinkIcon}
+          resizeMode="contain"
+        />
+        <Text style={styles.savedLinkText}>
+          {hiddenCount > 0 ? `Manage hidden content (${hiddenCount})` : 'Manage hidden content'}
+        </Text>
+        <Image source={discussionIcons.cardChevron} style={styles.savedLinkChevron} resizeMode="contain" />
+      </Pressable>
+
       <Pressable style={page.ctaCard} onPress={() => router.push(discussionCreateHref())}>
         <Image source={discussionIcons.ctaIcon} style={page.ctaIcon} resizeMode="contain" />
         <View style={page.ctaTextWrap}>
@@ -205,14 +288,30 @@ export default function DiscussionScreen() {
 
 function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
+    toolbarRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: s(4)
+    },
+    chipFlex: {
+      flex: 1,
+      minWidth: 0
+    },
     chipRow: {
-      marginTop: s(20),
-      marginBottom: 0
+      marginVertical: 0
+    },
+    tabHint: {
+      fontFamily: appFonts.body,
+      fontSize: t(13),
+      lineHeight: t(18),
+      color: figmaColors.gray,
+      marginTop: s(8),
+      marginBottom: s(4)
     },
     searchRow: {
       flexDirection: 'row',
-      gap: s(10),
-      marginTop: s(12),
+      gap: s(8),
+      marginTop: s(8),
       marginBottom: s(12),
       alignItems: 'center'
     },
@@ -228,8 +327,24 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       color: figmaColors.charcoal,
       backgroundColor: figmaColors.background
     },
+    savedButton: {
+      width: s(42),
+      height: s(42),
+      borderRadius: s(21),
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      backgroundColor: figmaColors.cardFeaturedBg,
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    savedIcon: {
+      width: s(14),
+      height: s(17),
+      opacity: 0.85
+    },
     createButton: {
       height: s(42),
+      minWidth: s(56),
       borderRadius: s(21),
       paddingHorizontal: s(14),
       backgroundColor: figmaColors.buttonPrimaryBg,
@@ -260,6 +375,34 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: t(14),
       color: figmaColors.error,
       marginBottom: s(12)
+    },
+    savedLinkRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(10),
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      borderRadius: s(12),
+      backgroundColor: figmaColors.cardFeaturedBg,
+      paddingVertical: s(12),
+      paddingHorizontal: s(14),
+      marginTop: s(15)
+    },
+    savedLinkIcon: {
+      width: s(14),
+      height: s(17),
+      opacity: 0.8
+    },
+    savedLinkText: {
+      flex: 1,
+      fontFamily: appFonts.body,
+      fontSize: t(15),
+      color: figmaColors.charcoal
+    },
+    savedLinkChevron: {
+      width: s(8),
+      height: s(12),
+      opacity: 0.5
     }
   });
 }

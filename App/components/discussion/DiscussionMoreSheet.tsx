@@ -9,6 +9,7 @@ type DiscussionMoreSheetProps = {
   visible: boolean;
   onClose: () => void;
   onShowLess: () => void;
+  onManageHidden: () => void;
   onFlagContent: () => void;
   s: (n: number) => number;
   t: (n: number) => number;
@@ -18,6 +19,7 @@ export function DiscussionMoreSheet({
   visible,
   onClose,
   onShowLess,
+  onManageHidden,
   onFlagContent,
   s,
   t
@@ -35,6 +37,11 @@ export function DiscussionMoreSheet({
         <Pressable style={styles.optionRow} onPress={onShowLess}>
           <Text style={styles.optionText}>Show less like this</Text>
           <Text style={styles.optionHint}>Hide similar topics and authors</Text>
+        </Pressable>
+
+        <Pressable style={styles.optionRow} onPress={onManageHidden}>
+          <Text style={styles.optionText}>Manage hidden content</Text>
+          <Text style={styles.optionHint}>Show threads and topics in your feed again</Text>
         </Pressable>
 
         <Pressable style={styles.optionRow} onPress={onFlagContent}>

@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { appFonts } from '@/constants/appFonts';
 import {
   ActivityIndicator,
@@ -19,6 +19,7 @@ import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import {
   discussionIcons,
   discussionSortFromTab,
+  discussionTabHint,
   discussionTabs,
   formatCommentCount,
   formatClapCount,
@@ -64,6 +65,10 @@ export default function DiscussionTopicScreen() {
     }, [load])
   );
 
+  useEffect(() => {
+    void load();
+  }, [activeTab, load]);
+
   return (
     <FigmaScreen
       backgroundColor={figmaColors.background}
@@ -105,6 +110,8 @@ export default function DiscussionTopicScreen() {
           <Text style={styles.createButtonText}>START A THREAD</Text>
         </Pressable>
       </View>
+
+      <Text style={styles.tabHint}>{discussionTabHint(activeTab)}</Text>
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
       {loading && threads.length === 0 ? (
@@ -189,6 +196,13 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       fontFamily: appFonts.accent,
       fontSize: t(12),
       color: figmaColors.buttonPrimaryText
+    },
+    tabHint: {
+      fontFamily: appFonts.body,
+      fontSize: t(13),
+      lineHeight: t(18),
+      color: figmaColors.gray,
+      marginBottom: s(8)
     },
     emptyText: {
       fontFamily: appFonts.body,

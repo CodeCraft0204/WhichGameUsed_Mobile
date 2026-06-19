@@ -106,3 +106,11 @@ export function discussionCreateHref(topicSlug?: string): Href {
     params: topicSlug ? { topicSlug } : {}
   } as unknown as Href;
 }
+
+export function discussionSavedHref(): Href {
+  return '/discussion/saved' as unknown as Href;
+}
+
+export function discussionFeedPreferencesHref(): Href {
+  return '/discussion/feed-preferences' as unknown as Href;
+}

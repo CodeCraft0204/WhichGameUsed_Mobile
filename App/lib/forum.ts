@@ -145,14 +145,16 @@ function sortThreads(items: ForumThreadSummary[], sort: ForumSort): ForumThreadS
           (a, b) =>
             b.clap_diversity_score - a.clap_diversity_score ||
             b.comment_count - a.comment_count ||
-            b.total_claps - a.total_claps
+            b.total_claps - a.total_claps ||
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         )
       : sort === 'all_time'
         ? [...rest].sort(
             (a, b) =>
-              b.clap_diversity_score - a.clap_diversity_score ||
               b.total_claps - a.total_claps ||
-              b.comment_count - a.comment_count
+              b.clap_diversity_score - a.clap_diversity_score ||
+              b.comment_count - a.comment_count ||
+              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
           )
         : [...rest].sort(
             (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -180,20 +182,84 @@ export async function listForumThreads(opts?: {
   const sort = opts?.sort ?? 'newest';
   const limit = opts?.limit ?? 25;
 
-  let q = supabase.from('forum_threads_enriched').select('*').limit(limit * 3);
+  let q = supabase.from('forum_threads_enriched').select('*');
 
   if (opts?.topicSlug) {
     q = q.eq('topic_slug', opts.topicSlug);
   }
 
-  const { data, error } = await q;
+  q = q.order('is_pinned', { ascending: false });
+  if (sort === 'hottest') {
+    q = q
+      .order('clap_diversity_score', { ascending: false })
+      .order('comment_count', { ascending: false })
+      .order('total_claps', { ascending: false })
+      .order('created_at', { ascending: false });
+  } else if (sort === 'all_time') {
+    q = q
+      .order('total_claps', { ascending: false })
+      .order('clap_diversity_score', { ascending: false })
+      .order('comment_count', { ascending: false })
+      .order('created_at', { ascending: false });
+  } else {
+    q = q.order('created_at', { ascending: false });
+  }
+
+  const { data, error } = await q.limit(limit);
+  if (error) return { items: [], error: error.message };
+
+  let items = ((data ?? []) as ForumThreadSummary[]).map((row) => mapThreadRow(row));
+  items = await applyFeedFilters(items);
+  items = await attachSavedThreads(items);
+
+  return { items, error: null };
+}
+
+export async function listSavedForumThreads(opts?: {
+  sort?: ForumSort;
+  limit?: number;
+}): Promise<{ items: ForumThreadSummary[]; error: string | null }> {
+  const sort = opts?.sort ?? 'newest';
+  const limit = opts?.limit ?? 50;
+
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) {
+    return { items: [], error: 'Sign in required.' };
+  }
+
+  const { data: saves, error: savesError } = await supabase
+    .from('forum_thread_saves')
+    .select('thread_id, created_at')
+    .eq('user_id', userData.user.id)
+    .order('created_at', { ascending: false });
+
+  if (savesError) return { items: [], error: savesError.message };
+  if (!saves?.length) return { items: [], error: null };
+
+  const saveOrder = new Map(saves.map((row) => [row.thread_id, row.created_at]));
+  const threadIds = saves.map((row) => row.thread_id);
+
+  const { data, error } = await supabase
+    .from('forum_threads_enriched')
+    .select('*')
+    .in('id', threadIds);
+
   if (error) return { items: [], error: error.message };
 
   let items = (data ?? []).map((row) => mapThreadRow(row as ForumThreadSummary));
-  items = sortThreads(items, sort).slice(0, limit * 2);
+
+  if (sort === 'newest') {
+    items.sort(
+      (a, b) =>
+        new Date(saveOrder.get(b.id) ?? 0).getTime() -
+        new Date(saveOrder.get(a.id) ?? 0).getTime()
+    );
+  } else {
+    items = sortThreads(items, sort);
+  }
+
   items = await applyFeedFilters(items);
-  items = items.slice(0, limit);
-  items = await attachSavedThreads(items);
+  items = items.slice(0, limit).map((row) => ({ ...row, saved: true }));
 
   return { items, error: null };
 }
@@ -431,6 +497,139 @@ export async function hideForumThreadLess(threadId: string): Promise<{ error: st
   return { error: error?.message ?? null };
 }
 
+export type ForumFeedFilterRow = {
+  id: string;
+  filter_type: 'thread' | 'topic' | 'author';
+  filter_target_id: string;
+  created_at: string;
+  label: string;
+  subtitle: string;
+};
+
+const FEED_FILTER_TYPE_LABELS: Record<ForumFeedFilterRow['filter_type'], string> = {
+  thread: 'Thread',
+  topic: 'Topic',
+  author: 'Author'
+};
+
+export async function countForumFeedFilters(): Promise<{ count: number; error: string | null }> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) return { count: 0, error: null };
+
+  const { count, error } = await supabase
+    .from('forum_feed_filters')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userData.user.id);
+
+  if (error) return { count: 0, error: error.message };
+  return { count: count ?? 0, error: null };
+}
+
+export async function listForumFeedFilters(): Promise<{
+  items: ForumFeedFilterRow[];
+  error: string | null;
+}> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) return { items: [], error: 'Sign in required.' };
+
+  const { data: filters, error } = await supabase
+    .from('forum_feed_filters')
+    .select('id, filter_type, filter_target_id, created_at')
+    .eq('user_id', userData.user.id)
+    .order('created_at', { ascending: false });
+
+  if (error) return { items: [], error: error.message };
+  if (!filters?.length) return { items: [], error: null };
+
+  const threadIds = filters
+    .filter((row) => row.filter_type === 'thread')
+    .map((row) => row.filter_target_id);
+  const topicIds = filters
+    .filter((row) => row.filter_type === 'topic')
+    .map((row) => row.filter_target_id);
+  const authorIds = filters
+    .filter((row) => row.filter_type === 'author')
+    .map((row) => row.filter_target_id);
+
+  const [threadsRes, topicsRes, authorsRes] = await Promise.all([
+    threadIds.length > 0
+      ? supabase.from('forum_threads_enriched').select('id, title').in('id', threadIds)
+      : Promise.resolve({ data: [] as { id: string; title: string }[] }),
+    topicIds.length > 0
+      ? supabase.from('forum_topics').select('id, title').in('id', topicIds)
+      : Promise.resolve({ data: [] as { id: string; title: string }[] }),
+    authorIds.length > 0
+      ? supabase.rpc('forum_author_profiles', { author_ids: authorIds })
+      : Promise.resolve({ data: [] as ProfileEmbed[] })
+  ]);
+
+  const threadTitles = new Map((threadsRes.data ?? []).map((row) => [row.id, row.title]));
+  const topicTitles = new Map((topicsRes.data ?? []).map((row) => [row.id, row.title]));
+  const authorNames = new Map(
+    (
+      (authorsRes.data ?? []) as Array<{
+        id: string;
+        display_name: string | null;
+        username: string | null;
+      }>
+    ).map((row) => [row.id, row.display_name || row.username || 'Collector'])
+  );
+
+  const items: ForumFeedFilterRow[] = filters.map((row) => {
+    const filterType = row.filter_type as ForumFeedFilterRow['filter_type'];
+    let label = 'Hidden item';
+
+    if (filterType === 'thread') {
+      label = threadTitles.get(row.filter_target_id) ?? 'Removed thread';
+    } else if (filterType === 'topic') {
+      label = topicTitles.get(row.filter_target_id) ?? 'Removed topic';
+    } else if (filterType === 'author') {
+      label = authorNames.get(row.filter_target_id) ?? 'Collector';
+    }
+
+    return {
+      id: row.id,
+      filter_type: filterType,
+      filter_target_id: row.filter_target_id,
+      created_at: row.created_at,
+      label,
+      subtitle: FEED_FILTER_TYPE_LABELS[filterType]
+    };
+  });
+
+  return { items, error: null };
+}
+
+export async function removeForumFeedFilter(filterId: string): Promise<{ error: string | null }> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) return { error: 'Sign in required.' };
+
+  const { error } = await supabase
+    .from('forum_feed_filters')
+    .delete()
+    .eq('id', filterId)
+    .eq('user_id', userData.user.id);
+
+  return { error: error?.message ?? null };
+}
+
+export async function clearAllForumFeedFilters(): Promise<{
+  error: string | null;
+  removed: number;
+}> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) return { error: 'Sign in required.', removed: 0 };
+
+  const { data, error } = await supabase
+    .from('forum_feed_filters')
+    .delete()
+    .eq('user_id', userData.user.id)
+    .select('id');
+
+  if (error) return { error: error.message, removed: 0 };
+  return { error: null, removed: data?.length ?? 0 };
+}
+
 export async function toggleForumThreadSave(threadId: string): Promise<{
   saved: boolean;
   error: string | null;
@@ -438,23 +637,38 @@ export async function toggleForumThreadSave(threadId: string): Promise<{
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError || !userData.user) return { saved: false, error: 'Sign in required.' };
 
-  const { data: existing } = await supabase
+  const userId = userData.user.id;
+
+  const { data: existing, error: readError } = await supabase
     .from('forum_thread_saves')
     .select('id')
-    .eq('user_id', userData.user.id)
+    .eq('user_id', userId)
     .eq('thread_id', threadId)
     .maybeSingle();
 
+  if (readError) return { saved: false, error: readError.message };
+
   if (existing?.id) {
-    const { error } = await supabase.from('forum_thread_saves').delete().eq('id', existing.id);
+    const { error } = await supabase
+      .from('forum_thread_saves')
+      .delete()
+      .eq('user_id', userId)
+      .eq('thread_id', threadId);
     return { saved: false, error: error?.message ?? null };
   }
 
   const { error } = await supabase.from('forum_thread_saves').insert({
-    user_id: userData.user.id,
+    user_id: userId,
     thread_id: threadId
   });
-  return { saved: true, error: error?.message ?? null };
+
+  if (error) {
+    // Row already exists (race or stale UI) — treat as saved instead of surfacing DB noise.
+    if (error.code === '23505') return { saved: true, error: null };
+    return { saved: false, error: error.message };
+  }
+
+  return { saved: true, error: null };
 }
 
 export async function reportForumContent(input: {
@@ -515,18 +729,33 @@ export async function searchForumThreads(
   if (!trimmed) return { items: [], error: null };
 
   const pat = postgrestOrIlikeValue(trimmed);
-  const { data, error } = await supabase
+  let q = supabase
     .from('forum_threads_enriched')
     .select('*')
     .or(`title.ilike.${pat},body.ilike.${pat}`)
-    .limit(limit * 3);
+    .order('is_pinned', { ascending: false });
 
+  if (sort === 'hottest') {
+    q = q
+      .order('clap_diversity_score', { ascending: false })
+      .order('comment_count', { ascending: false })
+      .order('total_claps', { ascending: false })
+      .order('created_at', { ascending: false });
+  } else if (sort === 'all_time') {
+    q = q
+      .order('total_claps', { ascending: false })
+      .order('clap_diversity_score', { ascending: false })
+      .order('comment_count', { ascending: false })
+      .order('created_at', { ascending: false });
+  } else {
+    q = q.order('created_at', { ascending: false });
+  }
+
+  const { data, error } = await q.limit(limit);
   if (error) return { items: [], error: error.message };
 
-  let items = (data ?? []).map((row) => mapThreadRow(row as ForumThreadSummary));
-  items = sortThreads(items, sort).slice(0, limit * 2);
+  let items = ((data ?? []) as ForumThreadSummary[]).map((row) => mapThreadRow(row));
   items = await applyFeedFilters(items);
-  items = items.slice(0, limit);
   items = await attachSavedThreads(items);
 
   return { items, error: null };

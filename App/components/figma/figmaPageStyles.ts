@@ -88,7 +88,7 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: s(12),
-      marginBottom: s(10)
+      marginTop: s(18)
     },
     ctaIcon: {
       width: s(164),

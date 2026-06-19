@@ -40,6 +40,19 @@ export function discussionSortFromTab(tab: DiscussionTab): 'newest' | 'hottest' 
   return 'newest';
 }
 
+export function discussionThreadsSectionTitle(tab: DiscussionTab, searching: boolean): string {
+  if (searching) return 'SEARCH RESULTS';
+  if (tab === 'HOTTEST') return 'TRENDING NOW';
+  if (tab === 'ALL-TIME GREATS') return 'ALL-TIME GREATS';
+  return 'LATEST THREADS';
+}
+
+export function discussionTabHint(tab: DiscussionTab): string {
+  if (tab === 'HOTTEST') return 'Threads gaining momentum right now.';
+  if (tab === 'ALL-TIME GREATS') return 'Most clapped and discussed threads.';
+  return 'Fresh posts from across the community.';
+}
+
 export function formatThreadCount(count: number): string {
   return `${count} thread${count === 1 ? '' : 's'}`;
 }

@@ -26,6 +26,7 @@ import {
   type ForumReportReasonKey
 } from '@/constants/discussionContent';
 import { figmaColors } from '@/constants/figmaColors';
+import { discussionFeedPreferencesHref } from '@/constants/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import { useThreadClaps } from '@/hooks/useThreadClaps';
@@ -115,12 +116,17 @@ export default function DiscussionThreadScreen() {
   }
 
   async function handleSave() {
-    if (!id) return;
+    if (!id || busy) return;
     requireSignedIn(() => {
       void (async () => {
-        const { error: err } = await toggleForumThreadSave(id);
-        if (err) Alert.alert('Save failed', err);
-        else await load();
+        setBusy(true);
+        const { saved, error: err } = await toggleForumThreadSave(id);
+        setBusy(false);
+        if (err) {
+          Alert.alert('Save failed', err);
+          return;
+        }
+        setThread((prev) => (prev ? { ...prev, saved } : prev));
       })();
     });
   }
@@ -168,7 +174,10 @@ export default function DiscussionThreadScreen() {
                   Alert.alert('Could not update feed', err);
                   return;
                 }
-                Alert.alert('Feed updated', 'You will see less content like this.');
+                Alert.alert(
+                  'Feed updated',
+                  'You will see less content like this. You can undo this anytime from Manage hidden content in thread options.'
+                );
                 router.back();
               })();
             }
@@ -176,6 +185,11 @@ export default function DiscussionThreadScreen() {
         ]
       );
     });
+  }
+
+  function openManageHidden() {
+    setMoreOpen(false);
+    router.push(discussionFeedPreferencesHref());
   }
 
   function openThreadFlag() {
@@ -350,6 +364,7 @@ export default function DiscussionThreadScreen() {
           setMoreOpen(false);
           handleShowLess();
         }}
+        onManageHidden={openManageHidden}
         onFlagContent={openThreadFlag}
         s={s}
         t={t}
