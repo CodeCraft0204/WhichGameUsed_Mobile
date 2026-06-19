@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import { appFonts } from '@/constants/appFonts';
 import {
@@ -6,30 +6,44 @@ import {
   Alert,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   View
 } from 'react-native';
 import { CommentComposer } from '@/components/discussion/CommentComposer';
+import { DiscussionMoreSheet } from '@/components/discussion/DiscussionMoreSheet';
+import {
+  ReportContentSheet,
+  type ReportSheetTarget
+} from '@/components/discussion/ReportContentSheet';
+import { ThreadEngagementBar } from '@/components/discussion/ThreadEngagementBar';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
+import {
+  forumReportReasonLabel,
+  type ForumReportReasonKey
+} from '@/constants/discussionContent';
 import { figmaColors } from '@/constants/figmaColors';
+import { useAuth } from '@/context/AuthContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
+import { useThreadClaps } from '@/hooks/useThreadClaps';
 import {
   createForumComment,
   getForumThread,
+  hideForumThreadLess,
   reportForumContent,
   toggleForumThreadSave,
   voteForumThread,
   type ForumThreadDetail
 } from '@/lib/forum';
-import { useFocusEffect } from 'expo-router';
+
+type ReportTarget = ReportSheetTarget;
 
 export default function DiscussionThreadScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { s, t } = useFigmaLayout();
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
@@ -39,6 +53,22 @@ export default function DiscussionThreadScreen() {
   const [error, setError] = useState<string | null>(null);
   const [reply, setReply] = useState('');
   const [busy, setBusy] = useState(false);
+  const [reportTarget, setReportTarget] = useState<ReportTarget | null>(null);
+  const [reportBusy, setReportBusy] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  const claps = useThreadClaps({
+    threadId: id ?? '',
+    initialTotalClaps: thread?.total_claps ?? 0,
+    initialUserClaps: thread?.user_clap_count ?? 0,
+    enabled: Boolean(user && thread),
+    onSynced: ({ total_claps, user_clap_count }) => {
+      setThread((prev) =>
+        prev ? { ...prev, total_claps, user_clap_count } : prev
+      );
+    },
+    onError: (message) => Alert.alert('Clap failed', message)
+  });
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -56,8 +86,23 @@ export default function DiscussionThreadScreen() {
     }, [load])
   );
 
+  function requireSignedIn(action: () => void) {
+    if (user) {
+      action();
+      return;
+    }
+    Alert.alert('Sign in required', 'Create an account or sign in to participate.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign in', onPress: () => router.push('/sign-in/sign-in') }
+    ]);
+  }
+
   async function submitReply() {
     if (!id || !reply.trim()) return;
+    if (!user) {
+      requireSignedIn(() => {});
+      return;
+    }
     setBusy(true);
     const { error: err } = await createForumComment({ threadId: id, body: reply.trim() });
     setBusy(false);
@@ -69,38 +114,115 @@ export default function DiscussionThreadScreen() {
     await load();
   }
 
-  async function handleVote(value: 'upvote' | 'downvote') {
-    if (!id) return;
-    const { error: err } = await voteForumThread(id, value);
-    if (err) Alert.alert('Vote failed', err);
-    else await load();
-  }
-
   async function handleSave() {
     if (!id) return;
-    const { error: err } = await toggleForumThreadSave(id);
-    if (err) Alert.alert('Save failed', err);
-    else await load();
+    requireSignedIn(() => {
+      void (async () => {
+        const { error: err } = await toggleForumThreadSave(id);
+        if (err) Alert.alert('Save failed', err);
+        else await load();
+      })();
+    });
   }
 
-  function handleReport(targetType: 'forum_thread' | 'forum_comment', targetId: string) {
-    Alert.alert('Report content', 'Send this to moderators for review?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Report',
-        style: 'destructive',
-        onPress: () => {
-          void reportForumContent({
-            targetType,
-            targetId,
-            reason: 'Reported from mobile app'
-          }).then(({ error: err }) => {
-            if (err) Alert.alert('Report failed', err);
-            else Alert.alert('Reported', 'Thanks — our team will review this.');
-          });
+  function handleClapPressIn() {
+    requireSignedIn(() => claps.onPressIn());
+  }
+
+  function handleVote(value: 'upvote' | 'downvote') {
+    if (!id) return;
+    requireSignedIn(() => {
+      void (async () => {
+        const { error: err, user_vote, vote_score } = await voteForumThread(id, value);
+        if (err) {
+          Alert.alert('Vote failed', err);
+          return;
         }
-      }
-    ]);
+        setThread((prev) =>
+          prev
+            ? {
+                ...prev,
+                user_vote: user_vote ?? null,
+                vote_score: vote_score ?? prev.vote_score
+              }
+            : prev
+        );
+      })();
+    });
+  }
+
+  function handleShowLess() {
+    if (!id) return;
+    requireSignedIn(() => {
+      Alert.alert(
+        'Show less like this?',
+        'We will hide this thread, its topic, and posts from this author in your discussion feed.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Show less',
+            onPress: () => {
+              void (async () => {
+                const { error: err } = await hideForumThreadLess(id);
+                if (err) {
+                  Alert.alert('Could not update feed', err);
+                  return;
+                }
+                Alert.alert('Feed updated', 'You will see less content like this.');
+                router.back();
+              })();
+            }
+          }
+        ]
+      );
+    });
+  }
+
+  function openThreadFlag() {
+    if (!thread) return;
+    setMoreOpen(false);
+    requireSignedIn(() =>
+      setReportTarget({
+        type: 'forum_thread',
+        id: thread.id,
+        headline: 'This discussion thread',
+        preview: thread.title
+      })
+    );
+  }
+
+  function openCommentFlag(comment: ForumThreadDetail['comments'][number]) {
+    const author =
+      comment.author_display_name || comment.author_username || 'Collector';
+    requireSignedIn(() =>
+      setReportTarget({
+        type: 'forum_comment',
+        id: comment.id,
+        headline: `Reply from ${author}`,
+        preview: comment.body
+      })
+    );
+  }
+
+  function openMoreMenu() {
+    requireSignedIn(() => setMoreOpen(true));
+  }
+
+  async function submitReport(reasonKey: ForumReportReasonKey, notes: string) {
+    if (!reportTarget) return;
+    setReportBusy(true);
+    const { error: err } = await reportForumContent({
+      targetType: reportTarget.type,
+      targetId: reportTarget.id,
+      reason: forumReportReasonLabel(reasonKey, notes)
+    });
+    setReportBusy(false);
+    if (err) {
+      Alert.alert('Report failed', err);
+      return;
+    }
+    setReportTarget(null);
+    Alert.alert('Sent to moderators', 'Thanks — we will review this privately.');
   }
 
   if (loading && !thread) {
@@ -138,56 +260,73 @@ export default function DiscussionThreadScreen() {
       <View style={styles.threadHeader}>
         <ProfileAvatar url={thread.author_avatar_url} name={author} size={s(56)} />
         <View style={styles.headerBody}>
+          <View style={styles.topicTag}>
+            <Text style={styles.topicTagText}>{thread.topic_title}</Text>
+          </View>
           <Text style={styles.title}>{thread.title}</Text>
           <Text style={styles.meta}>
-            {thread.topic_title} · by {author} · {new Date(thread.created_at).toLocaleDateString()}
+            by {author} · {new Date(thread.created_at).toLocaleDateString()}
           </Text>
         </View>
       </View>
 
       <Text style={styles.body}>{thread.body}</Text>
 
-      <View style={styles.actionRow}>
-        <Pressable style={styles.actionButton} onPress={() => void handleVote('upvote')}>
-          <Text style={styles.actionText}>
-            ▲ {thread.vote_score} {thread.user_vote === 'upvote' ? '· voted' : ''}
-          </Text>
-        </Pressable>
-        <Pressable style={styles.actionButton} onPress={() => void handleSave()}>
-          <Text style={styles.actionText}>{thread.saved ? '★ Saved' : '☆ Save'}</Text>
-        </Pressable>
-        <Pressable style={styles.actionButton} onPress={() => handleReport('forum_thread', thread.id)}>
-          <Text style={styles.actionText}>Report</Text>
-        </Pressable>
-      </View>
+      <ThreadEngagementBar
+        voteScore={thread.vote_score}
+        userVote={thread.user_vote}
+        onUpvote={() => handleVote('upvote')}
+        onDownvote={() => handleVote('downvote')}
+        totalClaps={claps.displayTotal}
+        userClaps={claps.displayUser}
+        clapMaxed={claps.maxed}
+        clapBubbles={claps.bubbles}
+        onClapPressIn={handleClapPressIn}
+        onClapPressOut={claps.onPressOut}
+        saved={Boolean(thread.saved)}
+        onSave={() => void handleSave()}
+        onMore={openMoreMenu}
+        disabled={busy || claps.syncing}
+        s={s}
+        t={t}
+      />
 
       <Text style={styles.sectionTitle}>COMMENTS ({thread.comments.length})</Text>
 
-      {thread.comments.map((comment) => {
-        const commentAuthor =
-          comment.author_display_name || comment.author_username || 'Collector';
-        return (
-          <View key={comment.id} style={styles.commentCard}>
-            <View style={styles.commentHeader}>
-              <ProfileAvatar
-                url={comment.author_avatar_url}
-                name={commentAuthor}
-                size={s(40)}
-              />
-              <View style={styles.commentHeaderText}>
-                <Text style={styles.commentAuthor}>{commentAuthor}</Text>
-                <Text style={styles.commentMeta}>
-                  {new Date(comment.created_at).toLocaleString()}
-                </Text>
+      {thread.comments.length === 0 ? (
+        <Text style={styles.emptyComments}>No replies yet — add the first comment below.</Text>
+      ) : (
+        thread.comments.map((comment) => {
+          const commentAuthor =
+            comment.author_display_name || comment.author_username || 'Collector';
+          return (
+            <View key={comment.id} style={styles.commentCard}>
+              <View style={styles.commentHeader}>
+                <ProfileAvatar
+                  url={comment.author_avatar_url}
+                  name={commentAuthor}
+                  size={s(40)}
+                />
+                <View style={styles.commentHeaderText}>
+                  <Text style={styles.commentAuthor}>{commentAuthor}</Text>
+                  <Text style={styles.commentMeta}>
+                    {new Date(comment.created_at).toLocaleString()}
+                  </Text>
+                </View>
+                <Pressable
+                  style={styles.commentMore}
+                  onPress={() => openCommentFlag(comment)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Comment options"
+                >
+                  <Text style={styles.commentMoreIcon}>⋯</Text>
+                </Pressable>
               </View>
+              <Text style={styles.commentBody}>{comment.body}</Text>
             </View>
-            <Text style={styles.commentBody}>{comment.body}</Text>
-            <Pressable onPress={() => handleReport('forum_comment', comment.id)}>
-              <Text style={styles.reportLink}>Report</Text>
-            </Pressable>
-          </View>
-        );
-      })}
+          );
+        })
+      )}
 
       {thread.is_locked ? (
         <Text style={styles.lockedText}>This thread is locked — new replies are disabled.</Text>
@@ -203,6 +342,28 @@ export default function DiscussionThreadScreen() {
       )}
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+      <DiscussionMoreSheet
+        visible={moreOpen}
+        onClose={() => setMoreOpen(false)}
+        onShowLess={() => {
+          setMoreOpen(false);
+          handleShowLess();
+        }}
+        onFlagContent={openThreadFlag}
+        s={s}
+        t={t}
+      />
+
+      <ReportContentSheet
+        visible={reportTarget != null}
+        target={reportTarget}
+        busy={reportBusy}
+        onClose={() => setReportTarget(null)}
+        onSubmit={submitReport}
+        s={s}
+        t={t}
+      />
     </FigmaScreen>
   );
 }
@@ -221,6 +382,21 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       marginBottom: s(12)
     },
     headerBody: { flex: 1, minWidth: 0 },
+    topicTag: {
+      alignSelf: 'flex-start',
+      backgroundColor: figmaColors.tagBg,
+      borderWidth: 1,
+      borderColor: figmaColors.tagBorder,
+      borderRadius: s(7),
+      paddingHorizontal: s(8),
+      paddingVertical: s(3),
+      marginBottom: s(6)
+    },
+    topicTagText: {
+      fontFamily: appFonts.body,
+      fontSize: t(9),
+      color: figmaColors.gray
+    },
     title: {
       fontFamily: appFonts.display,
       fontSize: t(24),
@@ -239,30 +415,17 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       color: figmaColors.charcoal,
       marginBottom: s(12)
     },
-    actionRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: s(8),
-      marginBottom: s(16)
-    },
-    actionButton: {
-      borderWidth: 1,
-      borderColor: figmaColors.borderLight,
-      borderRadius: s(16),
-      paddingHorizontal: s(12),
-      paddingVertical: s(8),
-      backgroundColor: figmaColors.tagBg
-    },
-    actionText: {
-      fontFamily: appFonts.body,
-      fontSize: t(13),
-      color: figmaColors.charcoal
-    },
     sectionTitle: {
       fontFamily: appFonts.display,
       fontSize: t(18),
       color: figmaColors.charcoal,
       marginBottom: s(10)
+    },
+    emptyComments: {
+      fontFamily: appFonts.body,
+      fontSize: t(14),
+      color: figmaColors.gray,
+      marginBottom: s(12)
     },
     commentCard: {
       borderWidth: 1,
@@ -277,6 +440,19 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       alignItems: 'center',
       gap: s(10),
       marginBottom: s(8)
+    },
+    commentMore: {
+      width: s(32),
+      height: s(32),
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: s(16)
+    },
+    commentMoreIcon: {
+      fontFamily: appFonts.body,
+      fontSize: t(22),
+      lineHeight: t(22),
+      color: figmaColors.gray
     },
     commentHeaderText: {
       flex: 1,
@@ -298,12 +474,6 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: t(15),
       lineHeight: t(20),
       color: figmaColors.charcoal
-    },
-    reportLink: {
-      marginTop: s(8),
-      fontFamily: appFonts.body,
-      fontSize: t(12),
-      color: figmaColors.gray
     },
     lockedText: {
       fontFamily: appFonts.body,

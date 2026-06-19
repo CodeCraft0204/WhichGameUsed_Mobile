@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { appFonts } from '@/constants/appFonts';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { figmaColors } from '@/constants/figmaColors';
@@ -15,9 +15,19 @@ type ProfileAvatarProps = {
 export function ProfileAvatar({ url, name, size, onPress, disabled }: ProfileAvatarProps) {
   const styles = useMemo(() => createStyles(size), [size]);
   const initials = profileInitials(name);
+  const [imageFailed, setImageFailed] = useState(false);
 
-  const content = url ? (
-    <Image source={{ uri: url }} style={styles.image} resizeMode="cover" />
+  useEffect(() => {
+    setImageFailed(false);
+  }, [url]);
+
+  const content = url && !imageFailed ? (
+    <Image
+      source={{ uri: url }}
+      style={styles.image}
+      resizeMode="cover"
+      onError={() => setImageFailed(true)}
+    />
   ) : (
     <View style={styles.fallback}>
       <Text style={styles.initials}>{initials || '?'}</Text>

@@ -2,44 +2,8 @@ import React from 'react';
 import { appFonts } from '@/constants/appFonts';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
-import {
-  discussionClipLayout,
-  discussionIcons
-} from '@/constants/discussionContent';
+import { discussionIcons } from '@/constants/discussionContent';
 import { figmaColors } from '@/constants/figmaColors';
-
-function ClippedThreadIcon({
-  left,
-  top,
-  width,
-  height,
-  s
-}: {
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-  s: (n: number) => number;
-}) {
-  const rowWidth = s(discussionClipLayout.threadRowWidth);
-  const rowHeight = s(discussionClipLayout.threadRowHeight);
-
-  return (
-    <View style={{ width: s(width), height: s(height), overflow: 'hidden' }}>
-      <Image
-        source={discussionIcons.threadActions}
-        style={{
-          width: rowWidth,
-          height: rowHeight,
-          position: 'absolute',
-          left: -s(left),
-          top: -s(top)
-        }}
-        resizeMode="stretch"
-      />
-    </View>
-  );
-}
 
 type DiscussionThreadCardProps = {
   avatarUrl?: string | null;
@@ -48,6 +12,7 @@ type DiscussionThreadCardProps = {
   category: string;
   author: string;
   comments: string;
+  claps: string;
   saved?: boolean;
   onPress?: () => void;
   s: (n: number) => number;
@@ -61,6 +26,7 @@ export function DiscussionThreadCard({
   category,
   author,
   comments,
+  claps,
   saved = false,
   onPress,
   s,
@@ -68,42 +34,51 @@ export function DiscussionThreadCard({
 }: DiscussionThreadCardProps) {
   const styles = createStyles(s, t);
   const avatarSize = s(76);
+  const actionIconSize = s(16);
 
   const content = (
     <>
       <ProfileAvatar url={avatarUrl ?? null} name={authorName} size={avatarSize} />
 
       <View style={styles.body}>
-        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.title} numberOfLines={2}>
+          {title}
+        </Text>
         <View style={styles.metaRow}>
           <View style={styles.categoryTag}>
             <Text style={styles.categoryText} numberOfLines={1}>
               {category}
             </Text>
           </View>
-          <Text style={styles.authorText}>by {author}</Text>
+          <Text style={styles.authorText} numberOfLines={1}>
+            by {author}
+          </Text>
         </View>
       </View>
 
       <View style={styles.actionsColumn}>
         <View style={styles.actionsDivider} />
         <View style={styles.actionsContent}>
-          <ClippedThreadIcon
-            s={s}
-            left={discussionClipLayout.threadCommentLeft}
-            top={discussionClipLayout.threadCommentTop}
-            width={discussionClipLayout.threadCommentWidth}
-            height={discussionClipLayout.threadCommentHeight}
+          <Image
+            source={discussionIcons.threadLike}
+            style={{ width: actionIconSize, height: actionIconSize }}
+            resizeMode="contain"
           />
-          <Text style={styles.commentCount}>{comments}</Text>
-          <ClippedThreadIcon
-            s={s}
-            left={discussionClipLayout.threadBookmarkLeft}
-            top={discussionClipLayout.threadBookmarkTop}
-            width={discussionClipLayout.threadBookmarkWidth}
-            height={discussionClipLayout.threadBookmarkHeight}
+          <Text style={styles.metaCount}>{claps}</Text>
+          <Image
+            source={discussionIcons.threadComment}
+            style={{ width: actionIconSize, height: actionIconSize }}
+            resizeMode="contain"
           />
-          {saved ? <Text style={styles.savedMark}>★</Text> : null}
+          <Text style={styles.metaCount}>{comments}</Text>
+          <Image
+            source={discussionIcons.threadBookmark}
+            style={[
+              { width: actionIconSize, height: actionIconSize },
+              !saved && styles.bookmarkMuted
+            ]}
+            resizeMode="contain"
+          />
         </View>
       </View>
     </>
@@ -151,8 +126,8 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     metaRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      flexWrap: 'wrap',
-      gap: s(6)
+      gap: s(6),
+      minWidth: 0
     },
     categoryTag: {
       backgroundColor: figmaColors.tagBg,
@@ -161,7 +136,8 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       borderRadius: s(7),
       paddingHorizontal: s(8),
       paddingVertical: s(3),
-      maxWidth: '72%'
+      flexShrink: 1,
+      maxWidth: '58%'
     },
     categoryText: {
       fontFamily: appFonts.body,
@@ -172,10 +148,11 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontFamily: appFonts.body,
       fontSize: t(13),
       color: figmaColors.gray,
+      flex: 1,
       flexShrink: 1
     },
     actionsColumn: {
-      width: s(88),
+      width: s(96),
       flexDirection: 'row',
       alignItems: 'stretch'
     },
@@ -193,15 +170,14 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       gap: s(4),
       paddingRight: s(2)
     },
-    commentCount: {
+    metaCount: {
       fontFamily: appFonts.body,
-      fontSize: t(14),
-      color: figmaColors.gray
+      fontSize: t(13),
+      color: figmaColors.gray,
+      marginRight: s(2)
     },
-    savedMark: {
-      fontFamily: appFonts.body,
-      fontSize: t(12),
-      color: figmaColors.bronze
+    bookmarkMuted: {
+      opacity: 0.35
     }
   });
 }

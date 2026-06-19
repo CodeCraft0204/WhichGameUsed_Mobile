@@ -21,6 +21,7 @@ import {
   discussionSortFromTab,
   discussionTabs,
   formatCommentCount,
+  formatClapCount,
   topicIconBySlug,
   type DiscussionTab
 } from '@/constants/discussionContent';
@@ -86,21 +87,24 @@ export default function DiscussionTopicScreen() {
         </View>
       </View>
 
-      <FigmaChipRow
-        options={chipOptionsFromLabels(discussionTabs)}
-        value={activeTab}
-        onChange={setActiveTab}
-        s={s}
-        t={t}
-        style={styles.chipRow}
-      />
-
-      <Pressable
-        style={styles.createButton}
-        onPress={() => router.push(discussionCreateHref(slug))}
-      >
-        <Text style={styles.createButtonText}>START A THREAD</Text>
-      </Pressable>
+      <View style={styles.toolbarRow}>
+        <View style={styles.chipFlex}>
+          <FigmaChipRow
+            options={chipOptionsFromLabels(discussionTabs)}
+            value={activeTab}
+            onChange={setActiveTab}
+            s={s}
+            t={t}
+            style={styles.chipRow}
+          />
+        </View>
+        <Pressable
+          style={styles.createButton}
+          onPress={() => router.push(discussionCreateHref(slug))}
+        >
+          <Text style={styles.createButtonText}>START A THREAD</Text>
+        </Pressable>
+      </View>
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
       {loading && threads.length === 0 ? (
@@ -120,6 +124,7 @@ export default function DiscussionTopicScreen() {
               category={thread.topic_title}
               author={authorName}
               comments={formatCommentCount(thread.comment_count)}
+              claps={formatClapCount(thread.total_claps)}
               saved={thread.saved}
               s={s}
               t={t}
@@ -156,13 +161,24 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: t(24),
       color: figmaColors.charcoal
     },
-    chipRow: { marginVertical: s(12) },
+    chipRow: {
+      marginVertical: 0
+    },
+    toolbarRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(10),
+      marginVertical: s(12)
+    },
+    chipFlex: {
+      flex: 1,
+      minWidth: 0
+    },
     createButton: {
-      alignSelf: 'flex-start',
-      marginBottom: s(12),
+      flexShrink: 0,
       height: s(40),
       borderRadius: s(20),
-      paddingHorizontal: s(16),
+      paddingHorizontal: s(14),
       backgroundColor: figmaColors.buttonPrimaryBg,
       borderWidth: 1,
       borderColor: figmaColors.buttonPrimaryBorder,

@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { appFonts } from '@/constants/appFonts';
 import {
   ActivityIndicator,
@@ -24,6 +24,7 @@ import {
   discussionSortFromTab,
   discussionTabs,
   formatCommentCount,
+  formatClapCount,
   formatThreadCount,
   topicIconBySlug,
   type DiscussionTab
@@ -37,6 +38,8 @@ import {
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import { listForumThreads, listForumTopics, searchForumThreads } from '@/lib/forum';
 
+const SEARCH_DEBOUNCE_MS = 300;
+
 export default function DiscussionScreen() {
   const router = useRouter();
   const { s, t } = useFigmaLayout();
@@ -49,6 +52,12 @@ export default function DiscussionScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const load = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -56,11 +65,11 @@ export default function DiscussionScreen() {
     setError(null);
 
     const sort = discussionSortFromTab(activeTab);
-    const trimmed = search.trim();
+    const trimmed = debouncedSearch;
     const [topicsRes, threadsRes] = await Promise.all([
       listForumTopics(),
       trimmed
-        ? searchForumThreads(trimmed, 20)
+        ? searchForumThreads(trimmed, { sort, limit: 20 })
         : listForumThreads({ sort, limit: 12 })
     ]);
 
@@ -71,7 +80,7 @@ export default function DiscussionScreen() {
 
     setLoading(false);
     setRefreshing(false);
-  }, [activeTab, search]);
+  }, [activeTab, debouncedSearch]);
 
   useFocusEffect(
     useCallback(() => {
@@ -150,7 +159,7 @@ export default function DiscussionScreen() {
       )}
 
       <View style={[page.sectionHeaderRow, styles.sectionSpaced]}>
-        <Text style={page.sectionTitle}>{search.trim() ? 'SEARCH RESULTS' : 'ACTIVE THREADS'}</Text>
+        <Text style={page.sectionTitle}>{debouncedSearch ? 'SEARCH RESULTS' : 'ACTIVE THREADS'}</Text>
       </View>
 
       {loading && threads.length === 0 ? (
@@ -170,6 +179,7 @@ export default function DiscussionScreen() {
               category={thread.topic_title}
               author={authorName}
               comments={formatCommentCount(thread.comment_count)}
+              claps={formatClapCount(thread.total_claps)}
               saved={thread.saved}
               s={s}
               t={t}
@@ -202,6 +212,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
     searchRow: {
       flexDirection: 'row',
       gap: s(10),
+      marginTop: s(12),
       marginBottom: s(12),
       alignItems: 'center'
     },

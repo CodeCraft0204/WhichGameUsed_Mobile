@@ -7,7 +7,12 @@ export const discussionIcons = {
   topicCounterfeits: figmaIcons.sealRejected,
   topicShowTell: figmaIcons.evidencePinned,
   topicAskAnything: figmaIcons.scrollQuestion,
-  threadActions: figmaIcons.topicNotepad,
+  metaActivity: figmaIcons.metaCalendar,
+  threadComment: figmaIcons.replyBubble,
+  threadBookmark: figmaIcons.bookmark,
+  threadLike: figmaIcons.thumbsUp,
+  threadClap: figmaIcons.starImportant,
+  threadReport: figmaIcons.watchEye,
   avatar1: require('@/assets/figma/leaderboard/avatar_rank1.png'),
   avatar2: require('@/assets/figma/leaderboard/avatar_rank2.png'),
   avatar3: require('@/assets/figma/leaderboard/avatar_rank3.png'),
@@ -45,7 +50,34 @@ export function formatCommentCount(count: number): string {
 
 export const defaultThreadAvatar = discussionIcons.avatar1;
 
-/** Clip regions for thread action icons extracted from thread_01.png. */
+/** Medium-style clap limits & timing */
+export const FORUM_MAX_CLAPS_PER_USER = 50;
+export const FORUM_CLAP_DEBOUNCE_MS = 500;
+export const FORUM_CLAP_HOLD_INTERVAL_MS = 100;
+
+export function formatClapCount(count: number): string {
+  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
+  if (count >= 10_000) return `${Math.round(count / 1000)}K`;
+  if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
+  return String(count);
+}
+
+export const forumReportReasons = [
+  { key: 'spam', label: 'Spam or advertising' },
+  { key: 'harassment', label: 'Harassment or abuse' },
+  { key: 'misleading', label: 'Misleading or off-topic' },
+  { key: 'other', label: 'Something else' }
+] as const;
+
+export type ForumReportReasonKey = (typeof forumReportReasons)[number]['key'];
+
+export function forumReportReasonLabel(key: ForumReportReasonKey, notes?: string): string {
+  const preset = forumReportReasons.find((row) => row.key === key);
+  if (key === 'other' && notes?.trim()) return notes.trim();
+  return preset?.label ?? 'Reported from mobile app';
+}
+
+/** @deprecated Clip sprites were replaced with direct icon assets. */
 export const discussionClipLayout = {
   threadRowWidth: 770,
   threadRowHeight: 100,

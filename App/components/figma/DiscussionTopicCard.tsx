@@ -1,41 +1,8 @@
 import React from 'react';
 import { appFonts } from '@/constants/appFonts';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { discussionClipLayout, discussionIcons } from '@/constants/discussionContent';
+import { discussionIcons } from '@/constants/discussionContent';
 import { figmaColors } from '@/constants/figmaColors';
-
-function ClippedThreadIcon({
-  left,
-  top,
-  width,
-  height,
-  s
-}: {
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-  s: (n: number) => number;
-}) {
-  const rowWidth = s(discussionClipLayout.threadRowWidth);
-  const rowHeight = s(discussionClipLayout.threadRowHeight);
-
-  return (
-    <View style={{ width: s(width), height: s(height), overflow: 'hidden' }}>
-      <Image
-        source={discussionIcons.threadActions}
-        style={{
-          width: rowWidth,
-          height: rowHeight,
-          position: 'absolute',
-          left: -s(left),
-          top: -s(top)
-        }}
-        resizeMode="stretch"
-      />
-    </View>
-  );
-}
 
 type DiscussionTopicCardProps = {
   icon: number;
@@ -78,13 +45,7 @@ export function DiscussionTopicCard({
             <Text style={styles.metaText}>{threadsLabel}</Text>
           </View>
           <View style={styles.metaRow}>
-            <ClippedThreadIcon
-              s={s}
-              left={discussionClipLayout.threadCommentLeft}
-              top={discussionClipLayout.threadCommentTop}
-              width={discussionClipLayout.threadCommentWidth}
-              height={discussionClipLayout.threadCommentHeight}
-            />
+            <Image source={discussionIcons.metaActivity} style={styles.metaIcon} resizeMode="contain" />
             <Text style={styles.metaText}>{activityLabel}</Text>
           </View>
         </View>
