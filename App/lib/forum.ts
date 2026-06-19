@@ -68,15 +68,52 @@ function mapThreadRow(row: ForumThreadSummary): ForumThreadSummary {
   const userVote = row.user_vote;
   const normalizedVote =
     userVote === 'upvote' || userVote === 'downvote' ? userVote : null;
+  const parsedScore = Number(row.vote_score);
 
   return {
     ...row,
     total_claps: Number(row.total_claps ?? 0),
     clap_diversity_score: Number(row.clap_diversity_score ?? 0),
     user_clap_count: Number(row.user_clap_count ?? 0),
-    vote_score: Number(row.vote_score ?? 0),
+    vote_score: Number.isFinite(parsedScore) ? parsedScore : 0,
     user_vote: normalizedVote,
     author_avatar_url: resolveProfileAvatarUrl(row.author_avatar_url)
+  };
+}
+
+function parseRpcNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function parseRpcUserVote(value: unknown): 'upvote' | 'downvote' | null {
+  return value === 'upvote' || value === 'downvote' ? value : null;
+}
+
+function voteDelta(value: 'upvote' | 'downvote'): number {
+  return value === 'upvote' ? 1 : -1;
+}
+
+export function computeVoteScoreAfterAction(
+  currentScore: number,
+  currentUserVote: 'upvote' | 'downvote' | null,
+  action: 'upvote' | 'downvote'
+): { user_vote: 'upvote' | 'downvote' | null; vote_score: number } {
+  const score = Number.isFinite(currentScore) ? currentScore : 0;
+
+  if (currentUserVote === action) {
+    return { user_vote: null, vote_score: score - voteDelta(action) };
+  }
+  if (currentUserVote == null) {
+    return { user_vote: action, vote_score: score + voteDelta(action) };
+  }
+  return {
+    user_vote: action,
+    vote_score: score - voteDelta(currentUserVote) + voteDelta(action)
   };
 }
 
@@ -143,16 +180,14 @@ function sortThreads(items: ForumThreadSummary[], sort: ForumSort): ForumThreadS
     sort === 'hottest'
       ? [...rest].sort(
           (a, b) =>
-            b.clap_diversity_score - a.clap_diversity_score ||
+            b.vote_score - a.vote_score ||
             b.comment_count - a.comment_count ||
-            b.total_claps - a.total_claps ||
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         )
       : sort === 'all_time'
         ? [...rest].sort(
             (a, b) =>
-              b.total_claps - a.total_claps ||
-              b.clap_diversity_score - a.clap_diversity_score ||
+              b.vote_score - a.vote_score ||
               b.comment_count - a.comment_count ||
               new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
           )
@@ -191,14 +226,12 @@ export async function listForumThreads(opts?: {
   q = q.order('is_pinned', { ascending: false });
   if (sort === 'hottest') {
     q = q
-      .order('clap_diversity_score', { ascending: false })
+      .order('vote_score', { ascending: false })
       .order('comment_count', { ascending: false })
-      .order('total_claps', { ascending: false })
       .order('created_at', { ascending: false });
   } else if (sort === 'all_time') {
     q = q
-      .order('total_claps', { ascending: false })
-      .order('clap_diversity_score', { ascending: false })
+      .order('vote_score', { ascending: false })
       .order('comment_count', { ascending: false })
       .order('created_at', { ascending: false });
   } else {
@@ -418,15 +451,14 @@ export async function voteForumThread(
   }
 
   const payload = (data ?? {}) as {
-    user_vote?: 'upvote' | 'downvote' | null;
-    vote_score?: number;
+    user_vote?: unknown;
+    vote_score?: unknown;
   };
 
-  const userVote = payload.user_vote;
   return {
     error: null,
-    user_vote: userVote === 'upvote' || userVote === 'downvote' ? userVote : null,
-    vote_score: typeof payload.vote_score === 'number' ? payload.vote_score : null
+    user_vote: parseRpcUserVote(payload.user_vote),
+    vote_score: parseRpcNumber(payload.vote_score)
   };
 }
 
@@ -737,14 +769,12 @@ export async function searchForumThreads(
 
   if (sort === 'hottest') {
     q = q
-      .order('clap_diversity_score', { ascending: false })
+      .order('vote_score', { ascending: false })
       .order('comment_count', { ascending: false })
-      .order('total_claps', { ascending: false })
       .order('created_at', { ascending: false });
   } else if (sort === 'all_time') {
     q = q
-      .order('total_claps', { ascending: false })
-      .order('clap_diversity_score', { ascending: false })
+      .order('vote_score', { ascending: false })
       .order('comment_count', { ascending: false })
       .order('created_at', { ascending: false });
   } else {

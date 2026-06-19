@@ -1,7 +1,9 @@
 import React, { useMemo } from 'react';
 import { appFonts } from '@/constants/appFonts';
+import { formatVoteScore } from '@/constants/discussionContent';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { ThreadClapButton } from '@/components/discussion/ThreadClapButton';
+// Star/clap feature disabled for now.
+// import { ThreadClapButton } from '@/components/discussion/ThreadClapButton';
 import { discussionIcons } from '@/constants/discussionContent';
 import { figmaColors } from '@/constants/figmaColors';
 
@@ -10,12 +12,6 @@ type ThreadEngagementBarProps = {
   userVote: 'upvote' | 'downvote' | null;
   onUpvote: () => void;
   onDownvote: () => void;
-  totalClaps: number;
-  userClaps: number;
-  clapMaxed: boolean;
-  clapBubbles: { id: number; key: number }[];
-  onClapPressIn: () => void;
-  onClapPressOut: () => void;
   saved: boolean;
   onSave: () => void;
   onMore: () => void;
@@ -31,12 +27,6 @@ export function ThreadEngagementBar({
   userVote,
   onUpvote,
   onDownvote,
-  totalClaps,
-  userClaps,
-  clapMaxed,
-  clapBubbles,
-  onClapPressIn,
-  onClapPressOut,
   saved,
   onSave,
   onMore,
@@ -47,6 +37,7 @@ export function ThreadEngagementBar({
   const styles = useMemo(() => createStyles(s, t), [s, t]);
   const iconW = s(VOTE_ICON.width);
   const iconH = s(VOTE_ICON.height);
+  const scoreLabel = formatVoteScore(voteScore);
 
   return (
     <ScrollView
@@ -70,7 +61,7 @@ export function ThreadEngagementBar({
           />
         </Pressable>
         <Text style={[styles.voteScore, userVote != null && styles.voteScoreActive]}>
-          {voteScore}
+          {scoreLabel}
         </Text>
         <Pressable
           style={[styles.voteButton, userVote === 'downvote' && styles.voteButtonActive]}
@@ -87,6 +78,7 @@ export function ThreadEngagementBar({
         </Pressable>
       </View>
 
+      {/*
       <ThreadClapButton
         totalClaps={totalClaps}
         userClaps={userClaps}
@@ -100,6 +92,7 @@ export function ThreadEngagementBar({
         s={s}
         t={t}
       />
+      */}
 
       <Pressable
         style={[styles.actionChip, saved && styles.actionChipActive]}
@@ -163,7 +156,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       borderColor: figmaColors.tagBorder
     },
     voteScore: {
-      minWidth: s(22),
+      minWidth: s(28),
       textAlign: 'center',
       fontFamily: appFonts.body,
       fontSize: t(13),

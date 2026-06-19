@@ -27,7 +27,7 @@ import {
   discussionTabs,
   discussionThreadsSectionTitle,
   formatCommentCount,
-  formatClapCount,
+  formatVoteScore,
   formatThreadCount,
   topicIconBySlug,
   type DiscussionTab
@@ -254,7 +254,7 @@ export default function DiscussionScreen() {
                   category={thread.topic_title}
                   author={authorName}
                   comments={formatCommentCount(thread.comment_count)}
-                  claps={formatClapCount(thread.total_claps)}
+                  votes={formatVoteScore(thread.vote_score)}
                   saved={thread.saved}
                   s={s}
                   t={t}

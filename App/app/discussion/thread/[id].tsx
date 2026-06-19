@@ -29,8 +29,10 @@ import { figmaColors } from '@/constants/figmaColors';
 import { discussionFeedPreferencesHref } from '@/constants/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
-import { useThreadClaps } from '@/hooks/useThreadClaps';
+// Star/clap feature disabled in mobile UI.
+// import { useThreadClaps } from '@/hooks/useThreadClaps';
 import {
+  computeVoteScoreAfterAction,
   createForumComment,
   getForumThread,
   hideForumThreadLess,
@@ -58,6 +60,7 @@ export default function DiscussionThreadScreen() {
   const [reportBusy, setReportBusy] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
 
+  /*
   const claps = useThreadClaps({
     threadId: id ?? '',
     initialTotalClaps: thread?.total_claps ?? 0,
@@ -70,6 +73,7 @@ export default function DiscussionThreadScreen() {
     },
     onError: (message) => Alert.alert('Clap failed', message)
   });
+  */
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -131,9 +135,11 @@ export default function DiscussionThreadScreen() {
     });
   }
 
+  /*
   function handleClapPressIn() {
     requireSignedIn(() => claps.onPressIn());
   }
+  */
 
   function handleVote(value: 'upvote' | 'downvote') {
     if (!id) return;
@@ -144,15 +150,15 @@ export default function DiscussionThreadScreen() {
           Alert.alert('Vote failed', err);
           return;
         }
-        setThread((prev) =>
-          prev
-            ? {
-                ...prev,
-                user_vote: user_vote ?? null,
-                vote_score: vote_score ?? prev.vote_score
-              }
-            : prev
-        );
+        setThread((prev) => {
+          if (!prev) return prev;
+          const fallback = computeVoteScoreAfterAction(prev.vote_score, prev.user_vote, value);
+          return {
+            ...prev,
+            user_vote: user_vote ?? fallback.user_vote,
+            vote_score: vote_score ?? fallback.vote_score
+          };
+        });
       })();
     });
   }
@@ -291,16 +297,10 @@ export default function DiscussionThreadScreen() {
         userVote={thread.user_vote}
         onUpvote={() => handleVote('upvote')}
         onDownvote={() => handleVote('downvote')}
-        totalClaps={claps.displayTotal}
-        userClaps={claps.displayUser}
-        clapMaxed={claps.maxed}
-        clapBubbles={claps.bubbles}
-        onClapPressIn={handleClapPressIn}
-        onClapPressOut={claps.onPressOut}
         saved={Boolean(thread.saved)}
         onSave={() => void handleSave()}
         onMore={openMoreMenu}
-        disabled={busy || claps.syncing}
+        disabled={busy}
         s={s}
         t={t}
       />

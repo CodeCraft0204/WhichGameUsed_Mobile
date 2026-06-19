@@ -21,8 +21,8 @@ import {
   discussionSortFromTab,
   discussionTabHint,
   discussionTabs,
-  formatClapCount,
   formatCommentCount,
+  formatVoteScore,
   type DiscussionTab
 } from '@/constants/discussionContent';
 import { figmaColors } from '@/constants/figmaColors';
@@ -167,7 +167,7 @@ export default function DiscussionSavedScreen() {
               category={thread.topic_title}
               author={authorName}
               comments={formatCommentCount(thread.comment_count)}
-              claps={formatClapCount(thread.total_claps)}
+              votes={formatVoteScore(thread.vote_score)}
               saved
               s={s}
               t={t}

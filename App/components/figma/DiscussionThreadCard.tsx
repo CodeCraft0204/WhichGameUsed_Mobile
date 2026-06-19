@@ -12,7 +12,7 @@ type DiscussionThreadCardProps = {
   category: string;
   author: string;
   comments: string;
-  claps: string;
+  votes: string;
   saved?: boolean;
   onPress?: () => void;
   s: (n: number) => number;
@@ -26,7 +26,7 @@ export function DiscussionThreadCard({
   category,
   author,
   comments,
-  claps,
+  votes,
   saved = false,
   onPress,
   s,
@@ -64,7 +64,7 @@ export function DiscussionThreadCard({
             style={{ width: actionIconSize, height: actionIconSize }}
             resizeMode="contain"
           />
-          <Text style={styles.metaCount}>{claps}</Text>
+          <Text style={styles.metaCount}>{votes}</Text>
           <Image
             source={discussionIcons.threadComment}
             style={{ width: actionIconSize, height: actionIconSize }}

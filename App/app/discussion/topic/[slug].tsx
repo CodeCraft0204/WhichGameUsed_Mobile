@@ -22,7 +22,7 @@ import {
   discussionTabHint,
   discussionTabs,
   formatCommentCount,
-  formatClapCount,
+  formatVoteScore,
   topicIconBySlug,
   type DiscussionTab
 } from '@/constants/discussionContent';
@@ -131,7 +131,7 @@ export default function DiscussionTopicScreen() {
               category={thread.topic_title}
               author={authorName}
               comments={formatCommentCount(thread.comment_count)}
-              claps={formatClapCount(thread.total_claps)}
+              votes={formatVoteScore(thread.vote_score)}
               saved={thread.saved}
               s={s}
               t={t}

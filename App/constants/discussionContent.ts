@@ -49,7 +49,7 @@ export function discussionThreadsSectionTitle(tab: DiscussionTab, searching: boo
 
 export function discussionTabHint(tab: DiscussionTab): string {
   if (tab === 'HOTTEST') return 'Threads gaining momentum right now.';
-  if (tab === 'ALL-TIME GREATS') return 'Most clapped and discussed threads.';
+  if (tab === 'ALL-TIME GREATS') return 'Most upvoted and discussed threads.';
   return 'Fresh posts from across the community.';
 }
 
@@ -61,9 +61,14 @@ export function formatCommentCount(count: number): string {
   return String(count);
 }
 
+export function formatVoteScore(count: number): string {
+  if (!Number.isFinite(count) || count === 0) return '0';
+  return count > 0 ? `+${count}` : String(count);
+}
+
 export const defaultThreadAvatar = discussionIcons.avatar1;
 
-/** Medium-style clap limits & timing */
+/** Medium-style clap limits & timing — star/clap UI disabled; kept for future use. */
 export const FORUM_MAX_CLAPS_PER_USER = 50;
 export const FORUM_CLAP_DEBOUNCE_MS = 500;
 export const FORUM_CLAP_HOLD_INTERVAL_MS = 100;
