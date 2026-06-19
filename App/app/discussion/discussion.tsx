@@ -4,6 +4,7 @@ import { appFonts } from '@/constants/appFonts';
 import {
   ActivityIndicator,
   Image,
+  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -162,7 +163,10 @@ export default function DiscussionScreen() {
           placeholder="Search threads…"
           placeholderTextColor={figmaColors.textMuted}
           returnKeyType="search"
-          clearButtonMode="while-editing"
+          autoCorrect={false}
+          autoCapitalize="none"
+          accessibilityLabel="Search discussion threads"
+          {...(Platform.OS === 'ios' ? { clearButtonMode: 'while-editing' as const } : {})}
         />
         <Pressable
           style={styles.savedButton}
@@ -317,15 +321,19 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     searchInput: {
       flex: 1,
-      height: s(42),
+      minWidth: 0,
+      minHeight: s(42),
       borderWidth: 1,
-      borderColor: figmaColors.borderLight,
+      borderColor: figmaColors.inputBorder,
       borderRadius: s(21),
       paddingHorizontal: s(14),
+      paddingVertical: s(10),
       fontFamily: appFonts.body,
-      fontSize: t(15),
-      color: figmaColors.charcoal,
-      backgroundColor: figmaColors.background
+      fontSize: t(16),
+      lineHeight: t(22),
+      color: figmaColors.textPrimary,
+      backgroundColor: figmaColors.cream,
+      ...(Platform.OS === 'android' ? { includeFontPadding: false, textAlignVertical: 'center' as const } : {})
     },
     savedButton: {
       width: s(42),
