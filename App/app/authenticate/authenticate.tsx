@@ -1,7 +1,16 @@
 ﻿import { useFocusEffect, useRouter } from 'expo-router';
 import { appFonts } from '@/constants/appFonts';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View
+} from 'react-native';
 import { AuthenticateDraftCard } from '@/components/figma/AuthenticateRecordCard';
 import { chipOptionsFromLabels, FigmaChipRow } from '@/components/figma/FigmaChipRow';
 import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
@@ -31,33 +40,35 @@ export default function AuthenticateScreen() {
   const [activeTab, setActiveTab] = useState(0);
   const [liveSubmissions, setLiveSubmissions] = useState<SubmissionWithItems[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const loadedOnceRef = useRef(false);
 
+  const reload = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else if (!loadedOnceRef.current && liveSubmissions.length === 0) setLoading(true);
+    setError(null);
+
+    const [{ items, error: listError }, count] = await Promise.all([
+      listMySubmissionsWithItems(),
+      countUnreadNotifications()
+    ]);
+
+    if (listError) setError(listError);
+    else {
+      setLiveSubmissions(items);
+      loadedOnceRef.current = true;
+    }
+    setUnreadCount(count);
+    setLoading(false);
+    setRefreshing(false);
+  }, [liveSubmissions.length]);
+
   useFocusEffect(
     useCallback(() => {
-      let active = true;
-      if (!loadedOnceRef.current && liveSubmissions.length === 0) {
-        setLoading(true);
-      }
-      setError(null);
-      void listMySubmissionsWithItems().then(({ items, error }) => {
-        if (!active) return;
-        if (error) setError(error);
-        else {
-          setLiveSubmissions(items);
-          loadedOnceRef.current = true;
-        }
-        setLoading(false);
-      });
-      void countUnreadNotifications().then((count) => {
-        if (active) setUnreadCount(count);
-      });
-      return () => {
-        active = false;
-      };
-    }, [liveSubmissions.length])
+      void reload();
+    }, [reload])
   );
 
   const pending = liveSubmissions.filter(
@@ -119,6 +130,10 @@ export default function AuthenticateScreen() {
           style={styles.contentScroll}
           contentContainerStyle={[page.scrollContent, styles.contentScrollBody]}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={() => void reload(true)} />
+          }
         >
           {unreadCount > 0 ? (
             <Pressable style={styles.noticeRow} onPress={() => router.push(databaseNotificationsHref())}>
@@ -224,13 +239,13 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     ctaTitle: {
       fontFamily: appFonts.display,
-      fontSize: 17,
+      fontSize: t(18),
       color: figmaColors.charcoal,
       marginBottom: s(4)
     },
     ctaBody: {
       fontFamily: appFonts.body,
-      fontSize: 18,
+      fontSize: t(21),
       lineHeight: 20,
       color: figmaColors.gray
     },

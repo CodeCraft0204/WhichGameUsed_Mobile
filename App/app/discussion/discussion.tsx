@@ -7,6 +7,7 @@ import {
   Platform,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -122,189 +123,220 @@ export default function DiscussionScreen() {
     <FigmaScreen
       backgroundColor={figmaColors.background}
       bottomNav={<FigmaDatabaseBottomNav active="discussion" />}
-      scrollProps={{
-        contentContainerStyle: page.scrollContent,
-        refreshControl: (
-          <RefreshControl refreshing={refreshing} onRefresh={() => void loadAll(true)} />
-        )
-      }}
+      scrollable={false}
     >
-      <FigmaPageHeader
-        title="DISCUSSION"
-        subtitle="HOBBY TALK WITHOUT THE DRAMA."
-        description="Engage with the newest evidence, discuss past and future research findings, and align yourself with the hobby's best and brightest."
-        heroSource={discussionIcons.hero}
-        s={s}
-        page={page}
-      />
-
-      <View style={styles.toolbarRow}>
-        <View style={styles.chipFlex}>
-          <FigmaChipRow
-            options={chipOptionsFromLabels(discussionTabs)}
-            value={activeTab}
-            onChange={setActiveTab}
+      <View style={styles.page}>
+        <View style={[page.scrollContent, styles.fixedTop]}>
+          <FigmaPageHeader
+            title="DISCUSSION"
+            subtitle="HOBBY TALK WITHOUT THE DRAMA."
+            description="Engage with the newest evidence, discuss past and future research findings, and align yourself with the hobby's best and brightest."
+            heroSource={discussionIcons.hero}
             s={s}
-            t={t}
-            style={styles.chipRow}
+            page={page}
           />
+
+          <View style={styles.stickyToolbar}>
+            <View style={styles.toolbarRow}>
+              <View style={styles.chipFlex}>
+                <FigmaChipRow
+                  options={chipOptionsFromLabels(discussionTabs)}
+                  value={activeTab}
+                  onChange={setActiveTab}
+                  s={s}
+                  t={t}
+                  style={styles.chipRow}
+                />
+              </View>
+            </View>
+
+            <Text style={styles.tabHint}>
+              {debouncedSearch ? 'Matching threads across all topics.' : discussionTabHint(activeTab)}
+            </Text>
+
+            <View style={styles.searchRow}>
+              <TextInput
+                style={styles.searchInput}
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Search threads…"
+                placeholderTextColor={figmaColors.textMuted}
+                returnKeyType="search"
+                autoCorrect={false}
+                autoCapitalize="none"
+                accessibilityLabel="Search discussion threads"
+                {...(Platform.OS === 'ios' ? { clearButtonMode: 'while-editing' as const } : {})}
+              />
+              <Pressable
+                style={styles.savedButton}
+                onPress={() => router.push(discussionSavedHref())}
+                accessibilityRole="button"
+                accessibilityLabel="Saved threads"
+              >
+                <Image
+                  source={discussionIcons.threadBookmark}
+                  style={styles.savedIcon}
+                  resizeMode="contain"
+                />
+              </Pressable>
+              <Pressable
+                style={styles.createButton}
+                onPress={() => router.push(discussionCreateHref())}
+              >
+                <Text style={styles.createButtonText}>NEW</Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
-      </View>
 
-      <Text style={styles.tabHint}>
-        {debouncedSearch ? 'Matching threads across all topics.' : discussionTabHint(activeTab)}
-      </Text>
-
-      <View style={styles.searchRow}>
-        <TextInput
-          style={styles.searchInput}
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search threads…"
-          placeholderTextColor={figmaColors.textMuted}
-          returnKeyType="search"
-          autoCorrect={false}
-          autoCapitalize="none"
-          accessibilityLabel="Search discussion threads"
-          {...(Platform.OS === 'ios' ? { clearButtonMode: 'while-editing' as const } : {})}
-        />
-        <Pressable
-          style={styles.savedButton}
-          onPress={() => router.push(discussionSavedHref())}
-          accessibilityRole="button"
-          accessibilityLabel="Saved threads"
+        <ScrollView
+          style={styles.contentScroll}
+          contentContainerStyle={[page.scrollContent, styles.contentScrollInner]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={() => void loadAll(true)} />
+          }
         >
-          <Image
-            source={discussionIcons.threadBookmark}
-            style={styles.savedIcon}
-            resizeMode="contain"
-          />
-        </Pressable>
-        <Pressable style={styles.createButton} onPress={() => router.push(discussionCreateHref())}>
-          <Text style={styles.createButtonText}>NEW</Text>
-        </Pressable>
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+          <View style={page.sectionHeaderRow}>
+            <Text style={page.sectionTitle}>TOPICS</Text>
+          </View>
+
+          {topicsLoading && topics.length === 0 ? (
+            <ActivityIndicator color={figmaColors.charcoal} style={styles.loader} />
+          ) : (
+            topics.map((topic) => (
+              <DiscussionTopicCard
+                key={topic.id}
+                icon={topicIconBySlug[topic.slug] ?? discussionIcons.topicAskAnything}
+                title={topic.title}
+                description={topic.description ?? ''}
+                threadsLabel={formatThreadCount(topic.thread_count)}
+                activityLabel={
+                  topic.last_activity_at
+                    ? `Active ${new Date(topic.last_activity_at).toLocaleDateString()}`
+                    : 'No activity yet'
+                }
+                s={s}
+                t={t}
+                onPress={() => router.push(discussionTopicHref(topic.slug))}
+              />
+            ))
+          )}
+
+          <View style={[page.sectionHeaderRow, styles.sectionSpaced]}>
+            <Text style={page.sectionTitle}>{sectionTitle}</Text>
+            {threadsLoading && threads.length > 0 ? (
+              <ActivityIndicator color={figmaColors.gray} size="small" />
+            ) : null}
+          </View>
+
+          {threadsLoading && threads.length === 0 ? (
+            <ActivityIndicator color={figmaColors.charcoal} style={styles.loader} />
+          ) : threads.length === 0 ? (
+            <Text style={styles.emptyText}>
+              {debouncedSearch
+                ? 'No threads match your search.'
+                : 'No threads yet. Start the conversation.'}
+            </Text>
+          ) : (
+            threads.map((thread) => {
+              const authorName =
+                thread.author_display_name || thread.author_username || 'Collector';
+              return (
+                <DiscussionThreadCard
+                  key={thread.id}
+                  avatarUrl={thread.author_avatar_url}
+                  authorName={authorName}
+                  title={thread.title}
+                  category={thread.topic_title}
+                  author={authorName}
+                  comments={formatCommentCount(thread.comment_count)}
+                  claps={formatClapCount(thread.total_claps)}
+                  saved={thread.saved}
+                  s={s}
+                  t={t}
+                  onPress={() => router.push(discussionThreadHref(thread.id))}
+                />
+              );
+            })
+          )}
+
+          <View style={styles.quickLinksRow}>
+            <Pressable
+              style={styles.quickLinkCard}
+              onPress={() => router.push(discussionSavedHref())}
+              accessibilityRole="button"
+              accessibilityLabel="View saved threads"
+            >
+              <Image
+                source={discussionIcons.threadBookmark}
+                style={styles.quickLinkIcon}
+                resizeMode="contain"
+              />
+              <Text style={styles.quickLinkLabel} numberOfLines={2}>
+                Saved threads
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={styles.quickLinkCard}
+              onPress={() => router.push(discussionFeedPreferencesHref())}
+              accessibilityRole="button"
+              accessibilityLabel="Manage hidden content"
+            >
+              <Image
+                source={discussionIcons.metaActivity}
+                style={styles.quickLinkIcon}
+                resizeMode="contain"
+              />
+              <Text style={styles.quickLinkLabel} numberOfLines={2}>
+                {hiddenCount > 0 ? `Hidden (${hiddenCount})` : 'Hidden content'}
+              </Text>
+            </Pressable>
+          </View>
+
+          <Pressable style={page.ctaCard} onPress={() => router.push(discussionCreateHref())}>
+            <Image source={discussionIcons.ctaIcon} style={page.ctaIcon} resizeMode="contain" />
+            <View style={page.ctaTextWrap}>
+              <Text style={page.ctaTitle}>THREADING THE NEEDLE.</Text>
+              <Text style={page.ctaBody}>
+                Share what you know, question what you don't, and help the hobby get smarter.
+              </Text>
+            </View>
+            <Image source={discussionIcons.ctaArrow} style={page.ctaArrow} resizeMode="contain" />
+          </Pressable>
+        </ScrollView>
       </View>
-
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-      <View style={page.sectionHeaderRow}>
-        <Text style={page.sectionTitle}>TOPICS</Text>
-      </View>
-
-      {topicsLoading && topics.length === 0 ? (
-        <ActivityIndicator color={figmaColors.charcoal} style={styles.loader} />
-      ) : (
-        topics.map((topic) => (
-          <DiscussionTopicCard
-            key={topic.id}
-            icon={topicIconBySlug[topic.slug] ?? discussionIcons.topicAskAnything}
-            title={topic.title}
-            description={topic.description ?? ''}
-            threadsLabel={formatThreadCount(topic.thread_count)}
-            activityLabel={
-              topic.last_activity_at
-                ? `Active ${new Date(topic.last_activity_at).toLocaleDateString()}`
-                : 'No activity yet'
-            }
-            s={s}
-            t={t}
-            onPress={() => router.push(discussionTopicHref(topic.slug))}
-          />
-        ))
-      )}
-
-      <View style={[page.sectionHeaderRow, styles.sectionSpaced]}>
-        <Text style={page.sectionTitle}>{sectionTitle}</Text>
-        {threadsLoading && threads.length > 0 ? (
-          <ActivityIndicator color={figmaColors.gray} size="small" />
-        ) : null}
-      </View>
-
-      {threadsLoading && threads.length === 0 ? (
-        <ActivityIndicator color={figmaColors.charcoal} style={styles.loader} />
-      ) : threads.length === 0 ? (
-        <Text style={styles.emptyText}>
-          {debouncedSearch
-            ? 'No threads match your search.'
-            : 'No threads yet. Start the conversation.'}
-        </Text>
-      ) : (
-        threads.map((thread) => {
-          const authorName =
-            thread.author_display_name || thread.author_username || 'Collector';
-          return (
-            <DiscussionThreadCard
-              key={thread.id}
-              avatarUrl={thread.author_avatar_url}
-              authorName={authorName}
-              title={thread.title}
-              category={thread.topic_title}
-              author={authorName}
-              comments={formatCommentCount(thread.comment_count)}
-              claps={formatClapCount(thread.total_claps)}
-              saved={thread.saved}
-              s={s}
-              t={t}
-              onPress={() => router.push(discussionThreadHref(thread.id))}
-            />
-          );
-        })
-      )}
-
-      <View style={styles.quickLinksRow}>
-        <Pressable
-          style={styles.quickLinkCard}
-          onPress={() => router.push(discussionSavedHref())}
-          accessibilityRole="button"
-          accessibilityLabel="View saved threads"
-        >
-          <Image
-            source={discussionIcons.threadBookmark}
-            style={styles.quickLinkIcon}
-            resizeMode="contain"
-          />
-          <Text style={styles.quickLinkLabel} numberOfLines={2}>
-            Saved threads
-          </Text>
-        </Pressable>
-
-        <Pressable
-          style={styles.quickLinkCard}
-          onPress={() => router.push(discussionFeedPreferencesHref())}
-          accessibilityRole="button"
-          accessibilityLabel="Manage hidden content"
-        >
-          <Image
-            source={discussionIcons.metaActivity}
-            style={styles.quickLinkIcon}
-            resizeMode="contain"
-          />
-          <Text style={styles.quickLinkLabel} numberOfLines={2}>
-            {hiddenCount > 0 ? `Hidden (${hiddenCount})` : 'Hidden content'}
-          </Text>
-        </Pressable>
-      </View>
-
-      <Pressable style={page.ctaCard} onPress={() => router.push(discussionCreateHref())}>
-        <Image source={discussionIcons.ctaIcon} style={page.ctaIcon} resizeMode="contain" />
-        <View style={page.ctaTextWrap}>
-          <Text style={page.ctaTitle}>THREADING THE NEEDLE.</Text>
-          <Text style={page.ctaBody}>
-            Share what you know, question what you don't, and help the hobby get smarter.
-          </Text>
-        </View>
-        <Image source={discussionIcons.ctaArrow} style={page.ctaArrow} resizeMode="contain" />
-      </Pressable>
     </FigmaScreen>
   );
 }
 
 function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
+    page: {
+      flex: 1
+    },
+    fixedTop: {
+      paddingBottom: 0
+    },
+    stickyToolbar: {
+      backgroundColor: figmaColors.background,
+      paddingBottom: s(8),
+      zIndex: 2
+    },
+    contentScroll: {
+      flex: 1
+    },
+    contentScrollInner: {
+      paddingTop: s(4)
+    },
     toolbarRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginTop: s(4)
+      marginTop: s(15)
     },
     chipFlex: {
       flex: 1,
@@ -325,7 +357,6 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       flexDirection: 'row',
       gap: s(8),
       marginTop: s(8),
-      marginBottom: s(12),
       alignItems: 'center'
     },
     searchInput: {
@@ -422,7 +453,8 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       minWidth: 0,
       fontFamily: appFonts.body,
       textAlign: 'center',
-      fontSize: t(15),
+      fontWeight: 600,
+      fontSize: t(18),
       lineHeight: t(16),
       color: figmaColors.charcoal
     }

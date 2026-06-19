@@ -1,10 +1,11 @@
 ﻿import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -77,6 +78,7 @@ export default function DatabaseScreen() {
   const [recent, setRecent] = useState<LiveRecord[]>([]);
   const [searchResults, setSearchResults] = useState<LiveRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [totalCards, setTotalCards] = useState(0);
   const [authenticatedCards, setAuthenticatedCards] = useState(0);
 
@@ -93,62 +95,58 @@ export default function DatabaseScreen() {
     }
   }, [focusCardId, router]);
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadCatalog = useCallback(async (isRefresh = false) => {
+    const sport = activeSport;
+    const trimmed = debouncedQuery.trim();
 
-    void (async () => {
-      const sport = activeSport;
-      const trimmed = debouncedQuery.trim();
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
 
-      setLoading(true);
-
-      try {
-        if (trimmed) {
-          const [searchResult, statsResult] = await Promise.all([
-            listCatalogCards({ sport, query: trimmed, limit: SEARCH_PAGE_SIZE, sort: 'title_asc' }),
-            getCatalogStats({ sport, query: trimmed })
-          ]);
-          if (cancelled) return;
-
-          setTotalCards(statsResult.stats.totalCards);
-          setAuthenticatedCards(statsResult.stats.authenticatedCards);
-          setSearchResults(
-            searchResult.items.map((card) => cardToLiveRecord(card, databaseIcons.recordMantle))
-          );
-          setFeatured([]);
-          setRecent([]);
-          return;
-        }
-
-        const [featuredResult, recentResult, statsResult] = await Promise.all([
-          listTrendingCards(4, sport),
-          listRecentCards(8, sport),
-          getCatalogStats({ sport })
+    try {
+      if (trimmed) {
+        const [searchResult, statsResult] = await Promise.all([
+          listCatalogCards({ sport, query: trimmed, limit: SEARCH_PAGE_SIZE, sort: 'title_asc' }),
+          getCatalogStats({ sport, query: trimmed })
         ]);
-        if (cancelled) return;
 
-        const listError = featuredResult.error ?? recentResult.error ?? statsResult.error;
         setTotalCards(statsResult.stats.totalCards);
         setAuthenticatedCards(statsResult.stats.authenticatedCards);
-        setSearchResults([]);
-        setFeatured(
-          featuredResult.items.map((card) => cardToLiveRecord(card, databaseIcons.recordMantle))
+        setSearchResults(
+          searchResult.items.map((card) => cardToLiveRecord(card, databaseIcons.recordMantle))
         );
-        setRecent(
-          recentResult.items.map((card) => cardToLiveRecord(card, databaseIcons.recentKobe))
-        );
-        if (listError && featuredResult.items.length === 0 && recentResult.items.length === 0) {
-          console.warn('[database] catalog list failed:', listError);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
+        setFeatured([]);
+        setRecent([]);
+        return;
       }
-    })();
 
-    return () => {
-      cancelled = true;
-    };
+      const [featuredResult, recentResult, statsResult] = await Promise.all([
+        listTrendingCards(4, sport),
+        listRecentCards(8, sport),
+        getCatalogStats({ sport })
+      ]);
+
+      const listError = featuredResult.error ?? recentResult.error ?? statsResult.error;
+      setTotalCards(statsResult.stats.totalCards);
+      setAuthenticatedCards(statsResult.stats.authenticatedCards);
+      setSearchResults([]);
+      setFeatured(
+        featuredResult.items.map((card) => cardToLiveRecord(card, databaseIcons.recordMantle))
+      );
+      setRecent(
+        recentResult.items.map((card) => cardToLiveRecord(card, databaseIcons.recentKobe))
+      );
+      if (listError && featuredResult.items.length === 0 && recentResult.items.length === 0) {
+        console.warn('[database] catalog list failed:', listError);
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, [activeSport, debouncedQuery]);
+
+  useEffect(() => {
+    void loadCatalog();
+  }, [loadCatalog]);
 
   const openSearch = (opts?: { sport?: DatabaseSportFilter; authenticated?: boolean }) => {
     router.push(
@@ -246,6 +244,9 @@ export default function DatabaseScreen() {
           contentContainerStyle={[page.scrollContent, styles.cardScrollContent]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={() => void loadCatalog(true)} />
+          }
         >
           {!loading ? (
             <DatabaseStatsBar

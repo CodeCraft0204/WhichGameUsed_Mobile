@@ -50,7 +50,6 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
       color: figmaColors.gray
     },
     sectionHeaderRow: {
-      marginBottom: s(5),
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -58,7 +57,7 @@ export function createFigmaPageStyles(s: (n: number) => number, t: (n: number) =
     },
     sectionTitle: {
       fontFamily: appFonts.display,
-      marginVertical: s(16),
+      marginVertical: s(10),
       fontSize: t(20),
       color: figmaColors.charcoal
     },
