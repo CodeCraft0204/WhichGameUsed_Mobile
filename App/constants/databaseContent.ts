@@ -17,7 +17,8 @@ export const databaseIcons = {
   cardChevron: require('@/assets/figma/database/card_chevron.png'),
   sectionChevron: require('@/assets/figma/database/section_chevron.png'),
   ctaRecords: require('@/assets/figma/database/cta_records.png'),
-  ctaArrow: require('@/assets/figma/database/cta_arrow.png')
+  ctaArrow: require('@/assets/figma/database/cta_arrow.png'),
+  cardPlaceholder: require('@/assets/authenticate/card-placeholder.png')
 } as const;
 
 export type DatabaseMetaIconKey = 'person' | 'baseball' | 'basketball' | 'calendar' | 'shield';

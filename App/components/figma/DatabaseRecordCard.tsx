@@ -18,7 +18,7 @@ const metaIconSources: Record<DatabaseMetaIconKey, number> = {
 };
 
 type DatabaseRecordCardProps = {
-  cardImage: number;
+  cardImage?: number;
   imageUrl?: string | null;
   title: string;
   description: string;
@@ -32,7 +32,6 @@ type DatabaseRecordCardProps = {
 
 /** Shared card layout — featured vs recent differs only in surface color. */
 export function DatabaseRecordCard({
-  cardImage,
   imageUrl,
   title,
   description,
@@ -48,11 +47,16 @@ export function DatabaseRecordCard({
   const content = (
     <>
       <View style={styles.imageWrap}>
-        <Image
-          source={imageUrl ? { uri: imageUrl } : cardImage}
-          style={styles.cardImage}
-          resizeMode="contain"
-        />
+        {imageUrl ? (
+          <Image source={{ uri: imageUrl }} style={styles.cardImage} resizeMode="contain" />
+        ) : (
+          <Image
+            source={databaseIcons.cardPlaceholder}
+            style={styles.cardImage}
+            resizeMode="cover"
+            accessibilityLabel="No card image"
+          />
+        )}
       </View>
 
       <View style={styles.body}>
