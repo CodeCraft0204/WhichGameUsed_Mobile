@@ -113,8 +113,6 @@ export function isForumEmojiOnly(text: string): boolean {
   return /\p{Extended_Pictographic}/u.test(trimmed);
 }
 
-export const forumQuickEmojis = ['👍', '❤️', '😂', '🔥', '🎉', '👀', '✅', '🙏'] as const;
-
 export const defaultThreadAvatar = discussionIcons.avatar1;
 
 /** Medium-style clap limits & timing — star/clap UI disabled; kept for future use. */

@@ -1,15 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo } from 'react';
-import { appFonts } from '@/constants/appFonts';
-import { forumEmojiTextStyle, forumQuickEmojis, forumUserTextStyle } from '@/constants/discussionContent';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View
-} from 'react-native';
+import { forumUserTextStyle } from '@/constants/discussionContent';
+import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { figmaColors } from '@/constants/figmaColors';
 
 type Props = {
@@ -32,34 +24,10 @@ export function CommentComposer({
   t
 }: Props) {
   const styles = useMemo(() => createStyles(s, t), [s, t]);
-
-  function appendEmoji(emoji: string) {
-    onChangeText(`${value}${emoji}`);
-  }
+  const canSend = value.trim().length > 0 && !busy;
 
   return (
-    <View style={styles.wrap}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.emojiScroll}
-        contentContainerStyle={styles.emojiRow}
-        keyboardShouldPersistTaps="handled"
-      >
-        {forumQuickEmojis.map((emoji) => (
-          <Pressable
-            key={emoji}
-            style={styles.emojiButton}
-            onPress={() => appendEmoji(emoji)}
-            disabled={busy}
-            accessibilityRole="button"
-            accessibilityLabel={`Insert ${emoji}`}
-          >
-            <Text style={styles.emoji}>{emoji}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-
+    <View style={styles.bar}>
       <TextInput
         style={styles.input}
         value={value}
@@ -68,16 +36,21 @@ export function CommentComposer({
         placeholderTextColor={figmaColors.textMuted}
         multiline
         editable={!busy}
+        returnKeyType="default"
+        blurOnSubmit={false}
+        accessibilityLabel="Reply message"
       />
       <Pressable
-        style={[styles.button, (!value.trim() || busy) && styles.buttonDisabled]}
+        style={[styles.sendButton, !canSend && styles.sendButtonDisabled]}
         onPress={onSubmit}
-        disabled={!value.trim() || busy}
+        disabled={!canSend}
+        accessibilityRole="button"
+        accessibilityLabel="Send reply"
       >
         {busy ? (
           <ActivityIndicator size="small" color={figmaColors.buttonPrimaryText} />
         ) : (
-          <Text style={styles.buttonText}>POST</Text>
+          <Ionicons name="send" size={s(18)} color={figmaColors.buttonPrimaryText} />
         )}
       </Pressable>
     </View>
@@ -86,61 +59,35 @@ export function CommentComposer({
 
 function createStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
-    wrap: {
-      gap: s(10),
-      marginTop: s(12)
-    },
-    emojiScroll: {
-      flexGrow: 0,
-      flexShrink: 0,
-      maxHeight: s(44)
-    },
-    emojiRow: {
+    bar: {
       flexDirection: 'row',
-      alignItems: 'center',
-      gap: s(6),
-      paddingVertical: s(2)
+      alignItems: 'flex-end',
+      gap: s(8)
     },
-    emojiButton: {
-      width: s(40),
-      height: s(40),
-      borderRadius: s(20),
-      borderWidth: 1,
-      borderColor: figmaColors.borderLight,
-      backgroundColor: figmaColors.cardFeaturedBg,
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
-    emoji: forumEmojiTextStyle(t, 26),
     input: {
-      minHeight: s(88),
+      flex: 1,
+      minHeight: s(42),
+      maxHeight: s(120),
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
       borderRadius: s(12),
-      paddingHorizontal: s(12),
-      paddingVertical: s(10),
+      paddingHorizontal: s(14),
+      paddingTop: s(10),
+      paddingBottom: s(10),
       ...forumUserTextStyle(t, 16, 22),
-      backgroundColor: figmaColors.background
+      backgroundColor: figmaColors.cream
     },
-    button: {
-      alignSelf: 'flex-end',
-      minWidth: s(96),
-      height: s(40),
-      borderRadius: s(20),
+    sendButton: {
+      width: s(42),
+      height: s(42),
+      borderRadius: s(21),
       backgroundColor: figmaColors.buttonPrimaryBg,
-      borderWidth: 1,
       borderColor: figmaColors.buttonPrimaryBorder,
       alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: s(16)
+      justifyContent: 'center'
     },
-    buttonDisabled: {
-      opacity: 0.5
-    },
-    buttonText: {
-      fontFamily: appFonts.accent,
-      fontSize: t(13),
-      color: figmaColors.buttonPrimaryText
+    sendButtonDisabled: {
+      opacity: 0.45
     }
   });
 }

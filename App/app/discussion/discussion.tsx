@@ -365,7 +365,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       minHeight: s(42),
       borderWidth: 1,
       borderColor: figmaColors.inputBorder,
-      borderRadius: s(21),
+      borderRadius: s(12),
       paddingHorizontal: s(14),
       paddingVertical: s(10),
       fontFamily: appFonts.body,

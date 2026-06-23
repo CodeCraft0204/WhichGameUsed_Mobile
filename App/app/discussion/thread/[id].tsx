@@ -4,6 +4,8 @@ import { appFonts } from '@/constants/appFonts';
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -291,7 +293,11 @@ export default function DiscussionThreadScreen() {
       bottomNav={<FigmaDatabaseBottomNav active="discussion" />}
       scrollable={false}
     >
-      <View style={styles.page}>
+      <KeyboardAvoidingView
+        style={styles.page}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 4 : 0}
+      >
         <View style={[page.scrollContent, styles.postSection]}>
           <Pressable onPress={() => router.back()}>
             <Text style={styles.backText}>← Back</Text>
@@ -334,6 +340,7 @@ export default function DiscussionThreadScreen() {
           contentContainerStyle={[page.scrollContent, styles.commentsScrollInner]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -350,7 +357,7 @@ export default function DiscussionThreadScreen() {
           <Text style={styles.sectionTitle}>COMMENTS ({thread.comments.length})</Text>
 
           {thread.comments.length === 0 ? (
-            <Text style={styles.emptyComments}>No replies yet — add the first comment below.</Text>
+            <Text style={styles.emptyComments}>No replies yet — be the first to reply.</Text>
           ) : (
             thread.comments.map((comment) => {
               const commentAuthor =
@@ -386,9 +393,15 @@ export default function DiscussionThreadScreen() {
             })
           )}
 
-          {thread.is_locked ? (
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        </ScrollView>
+
+        {thread.is_locked ? (
+          <View style={[page.scrollContent, styles.composerDock]}>
             <Text style={styles.lockedText}>This thread is locked — new replies are disabled.</Text>
-          ) : (
+          </View>
+        ) : (
+          <View style={[page.scrollContent, styles.composerDock]}>
             <CommentComposer
               value={reply}
               onChangeText={setReply}
@@ -397,11 +410,9 @@ export default function DiscussionThreadScreen() {
               s={s}
               t={t}
             />
-          )}
-
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-        </ScrollView>
-      </View>
+          </View>
+        )}
+      </KeyboardAvoidingView>
 
       <DiscussionMoreSheet
         visible={moreOpen}
@@ -445,7 +456,16 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     commentsScrollInner: {
       paddingTop: s(12),
+      paddingBottom: s(8),
       flexGrow: 0
+    },
+    composerDock: {
+      flexShrink: 0,
+      borderTopWidth: 1,
+      borderTopColor: figmaColors.divider,
+      backgroundColor: figmaColors.background,
+      paddingTop: s(10),
+      paddingBottom: s(10)
     },
     backText: {
       fontFamily: appFonts.body,
@@ -553,7 +573,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       fontFamily: appFonts.body,
       fontSize: t(14),
       color: figmaColors.gray,
-      marginTop: s(12)
+      textAlign: 'center'
     },
     errorText: {
       fontFamily: appFonts.body,
