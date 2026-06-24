@@ -18,6 +18,7 @@ import { DatabaseRecordCard } from '@/components/figma/DatabaseRecordCard';
 import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
+import { AppAnnouncementBanner } from '@/components/AppAnnouncementBanner';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import { databaseIcons, type DatabaseMetaItem, type DatabaseRecord } from '@/constants/databaseContent';
 import { appFonts } from '@/constants/appFonts';
@@ -203,6 +204,8 @@ export default function DatabaseScreen() {
             s={s}
             page={page}
           />
+
+          <AppAnnouncementBanner />
 
           <View style={styles.stickyToolbar}>
             <View style={styles.searchRow}>
