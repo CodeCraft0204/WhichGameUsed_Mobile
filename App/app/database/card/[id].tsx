@@ -26,6 +26,12 @@ import {
   type AuthenticatedAssetSummary,
   type CardDetail
 } from '@/lib/cards';
+import { ResearchRatingPanel } from '@/components/database/ResearchRatingPanel';
+import {
+  getCardResearchRatings,
+  setUserResearchRating,
+  type CardResearchRatings
+} from '@/lib/card-research-ratings';
 import {
   addCardToWishlist,
   getWishlistEntryForCard,
@@ -63,6 +69,8 @@ export default function CardDetailScreen() {
   const [wishBusy, setWishBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [researchRatings, setResearchRatings] = useState<CardResearchRatings | null>(null);
+  const [ratingBusy, setRatingBusy] = useState(false);
 
   useEffect(() => {
     if (!id || typeof id !== 'string') return;
@@ -71,13 +79,17 @@ export default function CardDetailScreen() {
     void Promise.all([
       getCardById(id),
       listAuthenticatedAssetsForCard(id),
-      getWishlistEntryForCard(id)
-    ]).then(([cardResult, assetsResult, wishEntry]) => {
+      getWishlistEntryForCard(id),
+      getCardResearchRatings(id)
+    ]).then(([cardResult, assetsResult, wishEntry, ratingsResult]) => {
         if (!active) return;
         setCard(cardResult.card);
         setAssets(assetsResult.items);
         setOnWishlist(!!wishEntry.itemId);
-        setError(cardResult.error ?? assetsResult.error ?? wishEntry.error);
+        setResearchRatings(ratingsResult.ratings);
+        setError(
+          cardResult.error ?? assetsResult.error ?? wishEntry.error ?? ratingsResult.error
+        );
         setLoading(false);
       });
     return () => {
@@ -101,6 +113,17 @@ export default function CardDetailScreen() {
     const { error: wishError } = await addCardToWishlist(user.id, card.id);
     setWishBusy(false);
     if (!wishError) setOnWishlist(true);
+  };
+
+  const voteResearch = async (rating: number) => {
+    if (!user || !id || ratingBusy) return;
+    setRatingBusy(true);
+    const { error: voteError } = await setUserResearchRating(id, rating);
+    if (!voteError) {
+      const { ratings } = await getCardResearchRatings(id);
+      setResearchRatings(ratings);
+    }
+    setRatingBusy(false);
   };
 
   const subtitle = card?.product_full_name ?? card?.product_name ?? undefined;
@@ -139,6 +162,15 @@ export default function CardDetailScreen() {
                 </View>
               ) : null}
             </View>
+
+            {researchRatings ? (
+              <ResearchRatingPanel
+                ratings={researchRatings}
+                signedIn={!!user}
+                voteBusy={ratingBusy}
+                onVote={(rating) => void voteResearch(rating)}
+              />
+            ) : null}
 
             <CardImagePager
               frontSource={card.imageUrl ? { uri: card.imageUrl } : databaseIcons.recordMantle}
