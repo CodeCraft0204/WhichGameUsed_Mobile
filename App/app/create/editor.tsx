@@ -1,4 +1,3 @@
-import { captureRef } from 'react-native-view-shot';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -15,6 +14,7 @@ import { getPhotoTemplate } from '@/constants/photoEditorTemplates';
 import { figmaColors } from '@/constants/figmaColors';
 import { useAuth } from '@/context/AuthContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
+import { captureEditorCanvas } from '@/lib/capture-editor-canvas';
 import { submitContentCreation } from '@/lib/content-submissions';
 
 function initialPhotos(templateId: string): SlotPhotos {
@@ -80,7 +80,7 @@ export default function CreateEditorScreen() {
     setBusy(true);
     setError(null);
     try {
-      const uri = await captureRef(canvasRef, { format: 'jpg', quality: 0.92 });
+      const uri = await captureEditorCanvas(canvasRef);
       const { submissionId, error: submitError } = await submitContentCreation({
         templateId: template.id,
         title,
