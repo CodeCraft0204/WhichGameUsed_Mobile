@@ -106,7 +106,6 @@ export type DatabaseSportFilter =
   | 'BASEBALL'
   | 'BASKETBALL'
   | 'FOOTBALL'
-  | 'HOCKEY'
   | 'PLAYERS';
 
 export type CatalogSort =
@@ -158,8 +157,7 @@ const SPORT_FILTER_NAMES: Record<
 > = {
   BASEBALL: 'Baseball',
   BASKETBALL: 'Basketball',
-  FOOTBALL: 'Football',
-  HOCKEY: 'Hockey'
+  FOOTBALL: 'Football'
 };
 
 // Supabase query builder types widen on each filter; keep this helper loosely typed.
