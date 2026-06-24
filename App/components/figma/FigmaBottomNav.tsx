@@ -19,7 +19,7 @@ type FigmaBottomNavProps = {
 };
 
 /** Shared bottom nav — always uses default Figma scale (matches Advocacy). */
-export function FigmaBottomNav({ items, activeKey, showLabels = false }: FigmaBottomNavProps) {
+export function FigmaBottomNav({ items, activeKey, showLabels = true }: FigmaBottomNavProps) {
   const router = useRouter();
   const { s, t } = useFigmaLayout();
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);

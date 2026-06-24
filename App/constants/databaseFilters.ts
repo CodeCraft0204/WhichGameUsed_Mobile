@@ -6,7 +6,7 @@ export const databaseSportTabs: DatabaseSportFilter[] = [
   'BASEBALL',
   'BASKETBALL',
   'FOOTBALL',
-  'HOCKEY',
+  // 'HOCKEY',
   'PLAYERS'
 ];
 
