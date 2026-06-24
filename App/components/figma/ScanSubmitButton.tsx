@@ -7,18 +7,20 @@ type ScanSubmitButtonProps = {
   onPress: () => void;
   s: (n: number) => number;
   t: (n: number) => number;
+  label?: string;
 };
 
+const DEFAULT_LABEL = 'SCAN TO SUBMIT YOUR CARD';
 const BUTTON_HEIGHT = 58;
 
-export function ScanSubmitButton({ onPress, s, t }: ScanSubmitButtonProps) {
+export function ScanSubmitButton({ onPress, s, t, label = DEFAULT_LABEL }: ScanSubmitButtonProps) {
   const styles = createStyles(s, t);
 
   return (
     <Pressable
       style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
       accessibilityRole="button"
-      accessibilityLabel="Scan to submit your card"
+      accessibilityLabel={label}
       onPress={onPress}
     >
       <Text
@@ -27,7 +29,7 @@ export function ScanSubmitButton({ onPress, s, t }: ScanSubmitButtonProps) {
         adjustsFontSizeToFit
         minimumFontScale={0.82}
       >
-        SCAN TO SUBMIT YOUR CARD
+        {label}
       </Text>
     </Pressable>
   );

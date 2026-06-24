@@ -1,12 +1,27 @@
 export const createCopy = {
   title: 'CREATE',
-  subtitle: 'Photograph your game-used card and submit it for authentication.',
-  step1: '1. Take clear front (and back) photos',
-  step2: '2. Review and crop if needed',
-  step3: '3. Send to our review team',
+  subtitle: 'Build research posts with templates, or photograph cards for authentication.',
+  step1: '1. Pick a template and add your photos',
+  step2: '2. Arrange evidence with frames and captions',
+  step3: '3. Submit for review — post to discussion or link to a card',
   openCamera: 'OPEN CAMERA',
-  chooseLibrary: 'Choose from photo library',
-  signInRequired: 'Sign in to submit card photos.'
+  openEditor: 'OPEN CONTENT EDITOR',
+  chooseLibrary: 'Choose from photo library (authenticate)',
+  signInRequired: 'Sign in to submit card photos or create content.'
+} as const;
+
+export const editorCopy = {
+  pickTemplate: 'Choose a template',
+  pickTemplateLead: 'Fixed layouts with frames and text areas — tap a slot to add a photo from your library.',
+  editorLead: 'Tap any frame to insert a photo. Photos resize to fit inside the frame.',
+  back: '← Back',
+  submit: 'SUBMIT FOR REVIEW',
+  submitting: 'Uploading…',
+  needPhoto: 'Add at least one photo before submitting.',
+  missingTemplate: 'Template not found.',
+  successTitle: 'Submitted',
+  successBody: 'Your creation was sent for admin review. We will publish it to discussion or link it to a card once approved.',
+  createAnother: 'Create another'
 } as const;
 
 export const editCopy = {

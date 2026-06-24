@@ -56,6 +56,12 @@ export default function CreateScreen() {
 
       {session ? (
         <>
+          <ScanSubmitButton
+            label={createCopy.openEditor}
+            onPress={() => router.push('/create/templates')}
+            s={s}
+            t={t}
+          />
           <ScanSubmitButton onPress={openCamera} s={s} t={t} />
           <Pressable onPress={() => void openLibraryThenEdit()} style={styles.libraryLink}>
             <Text style={styles.libraryText}>{createCopy.chooseLibrary}</Text>
