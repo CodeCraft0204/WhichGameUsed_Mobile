@@ -1,16 +1,12 @@
-import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Image, ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AnnouncementDetailModal } from '@/components/AnnouncementDetailModal';
 import { appFonts } from '@/constants/appFonts';
 import { bodyText } from '@/constants/appTypography';
 import { databaseIcons } from '@/constants/databaseContent';
 import { figmaIcons } from '@/constants/figmaIcons';
 import { figmaColors } from '@/constants/figmaColors';
-import {
-  dismissAnnouncement,
-  getActiveAnnouncement,
-  type AppAnnouncement
-} from '@/lib/announcements';
+import { getActiveAnnouncement, type AppAnnouncement } from '@/lib/announcements';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 
 /** Split portal message into subtitle + bold title (newline, pipe, or auto tail). */
@@ -42,10 +38,10 @@ export function parseAnnouncementMessage(message: string): { subtitle: string; t
 }
 
 export function AppAnnouncementBanner() {
-  const router = useRouter();
   const { s, t } = useFigmaLayout();
   const styles = useMemo(() => createStyles(s, t), [s, t]);
   const [announcement, setAnnouncement] = useState<AppAnnouncement | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     void getActiveAnnouncement().then(({ announcement: row }) => setAnnouncement(row));
@@ -57,65 +53,46 @@ export function AppAnnouncementBanner() {
   const subtitle = announcement.subtitle?.trim() || parsed.subtitle;
   const title = announcement.title?.trim() || parsed.title;
 
-  const onPress = () => {
-    if (!announcement.link_path) return;
-    router.push(announcement.link_path as import('expo-router').Href);
-  };
-
-  const onDismiss = () => {
-    void dismissAnnouncement(announcement.id);
-    setAnnouncement(null);
-  };
-
   return (
-    <View style={styles.outer}>
-      <ImageBackground
-        source={databaseIcons.announcementBanner}
-        style={styles.banner}
-        imageStyle={styles.bannerImage}
-        resizeMode="stretch"
-      >
-        <Pressable
-          style={styles.content}
-          onPress={announcement.link_path ? onPress : undefined}
-          accessibilityRole="button"
-          accessibilityLabel={announcement.message}
+    <>
+      <View style={styles.outer}>
+        <ImageBackground
+          source={databaseIcons.announcementBanner}
+          style={styles.banner}
+          imageStyle={styles.bannerImage}
+          resizeMode="stretch"
         >
-          <Image source={figmaIcons.megaphone} style={styles.megaphone} resizeMode="contain" />
+          <Pressable
+            style={styles.content}
+            onPress={() => setModalVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel={[subtitle, title].filter(Boolean).join('. ') || announcement.message}
+          >
+            <Image source={figmaIcons.megaphone} style={styles.megaphone} resizeMode="contain" />
 
-          <View style={styles.textCol}>
-          <View style={styles.titleRow}>
+            <View style={styles.textCol}>
+              {subtitle ? (
+                <Text style={styles.subtitle} numberOfLines={1}>
+                  {subtitle}
+                </Text>
+              ) : null}
               <Text style={styles.title} numberOfLines={2}>
                 {title}
               </Text>
-              {announcement.link_path ? (
-                <Image
-                  source={databaseIcons.sectionChevron}
-                  style={styles.chevron}
-                  resizeMode="contain"
-                />
-              ) : null}
             </View>
-            {subtitle ? (
-              <Text style={styles.subtitle} numberOfLines={1}>
-                {subtitle}
-              </Text>
-            ) : null}
-            
-          </View>
-        </Pressable>
+          </Pressable>
+        </ImageBackground>
+      </View>
 
-        <Pressable
-          onPress={onDismiss}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Dismiss announcement"
-          style={styles.closeBtn}
-        >
-          <Text style={styles.closeText}>×</Text>
-        </Pressable>
-      </ImageBackground>
-    </View>
+      <AnnouncementDetailModal
+        visible={modalVisible}
+        announcement={announcement}
+        subtitle={subtitle}
+        title={title}
+        onClose={() => setModalVisible(false)}
+        onDismissed={() => setAnnouncement(null)}
+      />
+    </>
   );
 }
 
@@ -141,8 +118,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
-      paddingLeft: s(10),
-      paddingRight: s(36),
+      paddingHorizontal: s(10),
       paddingVertical: s(14),
       gap: s(8)
     },
@@ -164,40 +140,12 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       lineHeight: tb(18),
       color: figmaColors.gray
     },
-    titleRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: s(6)
-    },
     title: {
-      flex: 1,
       fontFamily: appFonts.display,
       fontSize: t(20),
       lineHeight: t(24),
       color: figmaColors.charcoal,
       letterSpacing: 0.2
-    },
-    chevron: {
-      width: s(10),
-      height: s(17),
-      flexShrink: 0,
-      marginTop: s(2)
-    },
-    closeBtn: {
-      position: 'absolute',
-      top: s(8),
-      right: s(10),
-      width: s(28),
-      height: s(28),
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
-    closeText: {
-      fontFamily: appFonts.body,
-      fontSize: t(22),
-      lineHeight: t(22),
-      color: figmaColors.gray,
-      marginTop: -s(2)
     }
   });
 }
