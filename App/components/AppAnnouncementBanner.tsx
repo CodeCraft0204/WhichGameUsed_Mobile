@@ -157,8 +157,8 @@ function createBannerStyles(s: (n: number) => number, t: (n: number) => number) 
       width: s(36),
       height: s(36),
       flexShrink: 0,
-      marginLeft: s(12),
-      marginRight: s(4)
+      marginLeft: s(20),
+      marginRight: s(20)
     },
     textCol: {
       flex: 1,
