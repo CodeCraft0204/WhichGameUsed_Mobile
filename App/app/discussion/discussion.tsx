@@ -7,18 +7,19 @@ import {
   Platform,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View
 } from 'react-native';
 import { DiscussionThreadCard } from '@/components/figma/DiscussionThreadCard';
+import { ContextScrollView } from '@/components/context-header/ContextScrollView';
 import { chipOptionsFromLabels, FigmaChipRow } from '@/components/figma/FigmaChipRow';
 import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
+import { ContextHeaderScrollProvider } from '@/context/ContextHeaderScrollContext';
 import { DiscussionTopicCard } from '@/components/figma/DiscussionTopicCard';
 import {
   discussionIcons,
@@ -120,21 +121,23 @@ export default function DiscussionScreen() {
   const sectionTitle = discussionThreadsSectionTitle(activeTab, Boolean(debouncedSearch));
 
   return (
-    <FigmaScreen
-      backgroundColor={figmaColors.background}
-      bottomNav={<FigmaDatabaseBottomNav active="discussion" />}
-      scrollable={false}
-    >
-      <View style={styles.page}>
-        <View style={[page.scrollContent, styles.fixedTop]}>
-          <FigmaPageHeader
-            title="DISCUSSION"
-            subtitle="HOBBY TALK WITHOUT THE DRAMA."
-            description="Engage with the newest evidence, discuss past and future research findings, and align yourself with the hobby's best and brightest."
-            heroSource={discussionIcons.hero}
-            s={s}
-            page={page}
-          />
+    <ContextHeaderScrollProvider>
+      <FigmaScreen
+        backgroundColor={figmaColors.background}
+        bottomNav={<FigmaDatabaseBottomNav active="discussion" />}
+        scrollable={false}
+      >
+        <View style={styles.page}>
+          <View style={[page.scrollContent, styles.fixedTop]}>
+            <FigmaPageHeader
+              title="DISCUSSION"
+              subtitle="HOBBY TALK WITHOUT THE DRAMA."
+              description="Engage with the newest evidence, discuss past and future research findings, and align yourself with the hobby's best and brightest."
+              heroSource={discussionIcons.hero}
+              guidanceKey="discussion"
+              s={s}
+              page={page}
+            />
 
           <View style={styles.stickyToolbar}>
             <View style={styles.toolbarRow}>
@@ -189,7 +192,7 @@ export default function DiscussionScreen() {
           </View>
         </View>
 
-        <ScrollView
+        <ContextScrollView
           style={styles.contentScroll}
           contentContainerStyle={[page.scrollContent, styles.contentScrollInner]}
           showsVerticalScrollIndicator={false}
@@ -308,9 +311,10 @@ export default function DiscussionScreen() {
             </View>
             <Image source={discussionIcons.ctaArrow} style={page.ctaArrow} resizeMode="contain" />
           </Pressable>
-        </ScrollView>
-      </View>
-    </FigmaScreen>
+        </ContextScrollView>
+        </View>
+      </FigmaScreen>
+    </ContextHeaderScrollProvider>
   );
 }
 

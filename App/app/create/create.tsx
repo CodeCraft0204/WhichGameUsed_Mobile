@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { appFonts } from '@/constants/appFonts';
 import React, { useMemo } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ContextGuidanceStrip } from '@/components/context-header/ContextGuidanceStrip';
 import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
@@ -12,15 +13,28 @@ import { authenticateIcons } from '@/constants/authenticateContent';
 import { figmaColors } from '@/constants/figmaColors';
 import { figmaSharedIcons } from '@/constants/figmaShared';
 import { useAuth } from '@/context/AuthContext';
+import {
+  ContextHeaderScrollProvider,
+  useContextHeaderScrollProps
+} from '@/context/ContextHeaderScrollContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import { pickCardPhotoFromLibrary } from '@/lib/capture-photos';
 
 export default function CreateScreen() {
+  return (
+    <ContextHeaderScrollProvider>
+      <CreateScreenBody />
+    </ContextHeaderScrollProvider>
+  );
+}
+
+function CreateScreenBody() {
   const router = useRouter();
   const { session } = useAuth();
   const { s, t } = useFigmaLayout();
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createStyles(s, t), [s, t]);
+  const scrollProps = useContextHeaderScrollProps({ contentContainerStyle: page.scrollContent });
 
   const openCamera = () => {
     router.push('/camera/camera');
@@ -39,12 +53,17 @@ export default function CreateScreen() {
     <FigmaScreen
       backgroundColor={figmaColors.background}
       bottomNav={<FigmaDatabaseBottomNav active="create" />}
-      scrollProps={{ contentContainerStyle: page.scrollContent }}
+      scrollProps={scrollProps}
     >
       <View style={[page.headerSection, styles.headerSection]}>
         <Text style={[page.title, styles.title]}>{createCopy.title}</Text>
         <Image source={figmaSharedIcons.titleBrush} style={styles.titleBrush} resizeMode="stretch" />
         <Text style={[page.subtitle, styles.subtitle]}>{createCopy.subtitle}</Text>
+        <ContextGuidanceStrip
+          pageKey="create"
+          style={[page.description, styles.description]}
+          containerStyle={styles.descriptionWrap}
+        />
         <Image source={authenticateIcons.hero} style={styles.hero} resizeMode="contain" />
       </View>
 
@@ -93,7 +112,16 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     subtitle: {
       textAlign: 'center',
       paddingHorizontal: s(12),
-      marginBottom: s(8)
+      marginBottom: s(4)
+    },
+    descriptionWrap: {
+      width: '100%',
+      marginTop: 0
+    },
+    description: {
+      textAlign: 'center',
+      paddingHorizontal: s(12),
+      marginTop: 0
     },
     hero: {
       width: s(500),

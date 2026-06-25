@@ -9,6 +9,10 @@ import { FigmaHubBottomNav } from '@/components/figma/FigmaHubBottomNav';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import {
+  ContextHeaderScrollProvider,
+  useContextHeaderScrollProps
+} from '@/context/ContextHeaderScrollContext';
+import {
   educationGuides,
   educationIcons,
   educationTabs,
@@ -19,22 +23,32 @@ import { figmaSharedIcons } from '@/constants/figmaShared';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 
 export default function EducationScreen() {
+  return (
+    <ContextHeaderScrollProvider>
+      <EducationScreenBody />
+    </ContextHeaderScrollProvider>
+  );
+}
+
+function EducationScreenBody() {
   const { s, t } = useFigmaLayout();
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
   const [activeTab, setActiveTab] = useState<(typeof educationTabs)[number]>(educationTabs[0]);
+  const scrollProps = useContextHeaderScrollProps({ contentContainerStyle: page.scrollContent });
 
   return (
     <FigmaScreen
       backgroundColor={figmaColors.background}
       bottomNav={<FigmaHubBottomNav active="education" />}
-      scrollProps={{ contentContainerStyle: page.scrollContent }}
+      scrollProps={scrollProps}
     >
       <FigmaPageHeader
         title="EDUCATION"
         subtitle="LEARN THE HOBBY. SPOT THE FAKES."
         description="Explore guides, videos, and research tools that help collectors study game-used cards, identify fakes, and build evidence with confidence."
         heroSource={educationIcons.hero}
+        guidanceKey="education"
         s={s}
         page={page}
       >

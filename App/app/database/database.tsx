@@ -6,13 +6,13 @@ import {
   Image,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View
 } from 'react-native';
 import { DatabaseChipRow } from '@/components/database/DatabaseChipRow';
+import { ContextScrollView } from '@/components/context-header/ContextScrollView';
 import { DatabaseStatsBar } from '@/components/database/DatabaseStatsBar';
 import { DatabaseRecordCard } from '@/components/figma/DatabaseRecordCard';
 import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
@@ -20,6 +20,7 @@ import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { AppAnnouncementBanner } from '@/components/AppAnnouncementBanner';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
+import { ContextHeaderScrollProvider } from '@/context/ContextHeaderScrollContext';
 import { databaseIcons, type DatabaseMetaItem, type DatabaseRecord } from '@/constants/databaseContent';
 import { appFonts } from '@/constants/appFonts';
 import { bodyText } from '@/constants/appTypography';
@@ -189,23 +190,25 @@ export default function DatabaseScreen() {
   };
 
   return (
-    <FigmaScreen
-      backgroundColor={figmaColors.background}
-      bottomNav={<FigmaDatabaseBottomNav active="database" />}
-      scrollable={false}
-    >
-      <View style={styles.page}>
-        <AppAnnouncementBanner />
+    <ContextHeaderScrollProvider>
+      <FigmaScreen
+        backgroundColor={figmaColors.background}
+        bottomNav={<FigmaDatabaseBottomNav active="database" />}
+        scrollable={false}
+      >
+        <View style={styles.page}>
+          <AppAnnouncementBanner />
 
-        <View style={[page.scrollContent, styles.fixedTop]}>
-          <FigmaPageHeader
-            title="DATABASE"
-            subtitle="A HISTORY OF HISTORY."
-            description="Browse authenticated cards, patch examples, provenance notes, and research evidence from across the hobby."
-            heroSource={databaseIcons.hero}
-            s={s}
-            page={page}
-          />
+          <View style={[page.scrollContent, styles.fixedTop]}>
+            <FigmaPageHeader
+              title="DATABASE"
+              subtitle="A HISTORY OF HISTORY."
+              description="Browse authenticated cards, patch examples, provenance notes, and research evidence from across the hobby."
+              heroSource={databaseIcons.hero}
+              guidanceKey="database"
+              s={s}
+              page={page}
+            />
 
           <View style={styles.stickyToolbar}>
             <View style={styles.searchRow}>
@@ -242,7 +245,7 @@ export default function DatabaseScreen() {
           </View>
         </View>
 
-        <ScrollView
+        <ContextScrollView
           style={styles.cardScroll}
           contentContainerStyle={[page.scrollContent, styles.cardScrollContent]}
           showsVerticalScrollIndicator={false}
@@ -309,9 +312,10 @@ export default function DatabaseScreen() {
               <Image source={databaseIcons.ctaArrow} style={page.ctaArrow} resizeMode="contain" />
             </Pressable>
           ) : null}
-        </ScrollView>
-      </View>
-    </FigmaScreen>
+        </ContextScrollView>
+        </View>
+      </FigmaScreen>
+    </ContextHeaderScrollProvider>
   );
 }
 

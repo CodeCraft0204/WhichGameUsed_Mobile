@@ -6,6 +6,10 @@ import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaHubBottomNav } from '@/components/figma/FigmaHubBottomNav';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
+import {
+  ContextHeaderScrollProvider,
+  useContextHeaderScrollProps
+} from '@/context/ContextHeaderScrollContext';
 import { LeaderboardRankCard } from '@/components/figma/LeaderboardRankCard';
 import {
   leaderboardIcons,
@@ -17,24 +21,34 @@ import { figmaSharedIcons } from '@/constants/figmaShared';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 
 export default function LeaderboardScreen() {
+  return (
+    <ContextHeaderScrollProvider>
+      <LeaderboardScreenBody />
+    </ContextHeaderScrollProvider>
+  );
+}
+
+function LeaderboardScreenBody() {
   const { s, t } = useFigmaLayout();
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
   const [activeTab, setActiveTab] = useState<(typeof leaderboardPeriodTabs)[number]>(
     leaderboardPeriodTabs[0]
   );
+  const scrollProps = useContextHeaderScrollProps({ contentContainerStyle: page.scrollContent });
 
   return (
     <FigmaScreen
       backgroundColor={figmaColors.background}
       bottomNav={<FigmaHubBottomNav active="leaderboard" />}
-      scrollProps={{ contentContainerStyle: page.scrollContent }}
+      scrollProps={scrollProps}
     >
       <FigmaPageHeader
         title="LEADERBOARD"
         subtitle="THE HOBBY'S LEADING EXPERTS IN RABBIT HOLES."
         description="Track the top 20 users on the platform each month. Rankings are based on a points system that rewards strong authentication work, helpful participation, and research contributions."
         heroSource={leaderboardIcons.hero}
+        guidanceKey="leaderboard"
         s={s}
         page={page}
       >

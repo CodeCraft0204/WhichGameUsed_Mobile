@@ -62,3 +62,5 @@ const styles = StyleSheet.create({
     backgroundColor: figmaColors.bottomNav
   }
 });
+
+export { dismissContextHeader, resetContextHeaders } from '@/lib/context-header-session';

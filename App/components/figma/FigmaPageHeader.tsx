@@ -9,8 +9,10 @@ import {
   type TextStyle,
   type ViewStyle
 } from 'react-native';
+import { ContextGuidanceStrip } from '@/components/context-header/ContextGuidanceStrip';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaUtilityBar } from '@/components/figma/FigmaUtilityBar';
+import type { ContextHeaderPageKey } from '@/constants/contextHeaderContent';
 import { figmaSharedIcons } from '@/constants/figmaShared';
 
 type FigmaPageHeaderProps = {
@@ -24,6 +26,8 @@ type FigmaPageHeaderProps = {
   s: (n: number) => number;
   page: ReturnType<typeof createFigmaPageStyles>;
   showUtilityBar?: boolean;
+  /** Cycles tips in the description slot after the main description is shown. */
+  guidanceKey?: ContextHeaderPageKey;
   titleStyle?: StyleProp<TextStyle>;
   subtitleStyle?: StyleProp<TextStyle>;
   descriptionStyle?: StyleProp<TextStyle>;
@@ -46,6 +50,7 @@ export function FigmaPageHeader({
   s,
   page,
   showUtilityBar = true,
+  guidanceKey,
   titleStyle,
   subtitleStyle,
   descriptionStyle,
@@ -63,7 +68,13 @@ export function FigmaPageHeader({
       <View style={local.headerRow}>
         <View style={local.headerTextColumn}>
           <Text style={[page.subtitle, local.subtitle, subtitleStyle]}>{subtitle}</Text>
-          {description ? (
+          {guidanceKey ? (
+            <ContextGuidanceStrip
+              pageKey={guidanceKey}
+              fallbackDescription={description}
+              style={[page.description, local.description, descriptionStyle]}
+            />
+          ) : description ? (
             <Text style={[page.description, local.description, descriptionStyle]}>{description}</Text>
           ) : null}
         </View>

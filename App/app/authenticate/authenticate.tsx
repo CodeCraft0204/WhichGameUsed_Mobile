@@ -6,17 +6,18 @@ import {
   Image,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   View
 } from 'react-native';
 import { AuthenticateDraftCard } from '@/components/figma/AuthenticateRecordCard';
+import { ContextScrollView } from '@/components/context-header/ContextScrollView';
 import { chipOptionsFromLabels, FigmaChipRow } from '@/components/figma/FigmaChipRow';
 import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
+import { ContextHeaderScrollProvider } from '@/context/ContextHeaderScrollContext';
 import { ScanSubmitButton } from '@/components/figma/ScanSubmitButton';
 import { authenticateIcons, authenticateTabs } from '@/constants/authenticateContent';
 import { databaseCopy } from '@/constants/databaseCopy';
@@ -99,21 +100,23 @@ export default function AuthenticateScreen() {
         : databaseCopy.submissionEmptyReviewed;
 
   return (
-    <FigmaScreen
-      backgroundColor={figmaColors.background}
-      bottomNav={<FigmaDatabaseBottomNav active="authenticate" />}
-      scrollable={false}
-    >
-      <View style={styles.page}>
-        <View style={[page.scrollContent, styles.fixedTop]}>
-          <FigmaPageHeader
-            title="AUTHENTICATE"
-            subtitle="SUBMIT YOUR CARDS WITHOUT SUBMITTING YOUR CARDS."
-            description="Scan your collection of game-used cards. If your card has been authenticated in our database, simply submit for authentication and we will mail you a tamper-proof QR-linked label for FREE."
-            heroSource={authenticateIcons.main}
-            s={s}
-            page={page}
-          />
+    <ContextHeaderScrollProvider>
+      <FigmaScreen
+        backgroundColor={figmaColors.background}
+        bottomNav={<FigmaDatabaseBottomNav active="authenticate" />}
+        scrollable={false}
+      >
+        <View style={styles.page}>
+          <View style={[page.scrollContent, styles.fixedTop]}>
+            <FigmaPageHeader
+              title="AUTHENTICATE"
+              subtitle="SUBMIT YOUR CARDS WITHOUT SUBMITTING YOUR CARDS."
+              description="Scan your collection of game-used cards. If your card has been authenticated in our database, simply submit for authentication and we will mail you a tamper-proof QR-linked label for FREE."
+              heroSource={authenticateIcons.main}
+              guidanceKey="authenticate"
+              s={s}
+              page={page}
+            />
           <View style={styles.stickyToolbar}>
             <FigmaChipRow
               options={chipOptionsFromLabels(authenticateTabs)}
@@ -126,7 +129,7 @@ export default function AuthenticateScreen() {
           </View>
         </View>
 
-        <ScrollView
+        <ContextScrollView
           style={styles.contentScroll}
           contentContainerStyle={[page.scrollContent, styles.contentScrollBody]}
           showsVerticalScrollIndicator={false}
@@ -203,9 +206,10 @@ export default function AuthenticateScreen() {
             </View>
             <Image source={authenticateIcons.sectionChevron} style={page.ctaArrow} resizeMode="contain" />
           </View>
-        </ScrollView>
-      </View>
-    </FigmaScreen>
+        </ContextScrollView>
+        </View>
+      </FigmaScreen>
+    </ContextHeaderScrollProvider>
   );
 }
 

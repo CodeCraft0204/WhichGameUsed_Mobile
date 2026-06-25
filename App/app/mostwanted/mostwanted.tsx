@@ -6,6 +6,10 @@ import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaHubBottomNav } from '@/components/figma/FigmaHubBottomNav';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
+import {
+  ContextHeaderScrollProvider,
+  useContextHeaderScrollProps
+} from '@/context/ContextHeaderScrollContext';
 import { MostWantedRankCard } from '@/components/figma/MostWantedRankCard';
 import {
   mostWantedIcons,
@@ -17,24 +21,34 @@ import { figmaSharedIcons } from '@/constants/figmaShared';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 
 export default function MostWantedScreen() {
+  return (
+    <ContextHeaderScrollProvider>
+      <MostWantedScreenBody />
+    </ContextHeaderScrollProvider>
+  );
+}
+
+function MostWantedScreenBody() {
   const { s, t } = useFigmaLayout();
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
   const [activeTab, setActiveTab] = useState<(typeof mostWantedSportTabs)[number]>(
     mostWantedSportTabs[0]
   );
+  const scrollProps = useContextHeaderScrollProps({ contentContainerStyle: page.scrollContent });
 
   return (
     <FigmaScreen
       backgroundColor={figmaColors.background}
       bottomNav={<FigmaHubBottomNav active="mostwanted" />}
-      scrollProps={{ contentContainerStyle: page.scrollContent }}
+      scrollProps={scrollProps}
     >
       <FigmaPageHeader
         title="MOST WANTED"
         subtitle="VOTE THE HOBBY'S BIGGEST MYSTERIES TO THE TOP."
         description="Track the 20 game-used cards collectors most want authenticated. Vote with likes and dislikes, discuss leads, and earn bounties for evidence that helps prove a card."
         heroSource={mostWantedIcons.hero}
+        guidanceKey="mostwanted"
         s={s}
         page={page}
       >

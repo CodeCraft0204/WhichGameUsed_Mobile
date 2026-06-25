@@ -8,6 +8,10 @@ import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import { figmaColors } from '@/constants/figmaColors';
+import {
+  ContextHeaderScrollProvider,
+  useContextHeaderScrollProps
+} from '@/context/ContextHeaderScrollContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 
 import { figmaIcons } from '@/constants/figmaIcons';
@@ -56,21 +60,28 @@ const petitions = [
 ];
 
 export default function AdvocacyScreen() {
+  return (
+    <ContextHeaderScrollProvider>
+      <AdvocacyScreenBody />
+    </ContextHeaderScrollProvider>
+  );
+}
+
+function AdvocacyScreenBody() {
   const { s, t } = useFigmaLayout();
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
   const [activeTab, setActiveTab] = useState<(typeof advocacyTabs)[number]>(advocacyTabs[0]);
+  const scrollProps = useContextHeaderScrollProps({ contentContainerStyle: page.scrollContent });
 
   return (
-    <FigmaScreen
-      bottomNav={<FigmaHubBottomNav active="advocacy" />}
-      scrollProps={{ contentContainerStyle: page.scrollContent }}
-    >
+    <FigmaScreen bottomNav={<FigmaHubBottomNav active="advocacy" />} scrollProps={scrollProps}>
       <FigmaPageHeader
         title="ADVOCACY"
         subtitle={'MORE TRANSPARENCY.\nMORE TRUST. BETTER HOBBY.'}
         description="Sign petitions, raise your voice, and push the hobby toward transparency. Together, we can ask manufacturers to share the records collectors deserve."
         heroSource={icons.hero}
+        guidanceKey="advocacy"
         s={s}
         page={page}
       >
