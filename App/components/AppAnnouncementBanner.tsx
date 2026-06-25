@@ -1,102 +1,129 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Image, ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native';
 import { AnnouncementDetailModal } from '@/components/AnnouncementDetailModal';
+import { AnnouncementMarquee } from '@/components/AnnouncementMarquee';
 import { appFonts } from '@/constants/appFonts';
 import { bodyText } from '@/constants/appTypography';
 import { databaseIcons } from '@/constants/databaseContent';
 import { figmaIcons } from '@/constants/figmaIcons';
 import { figmaColors } from '@/constants/figmaColors';
-import { getActiveAnnouncement, type AppAnnouncement } from '@/lib/announcements';
+import {
+  getAnnouncementDisplay,
+  listVisibleAnnouncements,
+  type AppAnnouncement
+} from '@/lib/announcements';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 
-/** Split portal message into subtitle + bold title (newline, pipe, or auto tail). */
-export function parseAnnouncementMessage(message: string): { subtitle: string; title: string } {
-  const trimmed = message.trim();
-  if (!trimmed) return { subtitle: '', title: '' };
+type BannerCardProps = {
+  announcements: AppAnnouncement[];
+  onPress?: () => void;
+  hidden?: boolean;
+};
 
-  if (trimmed.includes('\n')) {
-    const [subtitle, ...rest] = trimmed.split('\n');
-    return { subtitle: subtitle.trim(), title: rest.join('\n').trim() };
-  }
+function AnnouncementBannerCard({ announcements, onPress, hidden = false }: BannerCardProps) {
+  const { s, t } = useFigmaLayout();
+  const styles = useMemo(() => createBannerStyles(s, t), [s, t]);
+  const count = announcements.length;
+  const first = count > 0 ? getAnnouncementDisplay(announcements[0]) : { title: '', content: '' };
+  const titleMarquee = announcements
+    .map((row) => getAnnouncementDisplay(row).title)
+    .filter(Boolean)
+    .join('   ·   ');
+  const accessibilityText =
+    count === 1
+      ? [first.title, first.content].filter(Boolean).join('. ')
+      : `${count} announcements. ${titleMarquee}`;
 
-  if (trimmed.includes('|')) {
-    const [subtitle, title] = trimmed.split('|');
-    return { subtitle: subtitle.trim(), title: title.trim() };
-  }
+  return (
+    <View style={[styles.outer, hidden && styles.outerHidden]} pointerEvents={hidden ? 'none' : 'auto'}>
+      <ImageBackground
+        source={databaseIcons.announcementBanner}
+        style={styles.banner}
+        imageStyle={styles.bannerImage}
+        resizeMode="stretch"
+      >
+        <Pressable
+          style={styles.content}
+          onPress={onPress}
+          accessibilityRole="button"
+          accessibilityLabel={`Announcements. ${accessibilityText}`}
+        >
+          <Image source={figmaIcons.megaphone} style={styles.megaphone} resizeMode="contain" />
 
-  const words = trimmed.split(/\s+/);
-  if (words.length >= 4) {
-    const titleWords = words.slice(-2);
-    const subtitleWords = words.slice(0, -2);
-    const titleCandidate = titleWords.join(' ');
-    if (/^[A-Z]/.test(titleCandidate)) {
-      return { subtitle: subtitleWords.join(' '), title: titleCandidate };
-    }
-  }
+          <View style={styles.textCol}>
+            <View style={styles.labelRow}>
+              <Text style={styles.label}>ANNOUNCEMENTS</Text>
+              {count > 1 ? (
+                <View style={styles.countBadge}>
+                  <Text style={styles.countText}>{count}</Text>
+                </View>
+              ) : null}
+            </View>
 
-  return { subtitle: '', title: trimmed };
+            {count === 1 ? (
+              <>
+                <Text style={styles.previewTitle} numberOfLines={1}>
+                  {first.title}
+                </Text>
+                {first.content ? (
+                  <Text style={styles.previewBody} numberOfLines={1}>
+                    {first.content}
+                  </Text>
+                ) : null}
+              </>
+            ) : (
+              <AnnouncementMarquee text={titleMarquee} />
+            )}
+          </View>
+        </Pressable>
+      </ImageBackground>
+    </View>
+  );
 }
 
 export function AppAnnouncementBanner() {
-  const { s, t } = useFigmaLayout();
-  const styles = useMemo(() => createStyles(s, t), [s, t]);
-  const [announcement, setAnnouncement] = useState<AppAnnouncement | null>(null);
+  const [announcements, setAnnouncements] = useState<AppAnnouncement[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
 
-  useEffect(() => {
-    void getActiveAnnouncement().then(({ announcement: row }) => setAnnouncement(row));
+  const reload = useCallback(async () => {
+    const { announcements: rows } = await listVisibleAnnouncements();
+    setAnnouncements(rows);
   }, []);
 
-  if (!announcement) return null;
+  useEffect(() => {
+    void reload();
+  }, [reload]);
 
-  const parsed = parseAnnouncementMessage(announcement.message);
-  const subtitle = announcement.subtitle?.trim() || parsed.subtitle;
-  const title = announcement.title?.trim() || parsed.title;
+  const handleDismissed = useCallback((id: string) => {
+    setAnnouncements((prev) => prev.filter((row) => row.id !== id));
+  }, []);
+
+  const handleClose = useCallback(() => {
+    setModalVisible(false);
+    void reload();
+  }, [reload]);
+
+  if (announcements.length === 0) return null;
 
   return (
     <>
-      <View style={styles.outer}>
-        <ImageBackground
-          source={databaseIcons.announcementBanner}
-          style={styles.banner}
-          imageStyle={styles.bannerImage}
-          resizeMode="stretch"
-        >
-          <Pressable
-            style={styles.content}
-            onPress={() => setModalVisible(true)}
-            accessibilityRole="button"
-            accessibilityLabel={[subtitle, title].filter(Boolean).join('. ') || announcement.message}
-          >
-            <Image source={figmaIcons.megaphone} style={styles.megaphone} resizeMode="contain" />
-
-            <View style={styles.textCol}>
-              {subtitle ? (
-                <Text style={styles.subtitle} numberOfLines={1}>
-                  {subtitle}
-                </Text>
-              ) : null}
-              <Text style={styles.title} numberOfLines={2}>
-                {title}
-              </Text>
-            </View>
-          </Pressable>
-        </ImageBackground>
-      </View>
+      <AnnouncementBannerCard
+        announcements={announcements}
+        onPress={() => setModalVisible(true)}
+        hidden={modalVisible}
+      />
 
       <AnnouncementDetailModal
         visible={modalVisible}
-        announcement={announcement}
-        subtitle={subtitle}
-        title={title}
-        onClose={() => setModalVisible(false)}
-        onDismissed={() => setAnnouncement(null)}
+        announcements={announcements}
+        onClose={handleClose}
+        onDismissed={handleDismissed}
       />
     </>
   );
 }
 
-function createStyles(s: (n: number) => number, t: (n: number) => number) {
+function createBannerStyles(s: (n: number) => number, t: (n: number) => number) {
   const tb = (n: number) => bodyText(t, n);
 
   return StyleSheet.create({
@@ -104,6 +131,9 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       width: '100%',
       alignSelf: 'stretch',
       marginBottom: s(6)
+    },
+    outerHidden: {
+      opacity: 0
     },
     banner: {
       width: '100%',
@@ -118,34 +148,64 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: s(10),
-      paddingVertical: s(14),
-      gap: s(8)
+      paddingLeft: s(8),
+      paddingRight: s(14),
+      paddingVertical: s(12),
+      gap: s(6)
     },
     megaphone: {
-      width: s(40),
-      height: s(40),
+      width: s(36),
+      height: s(36),
       flexShrink: 0,
-      margin: s(20)
+      marginLeft: s(12),
+      marginRight: s(4)
     },
     textCol: {
       flex: 1,
       minWidth: 0,
       justifyContent: 'center',
-      gap: s(2)
+      gap: s(3)
     },
-    subtitle: {
-      fontFamily: appFonts.body,
-      fontSize: tb(14),
-      lineHeight: tb(18),
-      color: figmaColors.gray
+    labelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(8)
     },
-    title: {
+    label: {
       fontFamily: appFonts.display,
-      fontSize: t(20),
-      lineHeight: t(24),
+      fontSize: t(15),
+      lineHeight: t(18),
+      color: figmaColors.charcoal,
+      letterSpacing: 1.1
+    },
+    countBadge: {
+      minWidth: s(20),
+      height: s(20),
+      borderRadius: s(10),
+      paddingHorizontal: s(6),
+      backgroundColor: figmaColors.sepia,
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    countText: {
+      fontFamily: appFonts.body,
+      fontSize: tb(11),
+      lineHeight: tb(14),
+      color: figmaColors.textOnDark,
+      fontWeight: '600'
+    },
+    previewTitle: {
+      fontFamily: appFonts.display,
+      fontSize: t(17),
+      lineHeight: t(21),
       color: figmaColors.charcoal,
       letterSpacing: 0.2
+    },
+    previewBody: {
+      fontFamily: appFonts.body,
+      fontSize: tb(13),
+      lineHeight: tb(17),
+      color: figmaColors.textSecondary
     }
   });
 }
