@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -26,7 +25,7 @@ import { figmaSharedIcons } from '@/constants/figmaShared';
 import { useContextHeaderScroll } from '@/context/ContextHeaderScrollContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import {
-  dismissContextHeader,
+  // dismissContextHeader,
   isContextHeaderDismissed,
   subscribeContextHeaderSession
 } from '@/lib/context-header-session';
@@ -70,7 +69,7 @@ function ContextGuidanceStripComponent({
   const messageOpacity = useRef(new Animated.Value(1)).current;
   const messageIndexRef = useRef(messageIndex);
   const scrolledRef = useRef(false);
-  const dismissible = config.dismissible !== false;
+  // const dismissible = config.dismissible !== false;
   const layoutKey = useRef('');
 
   messageIndexRef.current = messageIndex;
@@ -191,7 +190,7 @@ function ContextGuidanceStripComponent({
     !dismissed && !isScrolled && phase === 'tips' && messages.length > 0;
 
   const activeMessage: ContextHeaderMessage | undefined = messages[messageIndex] ?? messages[0];
-  const stepLabel = showTips && messages.length > 1 ? `${messageIndex + 1} of ${messages.length}` : null;
+  // const stepLabel = showTips && messages.length > 1 ? `${messageIndex + 1} of ${messages.length}` : null;
 
   const displayText = showTips
     ? activeMessage?.text ?? ''
@@ -208,12 +207,12 @@ function ContextGuidanceStripComponent({
     router.push(activeMessage.route as Href);
   }, [activeMessage?.route, router]);
 
-  const handleDismiss = useCallback(() => {
-    dismissContextHeader(pageKey);
-    setDismissed(true);
-    setPhase('tips');
-    messageOpacity.setValue(1);
-  }, [messageOpacity, pageKey]);
+  // const handleDismiss = useCallback(() => {
+  //   dismissContextHeader(pageKey);
+  //   setDismissed(true);
+  //   setPhase('tips');
+  //   messageOpacity.setValue(1);
+  // }, [messageOpacity, pageKey]);
 
   const collapseOpacity =
     scrollCtx && !isScrolled
@@ -254,9 +253,7 @@ function ContextGuidanceStripComponent({
         { opacity: collapseOpacity }
       ]}
       accessibilityRole="summary"
-      accessibilityLabel={
-        showTips ? `Page tip ${stepLabel ?? ''}. ${displayText}` : displayText
-      }
+      accessibilityLabel={displayText}
     >
       <View
         onLayout={(e) => {
@@ -264,6 +261,7 @@ function ContextGuidanceStripComponent({
         }}
         {...(showTips ? panResponder.panHandlers : {})}
       >
+        {/* Tips chrome — step counter and close hidden per client request
         {showTips ? (
           <View style={styles.metaRow}>
             {stepLabel ? <Text style={styles.step}>{stepLabel}</Text> : <View style={styles.metaSpacer} />}
@@ -293,10 +291,23 @@ function ContextGuidanceStripComponent({
             </View>
           </View>
         ) : null}
+        */}
 
         <Animated.Text style={[style, styles.message, { opacity: messageOpacity }]}>
           {displayText}
         </Animated.Text>
+
+        {showTips && activeMessage?.route ? (
+          <Pressable
+            onPress={openRoute}
+            hitSlop={10}
+            style={styles.ctaBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Open related page"
+          >
+            <Image source={figmaSharedIcons.sectionChevron} style={styles.ctaArrow} resizeMode="contain" />
+          </Pressable>
+        ) : null}
       </View>
     </Animated.View>
   );
