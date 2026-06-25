@@ -4,6 +4,8 @@ import { supabase } from '@/lib/supabase';
 export type AppAnnouncement = {
   id: string;
   message: string;
+  subtitle: string | null;
+  title: string | null;
   link_path: string | null;
 };
 

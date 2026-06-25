@@ -18,6 +18,7 @@ export const databaseIcons = {
   sectionChevron: require('@/assets/figma/database/section_chevron.png'),
   ctaRecords: require('@/assets/figma/database/cta_records.png'),
   ctaArrow: require('@/assets/figma/database/cta_arrow.png'),
+  announcementBanner: require('@/assets/figma/database/Announcement Banner.png'),
   cardPlaceholder: require('@/assets/authenticate/card-placeholder.png')
 } as const;
 

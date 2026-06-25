@@ -195,6 +195,8 @@ export default function DatabaseScreen() {
       scrollable={false}
     >
       <View style={styles.page}>
+        <AppAnnouncementBanner />
+
         <View style={[page.scrollContent, styles.fixedTop]}>
           <FigmaPageHeader
             title="DATABASE"
@@ -204,8 +206,6 @@ export default function DatabaseScreen() {
             s={s}
             page={page}
           />
-
-          <AppAnnouncementBanner />
 
           <View style={styles.stickyToolbar}>
             <View style={styles.searchRow}>
