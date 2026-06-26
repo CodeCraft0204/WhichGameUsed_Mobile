@@ -271,3 +271,24 @@ export const photoEditorTemplates: PhotoTemplate[] = [
 export function getPhotoTemplate(id: string): PhotoTemplate | undefined {
   return photoEditorTemplates.find((tpl) => tpl.id === id);
 }
+
+/** Default photo window inside a frame — matches first template slot for each frame type. */
+export function getPhotoFrameInsets(frame: PhotoFrameKey): {
+  insetTop: number;
+  insetLeft: number;
+  insetRight: number;
+  insetBottom: number;
+} {
+  for (const template of photoEditorTemplates) {
+    const slot = template.slots.find((entry) => entry.frame === frame);
+    if (slot) {
+      return {
+        insetTop: slot.insetTop ?? 8,
+        insetLeft: slot.insetLeft ?? 8,
+        insetRight: slot.insetRight ?? 8,
+        insetBottom: slot.insetBottom ?? 12
+      };
+    }
+  }
+  return { insetTop: 8, insetLeft: 8, insetRight: 8, insetBottom: 12 };
+}

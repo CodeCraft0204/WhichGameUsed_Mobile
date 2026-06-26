@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { appFonts } from '@/constants/appFonts';
 import { photoFrames, photoShapes, type PhotoFrameKey } from '@/constants/photoEditorAssets';
+import { getPhotoFrameInsets } from '@/constants/photoEditorTemplates';
 import {
   photoBackgroundSource,
   type PhotoBackgroundKey
@@ -173,6 +174,16 @@ type LayerViewProps = {
   onCommit: () => void;
 };
 
+function photoClipInsetsForFrame(frame: PhotoFrameKey) {
+  const insets = getPhotoFrameInsets(frame);
+  return {
+    top: `${insets.insetTop}%`,
+    left: `${insets.insetLeft}%`,
+    right: `${insets.insetRight}%`,
+    bottom: `${insets.insetBottom}%`
+  };
+}
+
 function BlankLayerView({
   layer,
   selected,
@@ -257,9 +268,9 @@ function BlankLayerView({
     }
   };
 
-  const framedInsets =
-    layer.kind === 'framed'
-      ? { top: '8%', left: '10%', right: '10%', bottom: '18%' }
+  const photoClipInsets =
+    layer.kind === 'framed' && layer.frame
+      ? photoClipInsetsForFrame(layer.frame)
       : { top: 0, left: 0, right: 0, bottom: 0 };
 
   return (
@@ -290,7 +301,7 @@ function BlankLayerView({
         <Image source={photoShapes[layer.shape]} style={styles.shapeImage} resizeMode="contain" />
       ) : (
         <Pressable style={styles.mediaSlot} onPress={() => void pickPhoto()}>
-          <View style={[styles.photoClip, framedInsets]}>
+          <View style={[styles.photoClip, photoClipInsets]}>
             {layer.photoUri ? (
               <Image source={{ uri: layer.photoUri }} style={styles.photo} resizeMode="cover" />
             ) : (
