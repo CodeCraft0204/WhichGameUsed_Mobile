@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { appFonts } from '@/constants/appFonts';
 import { photoFrames, photoShapes } from '@/constants/photoEditorAssets';
-import type { PhotoTemplate } from '@/constants/photoEditorTemplates';
+import { getPhotoFrameInsets, type PhotoTemplate } from '@/constants/photoEditorTemplates';
 import { figmaColors } from '@/constants/figmaColors';
 
 export type SlotPhotos = Record<string, string | null>;
@@ -51,10 +51,7 @@ export const PhotoEditorCanvas = React.forwardRef<View, PhotoEditorCanvasProps>(
       <View ref={ref} style={[styles.canvas, { width: w, height: h }, style]} collapsable={false}>
         {template.slots.map((slot) => {
           const photoUri = slotPhotos[slot.id];
-          const insetTop = slot.insetTop ?? 8;
-          const insetLeft = slot.insetLeft ?? 8;
-          const insetRight = slot.insetRight ?? 8;
-          const insetBottom = slot.insetBottom ?? 12;
+          const { insetTop, insetLeft, insetRight, insetBottom } = getPhotoFrameInsets(slot.frame);
 
           return (
             <Pressable
@@ -90,20 +87,21 @@ export const PhotoEditorCanvas = React.forwardRef<View, PhotoEditorCanvasProps>(
                   </View>
                 )}
               </View>
-              <Image
-                source={photoFrames[slot.frame]}
-                style={styles.frameOverlay}
-                resizeMode="stretch"
-                pointerEvents="none"
-              />
+              <View pointerEvents="none" style={styles.frameOverlay}>
+                <Image
+                  source={photoFrames[slot.frame]}
+                  style={styles.frameImage}
+                  resizeMode="stretch"
+                />
+              </View>
             </Pressable>
           );
         })}
 
         {template.decor?.map((shape, i) => (
-          <Image
+          <View
             key={`decor-${i}`}
-            source={photoShapes[shape.asset]}
+            pointerEvents="none"
             style={{
               position: 'absolute',
               left: `${shape.left}%`,
@@ -111,9 +109,13 @@ export const PhotoEditorCanvas = React.forwardRef<View, PhotoEditorCanvasProps>(
               width: `${shape.width}%`,
               height: `${shape.height}%`
             }}
-            resizeMode="contain"
-            pointerEvents="none"
-          />
+          >
+            <Image
+              source={photoShapes[shape.asset]}
+              style={styles.decorImage}
+              resizeMode="contain"
+            />
+          </View>
         ))}
 
         {template.textSlots.map((slot) => (
@@ -176,6 +178,15 @@ function createStyles(scale: number) {
     },
     frameOverlay: {
       ...StyleSheet.absoluteFillObject,
+      width: '100%',
+      height: '100%'
+    },
+    frameImage: {
+      ...StyleSheet.absoluteFillObject,
+      width: '100%',
+      height: '100%'
+    },
+    decorImage: {
       width: '100%',
       height: '100%'
     },

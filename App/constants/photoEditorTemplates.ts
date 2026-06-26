@@ -8,11 +8,6 @@ export type PhotoSlotDef = {
   top: number;
   width: number;
   height: number;
-  /** Photo inset inside frame as % of slot box. */
-  insetTop?: number;
-  insetLeft?: number;
-  insetRight?: number;
-  insetBottom?: number;
 };
 
 export type TextSlotDef = {
@@ -47,6 +42,19 @@ export type PhotoTemplate = {
 
 export const BLANK_TEMPLATE_ID = 'blank';
 
+/** Photo window inside each frame type — % of the frame slot box. */
+export const photoFrameInsets: Record<
+  PhotoFrameKey,
+  { insetTop: number; insetLeft: number; insetRight: number; insetBottom: number }
+> = {
+  polaroid: { insetTop: 4, insetLeft: 7, insetRight: 5, insetBottom: 23 },
+  kodak: { insetTop: 14, insetLeft: 2, insetRight: 1, insetBottom: 13 },
+  paper1: { insetTop: 5, insetLeft: 4, insetRight: 4, insetBottom: 3 },
+  paper2: { insetTop: 4, insetLeft: 2, insetRight: 2, insetBottom: 3 },
+  paper3: { insetTop: 7, insetLeft: 5, insetRight: 2, insetBottom: 5 },
+  paper4: { insetTop: 8, insetLeft: 6, insetRight: 6, insetBottom: 7 }
+};
+
 export const blankTemplateMeta = {
   id: BLANK_TEMPLATE_ID,
   name: 'Start from blank',
@@ -68,11 +76,7 @@ export const photoEditorTemplates: PhotoTemplate[] = [
         left: 18,
         top: 12,
         width: 64,
-        height: 52,
-        insetTop: 4,
-        insetLeft: 7,
-        insetRight: 5,
-        insetBottom: 23
+        height: 52
       }
     ],
     textSlots: [
@@ -93,11 +97,7 @@ export const photoEditorTemplates: PhotoTemplate[] = [
         left: 14,
         top: 10,
         width: 72,
-        height: 58,
-        insetTop: 14,
-        insetLeft: 2,
-        insetRight: 1,
-        insetBottom: 13
+        height: 58
       }
     ],
     textSlots: [
@@ -118,11 +118,7 @@ export const photoEditorTemplates: PhotoTemplate[] = [
         left: 6,
         top: 14,
         width: 44,
-        height: 38,
-        insetTop: 6,
-        insetLeft: 5,
-        insetRight: 6,
-        insetBottom: 8
+        height: 38
       },
       {
         id: 'right',
@@ -130,11 +126,7 @@ export const photoEditorTemplates: PhotoTemplate[] = [
         left: 50,
         top: 14,
         width: 44,
-        height: 38,
-        insetTop: 4,
-        insetLeft: 3,
-        insetRight: 3,
-        insetBottom: 3
+        height: 38
       }
     ],
     textSlots: [
@@ -155,11 +147,7 @@ export const photoEditorTemplates: PhotoTemplate[] = [
         left: 22,
         top: 4,
         width: 56,
-        height: 26,
-        insetTop: 7,
-        insetLeft: 5,
-        insetRight: 5,
-        insetBottom: 4
+        height: 26
       },
       {
         id: 'mid',
@@ -167,11 +155,7 @@ export const photoEditorTemplates: PhotoTemplate[] = [
         left: 22,
         top: 32,
         width: 56,
-        height: 26,
-        insetTop: 4,
-        insetLeft: 3,
-        insetRight: 3,
-        insetBottom: 4
+        height: 26
       },
       {
         id: 'bottom',
@@ -179,11 +163,7 @@ export const photoEditorTemplates: PhotoTemplate[] = [
         left: 22,
         top: 60,
         width: 56,
-        height: 26,
-        insetTop: 8,
-        insetLeft: 6,
-        insetRight: 3,
-        insetBottom: 6
+        height: 26
       }
     ],
     textSlots: [
@@ -204,11 +184,7 @@ export const photoEditorTemplates: PhotoTemplate[] = [
         left: 20,
         top: 6,
         width: 60,
-        height: 40,
-        insetTop: 13,
-        insetLeft: 2,
-        insetRight: 2,
-        insetBottom: 13
+        height: 40
       },
       {
         id: 'support-a',
@@ -216,11 +192,7 @@ export const photoEditorTemplates: PhotoTemplate[] = [
         left: 8,
         top: 50,
         width: 40,
-        height: 28,
-        insetTop: 8,
-        insetLeft: 6,
-        insetRight: 6,
-        insetBottom: 7
+        height: 28
       },
       {
         id: 'support-b',
@@ -228,11 +200,7 @@ export const photoEditorTemplates: PhotoTemplate[] = [
         left: 52,
         top: 50,
         width: 40,
-        height: 28,
-        insetTop: 7,
-        insetLeft: 4,
-        insetRight: 6,
-        insetBottom: 8
+        height: 28
       }
     ],
     textSlots: [
@@ -254,11 +222,7 @@ export const photoEditorTemplates: PhotoTemplate[] = [
         left: 20,
         top: 10,
         width: 60,
-        height: 48,
-        insetTop: 4,
-        insetLeft: 7,
-        insetRight: 5,
-        insetBottom: 22
+        height: 48
       }
     ],
     textSlots: [
@@ -272,23 +236,7 @@ export function getPhotoTemplate(id: string): PhotoTemplate | undefined {
   return photoEditorTemplates.find((tpl) => tpl.id === id);
 }
 
-/** Default photo window inside a frame — matches first template slot for each frame type. */
-export function getPhotoFrameInsets(frame: PhotoFrameKey): {
-  insetTop: number;
-  insetLeft: number;
-  insetRight: number;
-  insetBottom: number;
-} {
-  for (const template of photoEditorTemplates) {
-    const slot = template.slots.find((entry) => entry.frame === frame);
-    if (slot) {
-      return {
-        insetTop: slot.insetTop ?? 8,
-        insetLeft: slot.insetLeft ?? 8,
-        insetRight: slot.insetRight ?? 8,
-        insetBottom: slot.insetBottom ?? 12
-      };
-    }
-  }
-  return { insetTop: 8, insetLeft: 8, insetRight: 8, insetBottom: 12 };
+/** Photo window inside a frame — shared by template editor and blank editor. */
+export function getPhotoFrameInsets(frame: PhotoFrameKey): (typeof photoFrameInsets)[PhotoFrameKey] {
+  return photoFrameInsets[frame];
 }

@@ -29,6 +29,8 @@ export type BlankLayer = {
   top: number;
   width: number;
   height: number;
+  /** Clockwise rotation in degrees. */
+  rotation?: number;
   photoUri?: string | null;
   frame?: PhotoFrameKey;
   shape?: keyof typeof photoShapes;
@@ -112,7 +114,16 @@ export const BlankPhotoEditorCanvas = React.forwardRef<View, Props>(function Bla
   const uiScale = Math.min(width, height) / 360;
   const layersRef = useRef(layers);
   layersRef.current = layers;
+  const canvasOriginRef = useRef({ x: 0, y: 0 });
   const backgroundSource = photoBackgroundSource(backgroundKey);
+
+  const syncCanvasOrigin = useCallback(() => {
+    if (typeof ref === 'object' && ref?.current) {
+      ref.current.measureInWindow((x, y) => {
+        canvasOriginRef.current = { x, y };
+      });
+    }
+  }, [ref]);
 
   const updateLayer = useCallback(
     (id: string, patch: Partial<BlankLayer>, transient = true) => {
@@ -133,17 +144,19 @@ export const BlankPhotoEditorCanvas = React.forwardRef<View, Props>(function Bla
     <View
       ref={ref}
       collapsable={false}
+      onLayout={syncCanvasOrigin}
       style={[styles.canvas, { width, height }, style]}
     >
       <View style={[StyleSheet.absoluteFill, styles.canvasUnderlay]} pointerEvents="none" />
       {backgroundSource ? (
-        <Image
-          key={backgroundKey}
-          source={backgroundSource}
-          style={[StyleSheet.absoluteFill, { width, height }]}
-          resizeMode="cover"
-          pointerEvents="none"
-        />
+        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+          <Image
+            key={backgroundKey}
+            source={backgroundSource}
+            style={[StyleSheet.absoluteFill, { width, height }]}
+            resizeMode="cover"
+          />
+        </View>
       ) : null}
       <Pressable style={StyleSheet.absoluteFill} onPress={() => onSelect(null)} />
       {layers.map((layer) => (
@@ -154,6 +167,7 @@ export const BlankPhotoEditorCanvas = React.forwardRef<View, Props>(function Bla
           uiScale={uiScale}
           canvasW={width}
           canvasH={height}
+          getCanvasOrigin={() => canvasOriginRef.current}
           onSelect={onSelect}
           onChange={updateLayer}
           onCommit={commitLayers}
@@ -169,12 +183,29 @@ type LayerViewProps = {
   uiScale: number;
   canvasW: number;
   canvasH: number;
+  getCanvasOrigin: () => { x: number; y: number };
   onSelect: (id: string | null) => void;
   onChange: (id: string, patch: Partial<BlankLayer>, transient?: boolean) => void;
   onCommit: () => void;
 };
 
-function photoClipInsetsForFrame(frame: PhotoFrameKey) {
+function layerCenterOnScreen(
+  layer: BlankLayer,
+  canvasOrigin: { x: number; y: number },
+  canvasW: number,
+  canvasH: number
+) {
+  return {
+    x: canvasOrigin.x + ((layer.left + layer.width / 2) / 100) * canvasW,
+    y: canvasOrigin.y + ((layer.top + layer.height / 2) / 100) * canvasH
+  };
+}
+
+function angleFromPoint(centerX: number, centerY: number, pageX: number, pageY: number) {
+  return Math.atan2(pageY - centerY, pageX - centerX);
+}
+
+function photoClipInsetsForFrame(frame: PhotoFrameKey): Pick<ViewStyle, 'top' | 'left' | 'right' | 'bottom'> {
   const insets = getPhotoFrameInsets(frame);
   return {
     top: `${insets.insetTop}%`,
@@ -190,11 +221,28 @@ function BlankLayerView({
   uiScale,
   canvasW,
   canvasH,
+  getCanvasOrigin,
   onSelect,
   onChange,
   onCommit
 }: LayerViewProps) {
+  const layerRef = useRef(layer);
+  layerRef.current = layer;
+
   const origin = useRef({ left: layer.left, top: layer.top, width: layer.width, height: layer.height });
+  const rotateOrigin = useRef({ startRotation: 0, startAngle: 0, centerX: 0, centerY: 0 });
+
+  const handlersRef = useRef({
+    onSelect,
+    onChange,
+    onCommit,
+    getCanvasOrigin,
+    canvasW,
+    canvasH
+  });
+  handlersRef.current = { onSelect, onChange, onCommit, getCanvasOrigin, canvasW, canvasH };
+
+  const canRotate = layer.kind === 'framed' || layer.kind === 'shape';
 
   const pan = useRef(
     PanResponder.create({
@@ -202,19 +250,21 @@ function BlankLayerView({
       onMoveShouldSetPanResponder: () => true,
       onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: () => {
-        onSelect(layer.id);
+        const current = layerRef.current;
+        handlersRef.current.onSelect(current.id);
         origin.current = {
-          left: layer.left,
-          top: layer.top,
-          width: layer.width,
-          height: layer.height
+          left: current.left,
+          top: current.top,
+          width: current.width,
+          height: current.height
         };
       },
       onPanResponderMove: (_, gesture) => {
-        const dxPct = (gesture.dx / canvasW) * 100;
-        const dyPct = (gesture.dy / canvasH) * 100;
-        onChange(
-          layer.id,
+        const { canvasW: w, canvasH: h, onChange: change } = handlersRef.current;
+        const dxPct = (gesture.dx / w) * 100;
+        const dyPct = (gesture.dy / h) * 100;
+        change(
+          layerRef.current.id,
           {
             left: origin.current.left + dxPct,
             top: origin.current.top + dyPct
@@ -222,8 +272,8 @@ function BlankLayerView({
           true
         );
       },
-      onPanResponderRelease: onCommit,
-      onPanResponderTerminate: onCommit
+      onPanResponderRelease: () => handlersRef.current.onCommit(),
+      onPanResponderTerminate: () => handlersRef.current.onCommit()
     })
   ).current;
 
@@ -233,19 +283,21 @@ function BlankLayerView({
       onMoveShouldSetPanResponder: () => true,
       onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: () => {
-        onSelect(layer.id);
+        const current = layerRef.current;
+        handlersRef.current.onSelect(current.id);
         origin.current = {
-          left: layer.left,
-          top: layer.top,
-          width: layer.width,
-          height: layer.height
+          left: current.left,
+          top: current.top,
+          width: current.width,
+          height: current.height
         };
       },
       onPanResponderMove: (_, gesture) => {
-        const dwPct = (gesture.dx / canvasW) * 100;
-        const dhPct = (gesture.dy / canvasH) * 100;
-        onChange(
-          layer.id,
+        const { canvasW: w, canvasH: h, onChange: change } = handlersRef.current;
+        const dwPct = (gesture.dx / w) * 100;
+        const dhPct = (gesture.dy / h) * 100;
+        change(
+          layerRef.current.id,
           {
             width: Math.max(12, origin.current.width + dwPct),
             height: Math.max(10, origin.current.height + dhPct)
@@ -253,8 +305,43 @@ function BlankLayerView({
           true
         );
       },
-      onPanResponderRelease: onCommit,
-      onPanResponderTerminate: onCommit
+      onPanResponderRelease: () => handlersRef.current.onCommit(),
+      onPanResponderTerminate: () => handlersRef.current.onCommit()
+    })
+  ).current;
+
+  const rotatePan = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderGrant: (event) => {
+        const current = layerRef.current;
+        const { getCanvasOrigin: canvasOrigin, canvasW: w, canvasH: h, onSelect: select } =
+          handlersRef.current;
+        select(current.id);
+        const center = layerCenterOnScreen(current, canvasOrigin(), w, h);
+        const { pageX, pageY } = event.nativeEvent;
+        rotateOrigin.current = {
+          startRotation: current.rotation ?? 0,
+          startAngle: angleFromPoint(center.x, center.y, pageX, pageY),
+          centerX: center.x,
+          centerY: center.y
+        };
+      },
+      onPanResponderMove: (event) => {
+        const { startRotation, startAngle, centerX, centerY } = rotateOrigin.current;
+        const { pageX, pageY } = event.nativeEvent;
+        const angle = angleFromPoint(centerX, centerY, pageX, pageY);
+        const deltaDeg = ((angle - startAngle) * 180) / Math.PI;
+        handlersRef.current.onChange(
+          layerRef.current.id,
+          { rotation: startRotation + deltaDeg },
+          true
+        );
+      },
+      onPanResponderRelease: () => handlersRef.current.onCommit(),
+      onPanResponderTerminate: () => handlersRef.current.onCommit()
     })
   ).current;
 
@@ -268,10 +355,12 @@ function BlankLayerView({
     }
   };
 
-  const photoClipInsets =
+  const photoClipInsets: Pick<ViewStyle, 'top' | 'left' | 'right' | 'bottom'> =
     layer.kind === 'framed' && layer.frame
       ? photoClipInsetsForFrame(layer.frame)
       : { top: 0, left: 0, right: 0, bottom: 0 };
+
+  const rotation = layer.rotation ?? 0;
 
   return (
     <View
@@ -281,7 +370,8 @@ function BlankLayerView({
           left: `${layer.left}%`,
           top: `${layer.top}%`,
           width: `${layer.width}%`,
-          height: `${layer.height}%`
+          height: `${layer.height}%`,
+          transform: [{ rotate: `${rotation}deg` }]
         },
         selected && styles.layerSelected
       ]}
@@ -312,12 +402,13 @@ function BlankLayerView({
             )}
           </View>
           {layer.kind === 'framed' && layer.frame ? (
-            <Image
-              source={photoFrames[layer.frame]}
-              style={styles.frameOverlay}
-              resizeMode="stretch"
-              pointerEvents="none"
-            />
+            <View pointerEvents="none" style={styles.frameOverlay}>
+              <Image
+                source={photoFrames[layer.frame]}
+                style={styles.frameImage}
+                resizeMode="stretch"
+              />
+            </View>
           ) : null}
         </Pressable>
       )}
@@ -328,6 +419,14 @@ function BlankLayerView({
             <Ionicons name="move" size={14} color={figmaColors.buttonPrimaryText} />
           </View>
           <View style={[styles.resizeHandle, { transform: [{ scale: uiScale }] }]} {...resizePan.panHandlers} />
+          {canRotate ? (
+            <View
+              style={[styles.rotateHandle, { transform: [{ scale: uiScale }] }]}
+              {...rotatePan.panHandlers}
+            >
+              <Ionicons name="refresh" size={11} color={figmaColors.white} />
+            </View>
+          ) : null}
         </>
       ) : null}
     </View>
@@ -377,6 +476,11 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%'
   },
+  frameImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%'
+  },
   shapeImage: {
     width: '100%',
     height: '100%'
@@ -411,6 +515,20 @@ const styles = StyleSheet.create({
     backgroundColor: figmaColors.accentStrong,
     borderWidth: 2,
     borderColor: figmaColors.white,
+    zIndex: 2
+  },
+  rotateHandle: {
+    position: 'absolute',
+    left: -8,
+    bottom: -8,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: figmaColors.accentStrong,
+    borderWidth: 2,
+    borderColor: figmaColors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
     zIndex: 2
   }
 });
