@@ -2,7 +2,6 @@ import { useRouter, type Href } from 'expo-router';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
-  Image,
   PanResponder,
   Pressable,
   StyleSheet,
@@ -15,17 +14,14 @@ import {
 import { appFonts } from '@/constants/appFonts';
 import { bodyText } from '@/constants/appTypography';
 import {
-  CONTEXT_HEADER_COLLAPSE_DISTANCE,
   getContextHeaderConfig,
   type ContextHeaderMessage,
   type ContextHeaderPageKey
 } from '@/constants/contextHeaderContent';
 import { figmaColors } from '@/constants/figmaColors';
-import { figmaSharedIcons } from '@/constants/figmaShared';
 import { useContextHeaderScroll } from '@/context/ContextHeaderScrollContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import {
-  // dismissContextHeader,
   isContextHeaderDismissed,
   subscribeContextHeaderSession
 } from '@/lib/context-header-session';
@@ -44,6 +40,7 @@ const FADE_MS = 260;
 const SCROLL_DESCRIPTION_THRESHOLD = 12;
 const SWIPE_THRESHOLD = 40;
 
+type ContentMode = 'description' | 'tips';
 type Phase = 'intro' | 'tips';
 
 function ContextGuidanceStripComponent({
@@ -65,14 +62,22 @@ function ContextGuidanceStripComponent({
   );
   const [messageIndex, setMessageIndex] = useState(0);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
-  const messageOpacity = useRef(new Animated.Value(1)).current;
+  const [contentMode, setContentMode] = useState<ContentMode>(hasIntro ? 'description' : 'tips');
+  const [slotHeight, setSlotHeight] = useState(0);
+  const contentOpacity = useRef(new Animated.Value(1)).current;
   const messageIndexRef = useRef(messageIndex);
   const scrolledRef = useRef(false);
-  // const dismissible = config.dismissible !== false;
-  const layoutKey = useRef('');
+  const heightsRef = useRef({ description: 0, tipMax: 0 });
+  const transitionRef = useRef(false);
 
   messageIndexRef.current = messageIndex;
+
+  const targetMode: ContentMode = useMemo(() => {
+    const showTips = !dismissed && !isScrolled && phase === 'tips' && messages.length > 0;
+    if (showTips) return 'tips';
+    if (hasIntro) return 'description';
+    return messages.length > 0 ? 'tips' : 'description';
+  }, [dismissed, hasIntro, isScrolled, messages.length, phase]);
 
   useEffect(() => {
     const isDismissed = isContextHeaderDismissed(pageKey);
@@ -87,14 +92,16 @@ function ContextGuidanceStripComponent({
 
   useEffect(() => {
     setMessageIndex(0);
-    messageOpacity.setValue(1);
-    setMeasuredHeight(null);
+    contentOpacity.setValue(1);
     scrolledRef.current = false;
     setIsScrolled(false);
+    setSlotHeight(0);
+    heightsRef.current = { description: 0, tipMax: 0 };
+    setContentMode(hasIntro ? 'description' : 'tips');
     if (!isContextHeaderDismissed(pageKey) && fallbackDescription?.trim()) {
       setPhase('intro');
     }
-  }, [fallbackDescription, messageOpacity, pageKey]);
+  }, [contentOpacity, fallbackDescription, hasIntro, pageKey]);
 
   useEffect(() => {
     if (!scrollCtx) return;
@@ -110,73 +117,82 @@ function ContextGuidanceStripComponent({
     return () => scrollCtx.scrollY.removeListener(id);
   }, [scrollCtx]);
 
-  const fadeToMessage = useCallback(
-    (nextIndex: number) => {
-      Animated.timing(messageOpacity, {
+  const fadeContent = useCallback(
+    (onMidpoint: () => void) => {
+      if (transitionRef.current) return;
+      transitionRef.current = true;
+      Animated.timing(contentOpacity, {
         toValue: 0,
         duration: FADE_MS,
         useNativeDriver: true
       }).start(({ finished }) => {
-        if (!finished) return;
-        setMessageIndex(nextIndex);
-        Animated.timing(messageOpacity, {
+        if (!finished) {
+          transitionRef.current = false;
+          return;
+        }
+        onMidpoint();
+        Animated.timing(contentOpacity, {
           toValue: 1,
           duration: FADE_MS,
           useNativeDriver: true
-        }).start();
+        }).start(() => {
+          transitionRef.current = false;
+        });
       });
     },
-    [messageOpacity]
+    [contentOpacity]
+  );
+
+  useEffect(() => {
+    if (contentMode === targetMode) return;
+    fadeContent(() => setContentMode(targetMode));
+  }, [contentMode, fadeContent, targetMode]);
+
+  const fadeToMessage = useCallback(
+    (nextIndex: number) => {
+      fadeContent(() => setMessageIndex(nextIndex));
+    },
+    [fadeContent]
   );
 
   const goNext = useCallback(() => {
-    if (messages.length <= 1) return;
+    if (messages.length <= 1 || contentMode !== 'tips') return;
     fadeToMessage((messageIndex + 1) % messages.length);
-  }, [fadeToMessage, messageIndex, messages.length]);
+  }, [contentMode, fadeToMessage, messageIndex, messages.length]);
 
   const goPrev = useCallback(() => {
-    if (messages.length <= 1) return;
+    if (messages.length <= 1 || contentMode !== 'tips') return;
     fadeToMessage((messageIndex - 1 + messages.length) % messages.length);
-  }, [fadeToMessage, messageIndex, messages.length]);
+  }, [contentMode, fadeToMessage, messageIndex, messages.length]);
 
   const panResponder = useMemo(
     () =>
       PanResponder.create({
         onMoveShouldSetPanResponder: (_, gesture) =>
-          Math.abs(gesture.dx) > 10 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.2,
+          contentMode === 'tips' &&
+          Math.abs(gesture.dx) > 10 &&
+          Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.2,
         onPanResponderRelease: (_, gesture) => {
           if (gesture.dx <= -SWIPE_THRESHOLD) goNext();
           else if (gesture.dx >= SWIPE_THRESHOLD) goPrev();
         }
       }),
-    [goNext, goPrev]
+    [contentMode, goNext, goPrev]
   );
 
   useEffect(() => {
     if (dismissed || phase !== 'intro' || !hasIntro || isScrolled) return;
 
     const id = setTimeout(() => {
-      Animated.timing(messageOpacity, {
-        toValue: 0,
-        duration: FADE_MS,
-        useNativeDriver: true
-      }).start(({ finished }) => {
-        if (!finished) return;
-        setPhase('tips');
-        setMessageIndex(0);
-        Animated.timing(messageOpacity, {
-          toValue: 1,
-          duration: FADE_MS,
-          useNativeDriver: true
-        }).start();
-      });
+      setPhase('tips');
+      setMessageIndex(0);
     }, INTRO_DELAY_MS);
 
     return () => clearTimeout(id);
-  }, [dismissed, hasIntro, isScrolled, messageOpacity, phase]);
+  }, [dismissed, hasIntro, isScrolled, phase]);
 
   useEffect(() => {
-    if (phase !== 'tips' || messages.length <= 1 || dismissed || isScrolled) return;
+    if (contentMode !== 'tips' || messages.length <= 1 || dismissed || isScrolled) return;
 
     const id = setInterval(() => {
       const next = (messageIndexRef.current + 1) % messages.length;
@@ -184,132 +200,92 @@ function ContextGuidanceStripComponent({
     }, MESSAGE_CYCLE_MS);
 
     return () => clearInterval(id);
-  }, [dismissed, fadeToMessage, isScrolled, messages.length, phase]);
-
-  const showTips =
-    !dismissed && !isScrolled && phase === 'tips' && messages.length > 0;
+  }, [contentMode, dismissed, fadeToMessage, isScrolled, messages.length]);
 
   const activeMessage: ContextHeaderMessage | undefined = messages[messageIndex] ?? messages[0];
-  // const stepLabel = showTips && messages.length > 1 ? `${messageIndex + 1} of ${messages.length}` : null;
+  const displayText =
+    contentMode === 'tips'
+      ? activeMessage?.text ?? ''
+      : fallbackDescription ?? activeMessage?.text ?? '';
 
-  const displayText = showTips
-    ? activeMessage?.text ?? ''
-    : dismissed && hasIntro
-      ? fallbackDescription
-      : phase === 'intro' && hasIntro
-        ? fallbackDescription
-        : isScrolled && hasIntro
-          ? fallbackDescription
-          : activeMessage?.text ?? fallbackDescription ?? '';
+  const tipRoute = contentMode === 'tips' ? activeMessage?.route : undefined;
 
   const openRoute = useCallback(() => {
-    if (!activeMessage?.route) return;
-    router.push(activeMessage.route as Href);
-  }, [activeMessage?.route, router]);
+    if (!tipRoute) return;
+    router.push(tipRoute as Href);
+  }, [router, tipRoute]);
 
-  // const handleDismiss = useCallback(() => {
-  //   dismissContextHeader(pageKey);
-  //   setDismissed(true);
-  //   setPhase('tips');
-  //   messageOpacity.setValue(1);
-  // }, [messageOpacity, pageKey]);
-
-  const collapseOpacity =
-    scrollCtx && !isScrolled
-      ? scrollCtx.scrollY.interpolate({
-          inputRange: [0, CONTEXT_HEADER_COLLAPSE_DISTANCE],
-          outputRange: [1, 0],
-          extrapolate: 'clamp'
-        })
-      : 1;
-
-  const collapseMaxHeight =
-    measuredHeight != null && scrollCtx && !isScrolled
-      ? scrollCtx.scrollY.interpolate({
-          inputRange: [0, CONTEXT_HEADER_COLLAPSE_DISTANCE],
-          outputRange: [measuredHeight, 0],
-          extrapolate: 'clamp'
-        })
-      : measuredHeight ?? undefined;
-
-  const onContentLayout = useCallback((height: number) => {
-    const key = `${phase}:${messageIndex}:${isScrolled}:${displayText.length}`;
-    if (height > 0 && (measuredHeight == null || layoutKey.current !== key)) {
-      layoutKey.current = key;
-      setMeasuredHeight(height);
+  const registerHeight = useCallback((kind: 'description' | 'tip', height: number) => {
+    if (height <= 0) return;
+    if (kind === 'description') {
+      heightsRef.current.description = Math.max(heightsRef.current.description, height);
+    } else {
+      heightsRef.current.tipMax = Math.max(heightsRef.current.tipMax, height);
     }
-  }, [displayText.length, isScrolled, measuredHeight, messageIndex, phase]);
+    const stable = Math.max(heightsRef.current.description, heightsRef.current.tipMax);
+    setSlotHeight((prev) => (stable > prev ? stable : prev));
+  }, []);
+
+  const onVisibleLayout = useCallback(
+    (height: number) => {
+      registerHeight(contentMode === 'tips' ? 'tip' : 'description', height);
+    },
+    [contentMode, registerHeight]
+  );
 
   if (dismissed && !hasIntro) return null;
   if (!displayText && dismissed) return null;
   if (!displayText && messages.length === 0) return null;
 
+  const messageNode = (
+    <Animated.Text style={[style, styles.message, { opacity: contentOpacity }]}>
+      {displayText}
+    </Animated.Text>
+  );
+
   return (
-    <Animated.View
-      style={[
-        styles.collapseWrap,
-        containerStyle,
-        collapseMaxHeight != null ? { maxHeight: collapseMaxHeight } : null,
-        { opacity: collapseOpacity }
-      ]}
-      accessibilityRole="summary"
-      accessibilityLabel={displayText}
-    >
-      <View
-        onLayout={(e) => {
-          onContentLayout(e.nativeEvent.layout.height);
-        }}
-        {...(showTips ? panResponder.panHandlers : {})}
-      >
-        {/* Tips chrome — step counter and close hidden per client request
-        {showTips ? (
-          <View style={styles.metaRow}>
-            {stepLabel ? <Text style={styles.step}>{stepLabel}</Text> : <View style={styles.metaSpacer} />}
-            <View style={styles.metaActions}>
-              {activeMessage?.route ? (
-                <Pressable
-                  onPress={openRoute}
-                  hitSlop={10}
-                  style={styles.ctaBtn}
-                  accessibilityRole="button"
-                  accessibilityLabel="Open related page"
-                >
-                  <Image source={figmaSharedIcons.sectionChevron} style={styles.ctaArrow} resizeMode="contain" />
-                </Pressable>
-              ) : null}
-              {dismissible ? (
-                <Pressable
-                  onPress={handleDismiss}
-                  hitSlop={10}
-                  style={styles.closeBtn}
-                  accessibilityRole="button"
-                  accessibilityLabel="Dismiss tips"
-                >
-                  <Ionicons name="close" size={s(18)} color={figmaColors.brownMuted} />
-                </Pressable>
-              ) : null}
-            </View>
-          </View>
+    <View style={[styles.collapseWrap, containerStyle, slotHeight > 0 ? { minHeight: slotHeight } : null]}>
+      {/* Hidden measure pass — reserve tallest description/tip height to prevent header jump */}
+      <View style={styles.measureLayer} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no">
+        {hasIntro ? (
+          <Text
+            style={[style, styles.message]}
+            onLayout={(e) => registerHeight('description', e.nativeEvent.layout.height)}
+          >
+            {fallbackDescription}
+          </Text>
         ) : null}
-        */}
+        {messages.map((msg) => (
+          <Text
+            key={msg.text}
+            style={[style, styles.message]}
+            onLayout={(e) => registerHeight('tip', e.nativeEvent.layout.height)}
+          >
+            {msg.text}
+          </Text>
+        ))}
+      </View>
 
-        <Animated.Text style={[style, styles.message, { opacity: messageOpacity }]}>
-          {displayText}
-        </Animated.Text>
-
-        {showTips && activeMessage?.route ? (
+      <View
+        style={styles.visibleLayer}
+        onLayout={(e) => onVisibleLayout(e.nativeEvent.layout.height)}
+        {...(contentMode === 'tips' ? panResponder.panHandlers : {})}
+      >
+        {tipRoute ? (
           <Pressable
             onPress={openRoute}
-            hitSlop={10}
-            style={styles.ctaBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Open related page"
+            style={styles.messagePressable}
+            accessibilityRole="link"
+            accessibilityLabel={displayText}
+            accessibilityHint="Opens related page"
           >
-            <Image source={figmaSharedIcons.sectionChevron} style={styles.ctaArrow} resizeMode="contain" />
+            {messageNode}
           </Pressable>
-        ) : null}
+        ) : (
+          messageNode
+        )}
       </View>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -321,8 +297,27 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
     collapseWrap: {
       width: '100%',
-      overflow: 'hidden',
-      marginTop: s(12)
+      marginTop: s(12),
+      position: 'relative'
+    },
+    measureLayer: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      top: 0,
+      opacity: 0,
+      zIndex: -1
+    },
+    visibleLayer: {
+      width: '100%'
+    },
+    messagePressable: {
+      width: '100%'
+    },
+    message: {
+      width: '100%',
+      marginTop: 0,
+      flexShrink: 1
     },
     metaRow: {
       flexDirection: 'row',
@@ -347,21 +342,11 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       letterSpacing: 0.8,
       textTransform: 'uppercase'
     },
-    message: {
-      width: '100%',
-      marginTop: 0,
-      flexShrink: 1
-    },
     ctaBtn: {
       width: s(26),
       height: s(26),
       alignItems: 'center',
       justifyContent: 'center'
-    },
-    ctaArrow: {
-      width: s(10),
-      height: s(17),
-      tintColor: figmaColors.brownMuted
     },
     closeBtn: {
       width: s(26),
