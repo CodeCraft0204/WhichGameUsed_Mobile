@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Image,
+  PanResponder,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -36,15 +37,16 @@ type BackgroundAsset = {
   label: string;
   source: ImageSourcePropType | null;
 };
-type PickerAsset = FrameAsset | PinAsset | BackgroundAsset;
+export type PickerAsset = FrameAsset | PinAsset | BackgroundAsset;
 
 type Props = {
-  onAddFrame: (frame: PhotoFrameKey) => void;
-  onAddPin: (shape: PhotoShapeKey) => void;
   currentBackgroundKey: PhotoBackgroundKey;
-  onApplyBackground: (background: PhotoBackgroundKey) => void;
   /** Sidebar inner width — used to size list thumbnails */
   panelWidth?: number;
+  isDragging?: boolean;
+  onAssetDragStart: (item: PickerAsset) => void;
+  onAssetDragMove: (position: { pageX: number; pageY: number }) => void;
+  onAssetDragEnd: (position: { pageX: number; pageY: number }) => void;
 };
 
 const frameAssets: FrameAsset[] = photoFrameKeys.map((key) => ({
@@ -86,11 +88,12 @@ function backgroundAssetForKey(key: PhotoBackgroundKey): BackgroundAsset {
 }
 
 export function EditorAssetPicker({
-  onAddFrame,
-  onAddPin,
   currentBackgroundKey,
-  onApplyBackground,
-  panelWidth = 148
+  panelWidth = 148,
+  isDragging = false,
+  onAssetDragStart,
+  onAssetDragMove,
+  onAssetDragEnd
 }: Props) {
   const [tab, setTab] = useState<AssetTab>('frames');
   const [selected, setSelected] = useState<PickerAsset | null>(frameAssets[0] ?? null);
@@ -108,9 +111,6 @@ export function EditorAssetPicker({
 
   const selectItem = (item: PickerAsset) => {
     setSelected(item);
-    if (item.kind === 'background') onApplyBackground(item.key);
-    else if (item.kind === 'frame') onAddFrame(item.key);
-    else onAddPin(item.key);
   };
 
   const isBackgroundTab = tab === 'backgrounds';
@@ -159,7 +159,8 @@ export function EditorAssetPicker({
       <ScrollView
         style={styles.listScroll}
         contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator
+        showsVerticalScrollIndicator={false}
+        scrollEnabled={!isDragging}
         keyboardShouldPersistTaps="handled"
       >
         {items.map((item) => {
@@ -168,44 +169,132 @@ export function EditorAssetPicker({
             item.kind === 'background' && item.key === currentBackgroundKey;
 
           return (
-            <Pressable
+            <DraggableAssetThumb
               key={`${item.kind}-${item.key}`}
-              style={[
-                styles.listThumbWrap,
-                { width: thumbSize + 8 },
-                active && styles.listThumbWrapActive,
-                isAppliedBackground && styles.listThumbWrapApplied
-              ]}
-              onPress={() => selectItem(item)}
-              accessibilityLabel={item.label}
-            >
-              {item.kind === 'background' && !item.source ? (
-                <View
-                  style={[
-                    styles.listThumbClip,
-                    styles.parchmentPreview,
-                    { width: thumbSize, height: thumbSize }
-                  ]}
-                />
-              ) : item.source ? (
-                <View style={[styles.listThumbClip, { width: thumbSize, height: thumbSize }]}>
-                  <Image
-                    source={item.source}
-                    style={styles.listThumbImage}
-                    resizeMode={item.kind === 'background' ? 'cover' : 'contain'}
-                  />
-                </View>
-              ) : (
-                <View
-                  style={[styles.listThumbPlaceholder, { width: thumbSize, height: thumbSize }]}
-                >
-                  <Ionicons name="image-outline" size={20} color={figmaColors.grayMuted} />
-                </View>
-              )}
-            </Pressable>
+              item={item}
+              thumbSize={thumbSize}
+              active={active}
+              isAppliedBackground={isAppliedBackground}
+              onSelect={selectItem}
+              onDragStart={onAssetDragStart}
+              onDragMove={onAssetDragMove}
+              onDragEnd={onAssetDragEnd}
+            />
           );
         })}
       </ScrollView>
+    </View>
+  );
+}
+
+const DRAG_THRESHOLD = 10;
+
+function DraggableAssetThumb({
+  item,
+  thumbSize,
+  active,
+  isAppliedBackground,
+  onSelect,
+  onDragStart,
+  onDragMove,
+  onDragEnd
+}: {
+  item: PickerAsset;
+  thumbSize: number;
+  active: boolean;
+  isAppliedBackground: boolean;
+  onSelect: (item: PickerAsset) => void;
+  onDragStart: (item: PickerAsset) => void;
+  onDragMove: (position: { pageX: number; pageY: number }) => void;
+  onDragEnd: (position: { pageX: number; pageY: number }) => void;
+}) {
+  const dragged = useRef(false);
+  const startPage = useRef({ pageX: 0, pageY: 0 });
+  const handlersRef = useRef({ item, onSelect, onDragStart, onDragMove, onDragEnd });
+  handlersRef.current = { item, onSelect, onDragStart, onDragMove, onDragEnd };
+
+  const pan = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: (_, gesture) =>
+          Math.abs(gesture.dx) > DRAG_THRESHOLD || Math.abs(gesture.dy) > DRAG_THRESHOLD,
+        onPanResponderTerminationRequest: () => !dragged.current,
+        onPanResponderGrant: (event) => {
+          dragged.current = false;
+          startPage.current = {
+            pageX: event.nativeEvent.pageX,
+            pageY: event.nativeEvent.pageY
+          };
+        },
+        onPanResponderMove: (_, gesture) => {
+          const { item: currentItem, onDragMove: move, onDragStart: start } = handlersRef.current;
+          const pageX = startPage.current.pageX + gesture.dx;
+          const pageY = startPage.current.pageY + gesture.dy;
+          if (
+            !dragged.current &&
+            (Math.abs(gesture.dx) > DRAG_THRESHOLD || Math.abs(gesture.dy) > DRAG_THRESHOLD)
+          ) {
+            dragged.current = true;
+            move({ pageX, pageY });
+            start(currentItem);
+          }
+          if (dragged.current) move({ pageX, pageY });
+        },
+        onPanResponderRelease: (_, gesture) => {
+          const { item: currentItem, onSelect: select, onDragEnd: end } = handlersRef.current;
+          const pageX = startPage.current.pageX + gesture.dx;
+          const pageY = startPage.current.pageY + gesture.dy;
+          if (dragged.current) end({ pageX, pageY });
+          else select(currentItem);
+          dragged.current = false;
+        },
+        onPanResponderTerminate: (_, gesture) => {
+          const { onDragEnd: end } = handlersRef.current;
+          if (dragged.current) {
+            end({
+              pageX: startPage.current.pageX + gesture.dx,
+              pageY: startPage.current.pageY + gesture.dy
+            });
+          }
+          dragged.current = false;
+        }
+      }),
+    []
+  );
+
+  return (
+    <View
+      style={[
+        styles.listThumbWrap,
+        { width: thumbSize + 8 },
+        active && styles.listThumbWrapActive,
+        isAppliedBackground && styles.listThumbWrapApplied
+      ]}
+      accessibilityLabel={item.label}
+      {...pan.panHandlers}
+    >
+      {item.kind === 'background' && !item.source ? (
+        <View
+          style={[
+            styles.listThumbClip,
+            styles.parchmentPreview,
+            { width: thumbSize, height: thumbSize }
+          ]}
+        />
+      ) : item.source ? (
+        <View style={[styles.listThumbClip, { width: thumbSize, height: thumbSize }]}>
+          <Image
+            source={item.source}
+            style={styles.listThumbImage}
+            resizeMode={item.kind === 'background' ? 'cover' : 'contain'}
+          />
+        </View>
+      ) : (
+        <View style={[styles.listThumbPlaceholder, { width: thumbSize, height: thumbSize }]}>
+          <Ionicons name="image-outline" size={20} color={figmaColors.grayMuted} />
+        </View>
+      )}
     </View>
   );
 }
@@ -250,38 +339,35 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(139, 115, 85, 0.28)',
-    backgroundColor: 'rgba(253, 249, 242, 0.55)',
+    borderColor: figmaColors.borderLight,
+    backgroundColor: figmaColors.creamLight,
     alignItems: 'center',
     justifyContent: 'center'
   },
   tabActive: {
-    backgroundColor: 'rgba(74, 64, 53, 0.82)',
-    borderColor: 'rgba(61, 52, 41, 0.65)'
+    backgroundColor: figmaColors.sepia,
+    borderColor: figmaColors.umber
   },
   previewPane: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(139, 115, 85, 0.28)',
-    borderRadius: 10,
-    backgroundColor: 'rgba(253, 249, 242, 0.45)',
+    backgroundColor: 'transparent',
     padding: 8,
     minHeight: 88
   },
   previewImage: {
-    backgroundColor: figmaColors.surfaceMuted,
+    backgroundColor: figmaColors.white,
     borderRadius: 8,
     overflow: 'hidden'
   },
   parchmentPreview: {
     backgroundColor: figmaColors.parchment,
     borderWidth: 1,
-    borderColor: 'rgba(139, 115, 85, 0.28)'
+    borderColor: figmaColors.borderLight
   },
   previewPlaceholder: {
     borderRadius: 8,
-    backgroundColor: 'rgba(237, 228, 212, 0.65)',
+    backgroundColor: figmaColors.white,
     alignItems: 'center',
     justifyContent: 'center'
   },
@@ -297,15 +383,15 @@ const styles = StyleSheet.create({
   listThumbWrap: {
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(139, 115, 85, 0.28)',
-    backgroundColor: 'rgba(253, 249, 242, 0.45)',
+    borderColor: 'transparent',
+    backgroundColor: 'transparent',
     padding: 4,
     alignItems: 'center',
     overflow: 'hidden'
   },
   listThumbWrapActive: {
     borderColor: figmaColors.accent,
-    backgroundColor: 'rgba(247, 241, 228, 0.72)'
+    backgroundColor: 'transparent'
   },
   listThumbWrapApplied: {
     borderColor: figmaColors.success
@@ -313,7 +399,7 @@ const styles = StyleSheet.create({
   listThumbClip: {
     borderRadius: 6,
     overflow: 'hidden',
-    backgroundColor: figmaColors.surfaceMuted
+    backgroundColor: figmaColors.white
   },
   listThumbImage: {
     width: '100%',
@@ -321,7 +407,7 @@ const styles = StyleSheet.create({
   },
   listThumbPlaceholder: {
     borderRadius: 6,
-    backgroundColor: 'rgba(237, 228, 212, 0.65)',
+    backgroundColor: figmaColors.white,
     alignItems: 'center',
     justifyContent: 'center'
   }

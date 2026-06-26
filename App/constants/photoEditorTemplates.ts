@@ -69,10 +69,10 @@ export const photoEditorTemplates: PhotoTemplate[] = [
         top: 12,
         width: 64,
         height: 52,
-        insetTop: 8,
-        insetLeft: 10,
-        insetRight: 10,
-        insetBottom: 22
+        insetTop: 4,
+        insetLeft: 7,
+        insetRight: 5,
+        insetBottom: 23
       }
     ],
     textSlots: [
@@ -94,10 +94,10 @@ export const photoEditorTemplates: PhotoTemplate[] = [
         top: 10,
         width: 72,
         height: 58,
-        insetTop: 12,
-        insetLeft: 12,
-        insetRight: 12,
-        insetBottom: 18
+        insetTop: 14,
+        insetLeft: 2,
+        insetRight: 1,
+        insetBottom: 13
       }
     ],
     textSlots: [
@@ -119,10 +119,10 @@ export const photoEditorTemplates: PhotoTemplate[] = [
         top: 14,
         width: 44,
         height: 38,
-        insetTop: 10,
-        insetLeft: 10,
-        insetRight: 10,
-        insetBottom: 14
+        insetTop: 6,
+        insetLeft: 5,
+        insetRight: 6,
+        insetBottom: 8
       },
       {
         id: 'right',
@@ -131,10 +131,10 @@ export const photoEditorTemplates: PhotoTemplate[] = [
         top: 14,
         width: 44,
         height: 38,
-        insetTop: 10,
-        insetLeft: 10,
-        insetRight: 10,
-        insetBottom: 14
+        insetTop: 4,
+        insetLeft: 3,
+        insetRight: 3,
+        insetBottom: 3
       }
     ],
     textSlots: [
@@ -156,10 +156,10 @@ export const photoEditorTemplates: PhotoTemplate[] = [
         top: 4,
         width: 56,
         height: 26,
-        insetTop: 8,
-        insetLeft: 8,
-        insetRight: 8,
-        insetBottom: 10
+        insetTop: 7,
+        insetLeft: 5,
+        insetRight: 5,
+        insetBottom: 4
       },
       {
         id: 'mid',
@@ -168,10 +168,10 @@ export const photoEditorTemplates: PhotoTemplate[] = [
         top: 32,
         width: 56,
         height: 26,
-        insetTop: 8,
-        insetLeft: 8,
-        insetRight: 8,
-        insetBottom: 10
+        insetTop: 4,
+        insetLeft: 3,
+        insetRight: 3,
+        insetBottom: 4
       },
       {
         id: 'bottom',
@@ -181,9 +181,9 @@ export const photoEditorTemplates: PhotoTemplate[] = [
         width: 56,
         height: 26,
         insetTop: 8,
-        insetLeft: 8,
-        insetRight: 8,
-        insetBottom: 10
+        insetLeft: 6,
+        insetRight: 3,
+        insetBottom: 6
       }
     ],
     textSlots: [
@@ -205,10 +205,10 @@ export const photoEditorTemplates: PhotoTemplate[] = [
         top: 6,
         width: 60,
         height: 40,
-        insetTop: 10,
-        insetLeft: 10,
-        insetRight: 10,
-        insetBottom: 14
+        insetTop: 13,
+        insetLeft: 2,
+        insetRight: 2,
+        insetBottom: 13
       },
       {
         id: 'support-a',
@@ -218,9 +218,9 @@ export const photoEditorTemplates: PhotoTemplate[] = [
         width: 40,
         height: 28,
         insetTop: 8,
-        insetLeft: 8,
-        insetRight: 8,
-        insetBottom: 10
+        insetLeft: 6,
+        insetRight: 6,
+        insetBottom: 7
       },
       {
         id: 'support-b',
@@ -229,10 +229,10 @@ export const photoEditorTemplates: PhotoTemplate[] = [
         top: 50,
         width: 40,
         height: 28,
-        insetTop: 8,
-        insetLeft: 8,
-        insetRight: 8,
-        insetBottom: 10
+        insetTop: 7,
+        insetLeft: 4,
+        insetRight: 6,
+        insetBottom: 8
       }
     ],
     textSlots: [
@@ -255,10 +255,10 @@ export const photoEditorTemplates: PhotoTemplate[] = [
         top: 10,
         width: 60,
         height: 48,
-        insetTop: 8,
-        insetLeft: 10,
-        insetRight: 10,
-        insetBottom: 20
+        insetTop: 4,
+        insetLeft: 7,
+        insetRight: 5,
+        insetBottom: 22
       }
     ],
     textSlots: [

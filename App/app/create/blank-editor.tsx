@@ -3,6 +3,7 @@ import * as ImagePicker from 'expo-image-picker';
 import React, { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   LayoutChangeEvent,
   Pressable,
   StyleSheet,
@@ -23,10 +24,9 @@ import {
   createBlankTextLayer,
   type BlankLayer
 } from '@/components/create/BlankPhotoEditorCanvas';
-import { EditorAssetPicker } from '@/components/create/EditorAssetPicker';
+import { EditorAssetPicker, type PickerAsset } from '@/components/create/EditorAssetPicker';
 import { appFonts } from '@/constants/appFonts';
 import { editorCopy } from '@/constants/createContent';
-import type { PhotoFrameKey, PhotoShapeKey } from '@/constants/photoEditorAssets';
 import { BLANK_TEMPLATE_ID } from '@/constants/photoEditorTemplates';
 import { figmaColors } from '@/constants/figmaColors';
 import { useAuth } from '@/context/AuthContext';
@@ -43,6 +43,30 @@ function textFromLayers(layers: BlankLayer[]): { title: string; body: string } {
   return { title: texts[0], body: texts.slice(1).join('\n') };
 }
 
+function clampPercent(value: number, max: number): number {
+  return Math.min(Math.max(value, 0), max);
+}
+
+function layerAtDropPoint(
+  layer: BlankLayer,
+  canvasW: number,
+  canvasH: number,
+  pageX: number,
+  pageY: number,
+  canvasX: number,
+  canvasY: number
+): BlankLayer {
+  const relX = pageX - canvasX;
+  const relY = pageY - canvasY;
+  const centerLeft = (relX / canvasW) * 100;
+  const centerTop = (relY / canvasH) * 100;
+  return {
+    ...layer,
+    left: clampPercent(centerLeft - layer.width / 2, 100 - layer.width),
+    top: clampPercent(centerTop - layer.height / 2, 100 - layer.height)
+  };
+}
+
 export default function CreateBlankEditorScreen() {
   const router = useRouter();
   const { user } = useAuth();
@@ -56,6 +80,8 @@ export default function CreateBlankEditorScreen() {
   const { s, t } = useFigmaLayout(1);
   const styles = useMemo(() => createStyles(s, t), [s, t]);
   const canvasRef = useRef<ViewType>(null);
+  const canvasStageRef = useRef<ViewType>(null);
+  const draggingAssetRef = useRef<PickerAsset | null>(null);
 
   const {
     layers,
@@ -75,6 +101,8 @@ export default function CreateBlankEditorScreen() {
   const [done, setDone] = useState(false);
   const [canvasArea, setCanvasArea] = useState({ width: 0, height: 0 });
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [draggingAsset, setDraggingAsset] = useState<PickerAsset | null>(null);
+  const [dragPosition, setDragPosition] = useState({ pageX: 0, pageY: 0 });
   const { width: screenWidth } = useWindowDimensions();
   const sidebarWidth = Math.min(Math.max(screenWidth * 0.32, 132), 168);
 
@@ -90,7 +118,9 @@ export default function CreateBlankEditorScreen() {
 
   const handleCanvasAreaLayout = useCallback((event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
-    setCanvasArea({ width, height });
+    setCanvasArea((prev) =>
+      prev.width === width && prev.height === height ? prev : { width, height }
+    );
   }, []);
 
   const handleLayersChange = useCallback(
@@ -101,12 +131,15 @@ export default function CreateBlankEditorScreen() {
     [commitLayers, setLayersTransient]
   );
 
+  const layersRef = useRef(layers);
+  layersRef.current = layers;
+
   const addLayer = useCallback(
     (layer: BlankLayer) => {
-      commitLayers([...layers, layer]);
+      commitLayers([...layersRef.current, layer]);
       setSelectedId(layer.id);
     },
-    [commitLayers, layers]
+    [commitLayers]
   );
 
   const addPhoto = async () => {
@@ -118,13 +151,62 @@ export default function CreateBlankEditorScreen() {
     addLayer(createBlankPhotoLayer(result.assets[0].uri));
   };
 
-  const addFrame = (frame: PhotoFrameKey) => {
-    addLayer(createBlankFramedLayer(frame, null));
-  };
+  const applyLibraryAssetAt = useCallback(
+    (asset: PickerAsset, drop: { pageX: number; pageY: number }) => {
+      canvasStageRef.current?.measureInWindow((canvasX, canvasY, canvasW, canvasH) => {
+        if (
+          drop.pageX < canvasX ||
+          drop.pageX > canvasX + canvasW ||
+          drop.pageY < canvasY ||
+          drop.pageY > canvasY + canvasH
+        ) {
+          return;
+        }
 
-  const addPin = (shape: PhotoShapeKey) => {
-    addLayer(createBlankShapeLayer(shape));
-  };
+        if (asset.kind === 'background') {
+          setBackgroundKey(asset.key);
+          return;
+        }
+
+        const layer =
+          asset.kind === 'frame'
+            ? createBlankFramedLayer(asset.key, null)
+            : createBlankShapeLayer(asset.key);
+
+        addLayer(
+          layerAtDropPoint(
+            layer,
+            canvasW,
+            canvasH,
+            drop.pageX,
+            drop.pageY,
+            canvasX,
+            canvasY
+          )
+        );
+      });
+    },
+    [addLayer, setBackgroundKey]
+  );
+
+  const handleAssetDragStart = useCallback((asset: PickerAsset) => {
+    draggingAssetRef.current = asset;
+    setDraggingAsset(asset);
+  }, []);
+
+  const handleAssetDragMove = useCallback((position: { pageX: number; pageY: number }) => {
+    setDragPosition(position);
+  }, []);
+
+  const handleAssetDragEnd = useCallback(
+    (position: { pageX: number; pageY: number }) => {
+      const asset = draggingAssetRef.current;
+      if (asset) applyLibraryAssetAt(asset, position);
+      draggingAssetRef.current = null;
+      setDraggingAsset(null);
+    },
+    [applyLibraryAssetAt]
+  );
 
   const addText = () => {
     addLayer(createBlankTextLayer());
@@ -200,20 +282,22 @@ export default function CreateBlankEditorScreen() {
         </Pressable>
       </View>
 
-      <View style={styles.canvasStage} onLayout={handleCanvasAreaLayout}>
-        {canvasArea.width > 0 && canvasArea.height > 0 ? (
-          <BlankPhotoEditorCanvas
-            ref={canvasRef}
-            layers={layers}
-            selectedId={selectedId}
-            backgroundKey={backgroundKey}
-            onLayersChange={handleLayersChange}
-            onSelect={setSelectedId}
-            width={canvasArea.width}
-            height={canvasArea.height}
-            style={styles.canvasFill}
-          />
-        ) : null}
+      <View style={styles.editorBody}>
+        <View ref={canvasStageRef} style={styles.canvasStage} onLayout={handleCanvasAreaLayout}>
+          {canvasArea.width > 0 && canvasArea.height > 0 ? (
+            <BlankPhotoEditorCanvas
+              ref={canvasRef}
+              layers={layers}
+              selectedId={selectedId}
+              backgroundKey={backgroundKey}
+              onLayersChange={handleLayersChange}
+              onSelect={setSelectedId}
+              width={canvasArea.width}
+              height={canvasArea.height}
+              style={styles.canvasFill}
+            />
+          ) : null}
+        </View>
 
         {sidebarOpen ? (
           <View
@@ -222,12 +306,41 @@ export default function CreateBlankEditorScreen() {
           >
             <View style={styles.sidebarPanel} pointerEvents="auto">
               <EditorAssetPicker
-                onAddFrame={addFrame}
-                onAddPin={addPin}
                 currentBackgroundKey={backgroundKey}
-                onApplyBackground={setBackgroundKey}
                 panelWidth={sidebarWidth - s(16)}
+                isDragging={draggingAsset !== null}
+                onAssetDragStart={handleAssetDragStart}
+                onAssetDragMove={handleAssetDragMove}
+                onAssetDragEnd={handleAssetDragEnd}
               />
+            </View>
+          </View>
+        ) : null}
+
+        {draggingAsset ? (
+          <View style={styles.dragGhostLayer} pointerEvents="none">
+            <View
+              style={[
+                styles.dragGhost,
+                {
+                  left: dragPosition.pageX - 28,
+                  top: dragPosition.pageY - 28
+                }
+              ]}
+            >
+              {draggingAsset.kind === 'background' && !draggingAsset.source ? (
+                <View style={[styles.dragGhostImage, styles.dragGhostParchment]} />
+              ) : draggingAsset.source ? (
+                <Image
+                  source={draggingAsset.source}
+                  style={styles.dragGhostImage}
+                  resizeMode={draggingAsset.kind === 'background' ? 'cover' : 'contain'}
+                />
+              ) : (
+                <View style={styles.dragGhostImage}>
+                  <Ionicons name="image-outline" size={24} color={figmaColors.grayMuted} />
+                </View>
+              )}
             </View>
           </View>
         ) : null}
@@ -368,6 +481,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       backgroundColor: figmaColors.background
     },
     topBar: {
+      flexShrink: 0,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -403,8 +517,15 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: t(13),
       color: figmaColors.buttonPrimaryText
     },
+    editorBody: {
+      flex: 1,
+      minHeight: 0,
+      position: 'relative',
+      overflow: 'hidden'
+    },
     canvasStage: {
       flex: 1,
+      minHeight: 0,
       position: 'relative',
       overflow: 'hidden',
       backgroundColor: figmaColors.parchment
@@ -426,17 +547,52 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       elevation: 20
     },
     sidebarPanel: {
-      flex: 1,
+      height: '100%',
       width: '100%',
-      backgroundColor: 'rgba(247, 241, 228, 0.88)',
+      backgroundColor: figmaColors.cream,
       borderLeftWidth: 1,
-      borderLeftColor: 'rgba(139, 115, 85, 0.32)',
+      borderLeftColor: figmaColors.borderLight,
       paddingHorizontal: s(8),
       paddingTop: s(8),
       paddingBottom: s(6),
       overflow: 'hidden'
     },
+    dragGhostLayer: {
+      ...StyleSheet.absoluteFillObject,
+      zIndex: 40,
+      elevation: 40
+    },
+    dragGhost: {
+      position: 'absolute',
+      width: 56,
+      height: 56,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: figmaColors.accent,
+      backgroundColor: figmaColors.white,
+      padding: 4,
+      shadowColor: figmaColors.black,
+      shadowOpacity: 0.18,
+      shadowRadius: 6,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 6
+    },
+    dragGhostImage: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 6,
+      overflow: 'hidden',
+      backgroundColor: figmaColors.white,
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    dragGhostParchment: {
+      backgroundColor: figmaColors.parchment,
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight
+    },
     bottomPanel: {
+      flexShrink: 0,
       borderTopWidth: 1,
       borderTopColor: figmaColors.borderLight,
       backgroundColor: figmaColors.background,
