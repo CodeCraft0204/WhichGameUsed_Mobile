@@ -3,11 +3,12 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Image,
   PanResponder,
-  Pressable,
   ScrollView,
   StyleSheet,
   View,
-  type ImageSourcePropType
+  type GestureResponderEvent,
+  type ImageSourcePropType,
+  type PanResponderGestureState
 } from 'react-native';
 import {
   photoFrameKeys,
@@ -29,6 +30,16 @@ import { figmaColors } from '@/constants/figmaColors';
 
 type AssetTab = 'frames' | 'pins' | 'backgrounds';
 
+export type LibraryAssetTab = AssetTab;
+
+export const LIBRARY_TAB_ORDER: LibraryAssetTab[] = ['frames', 'pins', 'backgrounds'];
+
+export const LIBRARY_TAB_LABELS: Record<LibraryAssetTab, string> = {
+  frames: 'Frame',
+  pins: 'Pin',
+  backgrounds: 'Background'
+};
+
 type FrameAsset = { kind: 'frame'; key: PhotoFrameKey; label: string; source: ImageSourcePropType };
 type PinAsset = { kind: 'pin'; key: PhotoShapeKey; label: string; source: ImageSourcePropType };
 type BackgroundAsset = {
@@ -40,8 +51,10 @@ type BackgroundAsset = {
 export type PickerAsset = FrameAsset | PinAsset | BackgroundAsset;
 
 type Props = {
+  tab: LibraryAssetTab;
+  onTabChange: (tab: LibraryAssetTab) => void;
   currentBackgroundKey: PhotoBackgroundKey;
-  /** Sidebar inner width — used to size list thumbnails */
+  /** Inner sidebar width — sizes preview square */
   panelWidth?: number;
   isDragging?: boolean;
   onAssetDragStart: (item: PickerAsset) => void;
@@ -70,12 +83,6 @@ const backgroundAssets: BackgroundAsset[] = photoBackgroundPickerKeys.map((key) 
   source: photoBackgroundSource(key)
 }));
 
-const TAB_ICONS: Record<AssetTab, keyof typeof Ionicons.glyphMap> = {
-  frames: 'easel-outline',
-  pins: 'shapes-outline',
-  backgrounds: 'color-palette-outline'
-};
-
 function backgroundAssetForKey(key: PhotoBackgroundKey): BackgroundAsset {
   return (
     backgroundAssets.find((asset) => asset.key === key) ?? {
@@ -88,17 +95,24 @@ function backgroundAssetForKey(key: PhotoBackgroundKey): BackgroundAsset {
 }
 
 export function EditorAssetPicker({
+  tab,
+  onTabChange: _onTabChange,
   currentBackgroundKey,
-  panelWidth = 148,
+  panelWidth = 72,
   isDragging = false,
   onAssetDragStart,
   onAssetDragMove,
   onAssetDragEnd
 }: Props) {
-  const [tab, setTab] = useState<AssetTab>('frames');
   const [selected, setSelected] = useState<PickerAsset | null>(frameAssets[0] ?? null);
-  const thumbSize = Math.max(44, Math.min(panelWidth - 16, 64));
-  const previewSize = Math.max(52, Math.min(panelWidth - 24, 72));
+  const thumbSize = 26;
+  const previewSize = Math.max(32, panelWidth - 4);
+
+  useEffect(() => {
+    if (tab === 'frames') setSelected(frameAssets[0] ?? null);
+    else if (tab === 'pins') setSelected(pinAssets[0] ?? null);
+    else setSelected(backgroundAssetForKey(currentBackgroundKey));
+  }, [tab]);
 
   useEffect(() => {
     if (tab === 'backgrounds') {
@@ -117,23 +131,6 @@ export function EditorAssetPicker({
 
   return (
     <View style={styles.root}>
-      <View style={styles.tabs}>
-        {(['frames', 'pins', 'backgrounds'] as AssetTab[]).map((tabKey) => (
-          <TabIconButton
-            key={tabKey}
-            icon={TAB_ICONS[tabKey]}
-            active={tab === tabKey}
-            accessibilityLabel={tabKey}
-            onPress={() => {
-              setTab(tabKey);
-              if (tabKey === 'frames') setSelected(frameAssets[0] ?? null);
-              else if (tabKey === 'pins') setSelected(pinAssets[0] ?? null);
-              else setSelected(backgroundAssetForKey(currentBackgroundKey));
-            }}
-          />
-        ))}
-      </View>
-
       <View style={styles.previewPane}>
         {selected?.kind === 'background' && !selected.source ? (
           <View
@@ -151,7 +148,7 @@ export function EditorAssetPicker({
           />
         ) : (
           <View style={[styles.previewPlaceholder, { width: previewSize, height: previewSize }]}>
-            <Ionicons name="image-outline" size={28} color={figmaColors.grayMuted} />
+            <Ionicons name="image-outline" size={22} color={figmaColors.grayMuted} />
           </View>
         )}
       </View>
@@ -187,7 +184,26 @@ export function EditorAssetPicker({
   );
 }
 
-const DRAG_THRESHOLD = 10;
+const DRAG_THRESHOLD = 8;
+
+function screenPoint(
+  gesture: PanResponderGestureState,
+  event?: GestureResponderEvent
+): { pageX: number; pageY: number } {
+  if (Number.isFinite(gesture.moveX) && Number.isFinite(gesture.moveY)) {
+    return { pageX: gesture.moveX, pageY: gesture.moveY };
+  }
+  if (Number.isFinite(gesture.x0) && Number.isFinite(gesture.y0)) {
+    return { pageX: gesture.x0 + gesture.dx, pageY: gesture.y0 + gesture.dy };
+  }
+  if (event) {
+    const { pageX, pageY } = event.nativeEvent;
+    if (Number.isFinite(pageX) && Number.isFinite(pageY)) {
+      return { pageX, pageY };
+    }
+  }
+  return { pageX: 0, pageY: 0 };
+}
 
 function DraggableAssetThumb({
   item,
@@ -209,7 +225,6 @@ function DraggableAssetThumb({
   onDragEnd: (position: { pageX: number; pageY: number }) => void;
 }) {
   const dragged = useRef(false);
-  const startPage = useRef({ pageX: 0, pageY: 0 });
   const handlersRef = useRef({ item, onSelect, onDragStart, onDragMove, onDragEnd });
   handlersRef.current = { item, onSelect, onDragStart, onDragMove, onDragEnd };
 
@@ -217,46 +232,38 @@ function DraggableAssetThumb({
     () =>
       PanResponder.create({
         onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: (_, gesture) =>
-          Math.abs(gesture.dx) > DRAG_THRESHOLD || Math.abs(gesture.dy) > DRAG_THRESHOLD,
+        onStartShouldSetPanResponderCapture: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponderCapture: () => dragged.current,
         onPanResponderTerminationRequest: () => !dragged.current,
-        onPanResponderGrant: (event) => {
+        onPanResponderGrant: () => {
           dragged.current = false;
-          startPage.current = {
-            pageX: event.nativeEvent.pageX,
-            pageY: event.nativeEvent.pageY
-          };
         },
-        onPanResponderMove: (_, gesture) => {
+        onPanResponderMove: (event, gesture) => {
           const { item: currentItem, onDragMove: move, onDragStart: start } = handlersRef.current;
-          const pageX = startPage.current.pageX + gesture.dx;
-          const pageY = startPage.current.pageY + gesture.dy;
+          const point = screenPoint(gesture, event);
           if (
             !dragged.current &&
             (Math.abs(gesture.dx) > DRAG_THRESHOLD || Math.abs(gesture.dy) > DRAG_THRESHOLD)
           ) {
             dragged.current = true;
-            move({ pageX, pageY });
             start(currentItem);
           }
-          if (dragged.current) move({ pageX, pageY });
+          if (dragged.current) move(point);
         },
-        onPanResponderRelease: (_, gesture) => {
+        onPanResponderRelease: (event, gesture) => {
           const { item: currentItem, onSelect: select, onDragEnd: end } = handlersRef.current;
-          const pageX = startPage.current.pageX + gesture.dx;
-          const pageY = startPage.current.pageY + gesture.dy;
-          if (dragged.current) end({ pageX, pageY });
+          const point = screenPoint(gesture, event);
+          if (dragged.current) end(point);
           else select(currentItem);
           dragged.current = false;
         },
-        onPanResponderTerminate: (_, gesture) => {
+        onPanResponderTerminate: (event, gesture) => {
           const { onDragEnd: end } = handlersRef.current;
-          if (dragged.current) {
-            end({
-              pageX: startPage.current.pageX + gesture.dx,
-              pageY: startPage.current.pageY + gesture.dy
-            });
-          }
+          if (dragged.current) end(screenPoint(gesture, event));
+          dragged.current = false;
+        },
+        onPanResponderReject: () => {
           dragged.current = false;
         }
       }),
@@ -267,7 +274,7 @@ function DraggableAssetThumb({
     <View
       style={[
         styles.listThumbWrap,
-        { width: thumbSize + 8 },
+        { width: thumbSize + 4 },
         active && styles.listThumbWrapActive,
         isAppliedBackground && styles.listThumbWrapApplied
       ]}
@@ -286,78 +293,36 @@ function DraggableAssetThumb({
         <View style={[styles.listThumbClip, { width: thumbSize, height: thumbSize }]}>
           <Image
             source={item.source}
-            style={styles.listThumbImage}
+            style={{ width: thumbSize, height: thumbSize }}
             resizeMode={item.kind === 'background' ? 'cover' : 'contain'}
           />
         </View>
       ) : (
         <View style={[styles.listThumbPlaceholder, { width: thumbSize, height: thumbSize }]}>
-          <Ionicons name="image-outline" size={20} color={figmaColors.grayMuted} />
+          <Ionicons name="image-outline" size={14} color={figmaColors.grayMuted} />
         </View>
       )}
     </View>
   );
 }
 
-function TabIconButton({
-  icon,
-  active,
-  onPress,
-  accessibilityLabel
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  active: boolean;
-  onPress: () => void;
-  accessibilityLabel: string;
-}) {
-  return (
-    <Pressable
-      style={[styles.tab, active && styles.tabActive]}
-      onPress={onPress}
-      accessibilityLabel={accessibilityLabel}
-    >
-      <Ionicons
-        name={icon}
-        size={18}
-        color={active ? figmaColors.tabTextActive : figmaColors.tabText}
-      />
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    gap: 8
-  },
-  tabs: {
-    flexDirection: 'row',
-    gap: 6
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: figmaColors.borderLight,
-    backgroundColor: figmaColors.creamLight,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  tabActive: {
-    backgroundColor: figmaColors.sepia,
-    borderColor: figmaColors.umber
+    minHeight: 0,
+    gap: 4
   },
   previewPane: {
+    flexShrink: 0,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent',
-    padding: 8,
-    minHeight: 88
+    paddingHorizontal: 2,
+    paddingVertical: 4
   },
   previewImage: {
-    backgroundColor: figmaColors.white,
-    borderRadius: 8,
+    backgroundColor: figmaColors.surfaceMuted,
+    borderRadius: 6,
     overflow: 'hidden'
   },
   parchmentPreview: {
@@ -366,26 +331,27 @@ const styles = StyleSheet.create({
     borderColor: figmaColors.borderLight
   },
   previewPlaceholder: {
-    borderRadius: 8,
-    backgroundColor: figmaColors.white,
+    borderRadius: 6,
+    backgroundColor: figmaColors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center'
   },
   listScroll: {
     flex: 1,
+    minHeight: 0,
     width: '100%'
   },
   listContent: {
     alignItems: 'center',
-    gap: 8,
-    paddingBottom: 12
+    gap: 4,
+    paddingBottom: 6
   },
   listThumbWrap: {
-    borderRadius: 8,
+    borderRadius: 4,
     borderWidth: 1,
     borderColor: 'transparent',
     backgroundColor: 'transparent',
-    padding: 4,
+    padding: 2,
     alignItems: 'center',
     overflow: 'hidden'
   },
@@ -397,17 +363,13 @@ const styles = StyleSheet.create({
     borderColor: figmaColors.success
   },
   listThumbClip: {
-    borderRadius: 6,
+    borderRadius: 3,
     overflow: 'hidden',
-    backgroundColor: figmaColors.white
-  },
-  listThumbImage: {
-    width: '100%',
-    height: '100%'
+    backgroundColor: figmaColors.surfaceMuted
   },
   listThumbPlaceholder: {
-    borderRadius: 6,
-    backgroundColor: figmaColors.white,
+    borderRadius: 3,
+    backgroundColor: figmaColors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center'
   }

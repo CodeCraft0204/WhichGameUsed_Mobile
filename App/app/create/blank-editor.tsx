@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   Image,
   LayoutChangeEvent,
+  Modal,
   Pressable,
   StyleSheet,
   Text,
@@ -24,7 +25,13 @@ import {
   createBlankTextLayer,
   type BlankLayer
 } from '@/components/create/BlankPhotoEditorCanvas';
-import { EditorAssetPicker, type PickerAsset } from '@/components/create/EditorAssetPicker';
+import {
+  EditorAssetPicker,
+  LIBRARY_TAB_LABELS,
+  LIBRARY_TAB_ORDER,
+  type LibraryAssetTab,
+  type PickerAsset
+} from '@/components/create/EditorAssetPicker';
 import { appFonts } from '@/constants/appFonts';
 import { editorCopy } from '@/constants/createContent';
 import { BLANK_TEMPLATE_ID } from '@/constants/photoEditorTemplates';
@@ -81,7 +88,10 @@ export default function CreateBlankEditorScreen() {
   const styles = useMemo(() => createStyles(s, t), [s, t]);
   const canvasRef = useRef<ViewType>(null);
   const canvasStageRef = useRef<ViewType>(null);
+  const editorBodyRef = useRef<ViewType>(null);
   const draggingAssetRef = useRef<PickerAsset | null>(null);
+  const canvasBoundsRef = useRef({ x: 0, y: 0, width: 0, height: 0 });
+  const editorBodyOffsetRef = useRef({ x: 0, y: 0 });
 
   const {
     layers,
@@ -101,10 +111,12 @@ export default function CreateBlankEditorScreen() {
   const [done, setDone] = useState(false);
   const [canvasArea, setCanvasArea] = useState({ width: 0, height: 0 });
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [libraryTab, setLibraryTab] = useState<LibraryAssetTab>('frames');
+  const [libraryMenuOpen, setLibraryMenuOpen] = useState(false);
   const [draggingAsset, setDraggingAsset] = useState<PickerAsset | null>(null);
   const [dragPosition, setDragPosition] = useState({ pageX: 0, pageY: 0 });
   const { width: screenWidth } = useWindowDimensions();
-  const sidebarWidth = Math.min(Math.max(screenWidth * 0.32, 132), 168);
+  const sidebarWidth = Math.min(Math.max(screenWidth * 0.2, 72), 84);
 
   useEffect(() => {
     if (selectedId && !layers.some((layer) => layer.id === selectedId)) {
@@ -121,6 +133,13 @@ export default function CreateBlankEditorScreen() {
     setCanvasArea((prev) =>
       prev.width === width && prev.height === height ? prev : { width, height }
     );
+    requestAnimationFrame(() => {
+      canvasStageRef.current?.measureInWindow((x, y, measuredWidth, measuredHeight) => {
+        if (measuredWidth > 0 && measuredHeight > 0) {
+          canvasBoundsRef.current = { x, y, width: measuredWidth, height: measuredHeight };
+        }
+      });
+    });
   }, []);
 
   const handleLayersChange = useCallback(
@@ -151,9 +170,15 @@ export default function CreateBlankEditorScreen() {
     addLayer(createBlankPhotoLayer(result.assets[0].uri));
   };
 
+  const syncEditorBodyOffset = useCallback(() => {
+    editorBodyRef.current?.measureInWindow((x, y) => {
+      editorBodyOffsetRef.current = { x, y };
+    });
+  }, []);
+
   const applyLibraryAssetAt = useCallback(
     (asset: PickerAsset, drop: { pageX: number; pageY: number }) => {
-      canvasStageRef.current?.measureInWindow((canvasX, canvasY, canvasW, canvasH) => {
+      const applyWithBounds = (canvasX: number, canvasY: number, canvasW: number, canvasH: number) => {
         if (
           drop.pageX < canvasX ||
           drop.pageX > canvasX + canvasW ||
@@ -184,26 +209,58 @@ export default function CreateBlankEditorScreen() {
             canvasY
           )
         );
+      };
+
+      const cached = canvasBoundsRef.current;
+      if (cached.width > 0 && cached.height > 0) {
+        applyWithBounds(cached.x, cached.y, cached.width, cached.height);
+        return;
+      }
+
+      canvasStageRef.current?.measureInWindow((canvasX, canvasY, canvasW, canvasH) => {
+        if (canvasW > 0 && canvasH > 0) {
+          canvasBoundsRef.current = { x: canvasX, y: canvasY, width: canvasW, height: canvasH };
+        }
+        applyWithBounds(canvasX, canvasY, canvasW, canvasH);
       });
     },
     [addLayer, setBackgroundKey]
   );
 
-  const handleAssetDragStart = useCallback((asset: PickerAsset) => {
-    draggingAssetRef.current = asset;
-    setDraggingAsset(asset);
-  }, []);
+  const handleAssetDragStart = useCallback(
+    (asset: PickerAsset) => {
+      syncEditorBodyOffset();
+      canvasStageRef.current?.measureInWindow((x, y, width, height) => {
+        if (width > 0 && height > 0) {
+          canvasBoundsRef.current = { x, y, width, height };
+        }
+      });
+      draggingAssetRef.current = asset;
+      setDraggingAsset(asset);
+    },
+    [syncEditorBodyOffset]
+  );
 
-  const handleAssetDragMove = useCallback((position: { pageX: number; pageY: number }) => {
-    setDragPosition(position);
-  }, []);
+  const handleAssetDragMove = useCallback(
+    (position: { pageX: number; pageY: number }) => {
+      setDragPosition(position);
+    },
+    []
+  );
 
   const handleAssetDragEnd = useCallback(
     (position: { pageX: number; pageY: number }) => {
       const asset = draggingAssetRef.current;
-      if (asset) applyLibraryAssetAt(asset, position);
       draggingAssetRef.current = null;
       setDraggingAsset(null);
+      if (!asset) return;
+
+      canvasStageRef.current?.measureInWindow((x, y, width, height) => {
+        if (width > 0 && height > 0) {
+          canvasBoundsRef.current = { x, y, width, height };
+        }
+        applyLibraryAssetAt(asset, position);
+      });
     },
     [applyLibraryAssetAt]
   );
@@ -216,6 +273,21 @@ export default function CreateBlankEditorScreen() {
     if (!selectedId) return;
     commitLayers(layers.filter((layer) => layer.id !== selectedId));
     setSelectedId(null);
+  };
+
+  const handleLibraryPress = () => {
+    if (sidebarOpen) {
+      setSidebarOpen(false);
+      setLibraryMenuOpen(false);
+      return;
+    }
+    setLibraryMenuOpen(true);
+  };
+
+  const handleLibraryTabSelect = (tab: LibraryAssetTab) => {
+    setLibraryTab(tab);
+    setLibraryMenuOpen(false);
+    setSidebarOpen(true);
   };
 
   const onSubmit = async () => {
@@ -282,7 +354,7 @@ export default function CreateBlankEditorScreen() {
         </Pressable>
       </View>
 
-      <View style={styles.editorBody}>
+      <View ref={editorBodyRef} style={styles.editorBody} onLayout={syncEditorBodyOffset}>
         <View ref={canvasStageRef} style={styles.canvasStage} onLayout={handleCanvasAreaLayout}>
           {canvasArea.width > 0 && canvasArea.height > 0 ? (
             <BlankPhotoEditorCanvas
@@ -306,8 +378,10 @@ export default function CreateBlankEditorScreen() {
           >
             <View style={styles.sidebarPanel} pointerEvents="auto">
               <EditorAssetPicker
+                tab={libraryTab}
+                onTabChange={setLibraryTab}
                 currentBackgroundKey={backgroundKey}
-                panelWidth={sidebarWidth - s(16)}
+                panelWidth={sidebarWidth - s(8)}
                 isDragging={draggingAsset !== null}
                 onAssetDragStart={handleAssetDragStart}
                 onAssetDragMove={handleAssetDragMove}
@@ -323,8 +397,8 @@ export default function CreateBlankEditorScreen() {
               style={[
                 styles.dragGhost,
                 {
-                  left: dragPosition.pageX - 28,
-                  top: dragPosition.pageY - 28
+                  left: dragPosition.pageX - editorBodyOffsetRef.current.x - 16,
+                  top: dragPosition.pageY - editorBodyOffsetRef.current.y - 16
                 }
               ]}
             >
@@ -352,7 +426,7 @@ export default function CreateBlankEditorScreen() {
           <ToolbarButton
             icon="albums-outline"
             label="Library"
-            onPress={() => setSidebarOpen((open) => !open)}
+            onPress={handleLibraryPress}
             active={sidebarOpen}
           />
           <ToolbarButton icon="text-outline" label="Text" onPress={addText} />
@@ -367,9 +441,105 @@ export default function CreateBlankEditorScreen() {
         {error ? <AuthErrorBanner message={error} /> : null}
         {busy ? <ActivityIndicator color={figmaColors.charcoal} style={styles.loader} /> : null}
       </View>
+
+      <LibraryAssetTypeMenu
+        visible={libraryMenuOpen}
+        selectedTab={libraryTab}
+        bottomInset={Math.max(insets.bottom, 8)}
+        onSelect={handleLibraryTabSelect}
+        onClose={() => setLibraryMenuOpen(false)}
+      />
     </View>
   );
 }
+
+function LibraryAssetTypeMenu({
+  visible,
+  selectedTab,
+  bottomInset,
+  onSelect,
+  onClose
+}: {
+  visible: boolean;
+  selectedTab: LibraryAssetTab;
+  bottomInset: number;
+  onSelect: (tab: LibraryAssetTab) => void;
+  onClose: () => void;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={libraryMenuStyles.backdrop} onPress={onClose} />
+      <View
+        style={[libraryMenuStyles.anchor, { paddingBottom: bottomInset + 72 }]}
+        pointerEvents="box-none"
+      >
+        <View style={libraryMenuStyles.menu}>
+          {LIBRARY_TAB_ORDER.map((tab) => {
+            const active = tab === selectedTab;
+            return (
+              <Pressable
+                key={tab}
+                style={[libraryMenuStyles.option, active && libraryMenuStyles.optionActive]}
+                onPress={() => onSelect(tab)}
+              >
+                <Text style={[libraryMenuStyles.optionText, active && libraryMenuStyles.optionTextActive]}>
+                  {LIBRARY_TAB_LABELS[tab]}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const libraryMenuStyles = StyleSheet.create({
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(42, 36, 28, 0.28)'
+  },
+  anchor: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingHorizontal: 24
+  },
+  menu: {
+    flexDirection: 'row',
+    gap: 8,
+    padding: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: figmaColors.borderLight,
+    backgroundColor: figmaColors.cream,
+    shadowColor: figmaColors.black,
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 6
+  },
+  option: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: figmaColors.borderLight,
+    backgroundColor: figmaColors.creamLight
+  },
+  optionActive: {
+    backgroundColor: figmaColors.sepia,
+    borderColor: figmaColors.umber
+  },
+  optionText: {
+    fontFamily: appFonts.body,
+    fontSize: 13,
+    color: figmaColors.charcoal
+  },
+  optionTextActive: {
+    color: figmaColors.tabTextActive
+  }
+});
 
 function IconButton({
   icon,
@@ -552,9 +722,9 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       backgroundColor: figmaColors.cream,
       borderLeftWidth: 1,
       borderLeftColor: figmaColors.borderLight,
-      paddingHorizontal: s(8),
-      paddingTop: s(8),
-      paddingBottom: s(6),
+      paddingHorizontal: s(4),
+      paddingTop: s(4),
+      paddingBottom: s(4),
       overflow: 'hidden'
     },
     dragGhostLayer: {
@@ -564,13 +734,13 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     dragGhost: {
       position: 'absolute',
-      width: 56,
-      height: 56,
-      borderRadius: 8,
+      width: 32,
+      height: 32,
+      borderRadius: 5,
       borderWidth: 1,
       borderColor: figmaColors.accent,
       backgroundColor: figmaColors.white,
-      padding: 4,
+      padding: 2,
       shadowColor: figmaColors.black,
       shadowOpacity: 0.18,
       shadowRadius: 6,
