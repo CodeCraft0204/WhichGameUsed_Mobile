@@ -5,9 +5,9 @@ import {
   ActivityIndicator,
   LayoutChangeEvent,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
   type View as ViewType
 } from 'react-native';
@@ -74,7 +74,9 @@ export default function CreateBlankEditorScreen() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [canvasArea, setCanvasArea] = useState({ width: 0, height: 0 });
-  const [pickerOpen, setPickerOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { width: screenWidth } = useWindowDimensions();
+  const sidebarWidth = Math.min(Math.max(screenWidth * 0.32, 132), 168);
 
   useEffect(() => {
     if (selectedId && !layers.some((layer) => layer.id === selectedId)) {
@@ -212,6 +214,23 @@ export default function CreateBlankEditorScreen() {
             style={styles.canvasFill}
           />
         ) : null}
+
+        {sidebarOpen ? (
+          <View
+            style={[styles.sidebarOverlay, { width: sidebarWidth }]}
+            pointerEvents="box-none"
+          >
+            <View style={styles.sidebarPanel} pointerEvents="auto">
+              <EditorAssetPicker
+                onAddFrame={addFrame}
+                onAddPin={addPin}
+                currentBackgroundKey={backgroundKey}
+                onApplyBackground={setBackgroundKey}
+                panelWidth={sidebarWidth - s(16)}
+              />
+            </View>
+          </View>
+        ) : null}
       </View>
 
       <View style={[styles.bottomPanel, { paddingBottom: Math.max(insets.bottom, 8) }]}>
@@ -220,8 +239,8 @@ export default function CreateBlankEditorScreen() {
           <ToolbarButton
             icon="albums-outline"
             label="Library"
-            onPress={() => setPickerOpen((open) => !open)}
-            active={pickerOpen}
+            onPress={() => setSidebarOpen((open) => !open)}
+            active={sidebarOpen}
           />
           <ToolbarButton icon="text-outline" label="Text" onPress={addText} />
           <ToolbarButton
@@ -231,22 +250,6 @@ export default function CreateBlankEditorScreen() {
             disabled={!selectedId}
           />
         </View>
-
-        {pickerOpen ? (
-          <ScrollView
-            style={styles.pickerScroll}
-            contentContainerStyle={styles.pickerScrollContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            <EditorAssetPicker
-              onAddFrame={addFrame}
-              onAddPin={addPin}
-              currentBackgroundKey={backgroundKey}
-              onApplyBackground={setBackgroundKey}
-            />
-          </ScrollView>
-        ) : null}
 
         {error ? <AuthErrorBanner message={error} /> : null}
         {busy ? <ActivityIndicator color={figmaColors.charcoal} style={styles.loader} /> : null}
@@ -409,7 +412,29 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     canvasFill: {
       position: 'absolute',
       top: 0,
-      left: 0
+      left: 0,
+      right: 0,
+      bottom: 0
+    },
+    sidebarOverlay: {
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      bottom: 0,
+      alignItems: 'flex-end',
+      zIndex: 20,
+      elevation: 20
+    },
+    sidebarPanel: {
+      flex: 1,
+      width: '100%',
+      backgroundColor: 'rgba(247, 241, 228, 0.88)',
+      borderLeftWidth: 1,
+      borderLeftColor: 'rgba(139, 115, 85, 0.32)',
+      paddingHorizontal: s(8),
+      paddingTop: s(8),
+      paddingBottom: s(6),
+      overflow: 'hidden'
     },
     bottomPanel: {
       borderTopWidth: 1,
@@ -417,18 +442,11 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       backgroundColor: figmaColors.background,
       paddingHorizontal: s(12),
       paddingTop: s(8),
-      gap: s(8),
-      maxHeight: '42%'
+      gap: s(8)
     },
     quickToolbar: {
       flexDirection: 'row',
       gap: s(8)
-    },
-    pickerScroll: {
-      maxHeight: s(220)
-    },
-    pickerScrollContent: {
-      paddingBottom: s(4)
     },
     loader: { marginBottom: s(4) },
     doneWrap: {

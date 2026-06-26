@@ -5,11 +5,9 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
   type ImageSourcePropType
 } from 'react-native';
-import { appFonts } from '@/constants/appFonts';
 import {
   photoFrameKeys,
   photoFrameLabels,
@@ -45,6 +43,8 @@ type Props = {
   onAddPin: (shape: PhotoShapeKey) => void;
   currentBackgroundKey: PhotoBackgroundKey;
   onApplyBackground: (background: PhotoBackgroundKey) => void;
+  /** Sidebar inner width — used to size list thumbnails */
+  panelWidth?: number;
 };
 
 const frameAssets: FrameAsset[] = photoFrameKeys.map((key) => ({
@@ -68,6 +68,12 @@ const backgroundAssets: BackgroundAsset[] = photoBackgroundPickerKeys.map((key) 
   source: photoBackgroundSource(key)
 }));
 
+const TAB_ICONS: Record<AssetTab, keyof typeof Ionicons.glyphMap> = {
+  frames: 'easel-outline',
+  pins: 'shapes-outline',
+  backgrounds: 'color-palette-outline'
+};
+
 function backgroundAssetForKey(key: PhotoBackgroundKey): BackgroundAsset {
   return (
     backgroundAssets.find((asset) => asset.key === key) ?? {
@@ -83,10 +89,13 @@ export function EditorAssetPicker({
   onAddFrame,
   onAddPin,
   currentBackgroundKey,
-  onApplyBackground
+  onApplyBackground,
+  panelWidth = 148
 }: Props) {
   const [tab, setTab] = useState<AssetTab>('frames');
   const [selected, setSelected] = useState<PickerAsset | null>(frameAssets[0] ?? null);
+  const thumbSize = Math.max(44, Math.min(panelWidth - 16, 64));
+  const previewSize = Math.max(52, Math.min(panelWidth - 24, 72));
 
   useEffect(() => {
     if (tab === 'backgrounds') {
@@ -99,106 +108,59 @@ export function EditorAssetPicker({
 
   const selectItem = (item: PickerAsset) => {
     setSelected(item);
-    if (item.kind === 'background') {
-      onApplyBackground(item.key);
-    }
+    if (item.kind === 'background') onApplyBackground(item.key);
+    else if (item.kind === 'frame') onAddFrame(item.key);
+    else onAddPin(item.key);
   };
 
-  const applySelected = () => {
-    if (!selected) return;
-    if (selected.kind === 'frame') onAddFrame(selected.key);
-    else if (selected.kind === 'pin') onAddPin(selected.key);
-    else onApplyBackground(selected.key);
-  };
-
-  const previewLabel = selected?.label ?? 'Select an item to preview';
   const isBackgroundTab = tab === 'backgrounds';
-  const isCurrentBackground =
-    selected?.kind === 'background' && selected.key === currentBackgroundKey;
-
-  const previewHint = isBackgroundTab
-    ? 'Sets the canvas backdrop behind your layers.'
-    : tab === 'frames'
-      ? 'Adds an empty frame you can fill and move on the canvas.'
-      : 'Adds a decorative pin you can drag and resize.';
-
-  const actionLabel = isBackgroundTab
-    ? isCurrentBackground
-      ? 'Applied'
-      : 'Apply background'
-    : 'Add to canvas';
 
   return (
     <View style={styles.root}>
       <View style={styles.tabs}>
-        <TabButton
-          label="Frames"
-          active={tab === 'frames'}
-          onPress={() => {
-            setTab('frames');
-            setSelected(frameAssets[0] ?? null);
-          }}
-        />
-        <TabButton
-          label="Pins"
-          active={tab === 'pins'}
-          onPress={() => {
-            setTab('pins');
-            setSelected(pinAssets[0] ?? null);
-          }}
-        />
-        <TabButton
-          label="Backgrounds"
-          active={tab === 'backgrounds'}
-          onPress={() => {
-            setTab('backgrounds');
-            setSelected(backgroundAssetForKey(currentBackgroundKey));
-          }}
-        />
+        {(['frames', 'pins', 'backgrounds'] as AssetTab[]).map((tabKey) => (
+          <TabIconButton
+            key={tabKey}
+            icon={TAB_ICONS[tabKey]}
+            active={tab === tabKey}
+            accessibilityLabel={tabKey}
+            onPress={() => {
+              setTab(tabKey);
+              if (tabKey === 'frames') setSelected(frameAssets[0] ?? null);
+              else if (tabKey === 'pins') setSelected(pinAssets[0] ?? null);
+              else setSelected(backgroundAssetForKey(currentBackgroundKey));
+            }}
+          />
+        ))}
       </View>
 
       <View style={styles.previewPane}>
         {selected?.kind === 'background' && !selected.source ? (
-          <View style={[styles.previewImage, styles.parchmentPreview]} />
+          <View
+            style={[
+              styles.previewImage,
+              styles.parchmentPreview,
+              { width: previewSize, height: previewSize }
+            ]}
+          />
         ) : selected?.source ? (
           <Image
             source={selected.source}
-            style={styles.previewImage}
+            style={[styles.previewImage, { width: previewSize, height: previewSize }]}
             resizeMode={isBackgroundTab ? 'cover' : 'contain'}
           />
         ) : (
-          <View style={styles.previewPlaceholder}>
-            <Ionicons name="eye-outline" size={28} color={figmaColors.grayMuted} />
+          <View style={[styles.previewPlaceholder, { width: previewSize, height: previewSize }]}>
+            <Ionicons name="image-outline" size={28} color={figmaColors.grayMuted} />
           </View>
         )}
-        <View style={styles.previewCopy}>
-          <Text style={styles.previewTitle} numberOfLines={2}>
-            {previewLabel}
-          </Text>
-          <Text style={styles.previewHint}>{previewHint}</Text>
-          <Pressable
-            style={[
-              styles.addButton,
-              !selected && styles.addButtonDisabled,
-              isCurrentBackground && isBackgroundTab && styles.addButtonApplied
-            ]}
-            onPress={applySelected}
-            disabled={!selected}
-          >
-            <Ionicons
-              name={isBackgroundTab ? 'color-palette-outline' : 'add-circle-outline'}
-              size={16}
-              color={figmaColors.buttonPrimaryText}
-            />
-            <Text style={styles.addButtonText}>{actionLabel}</Text>
-          </Pressable>
-        </View>
       </View>
 
       <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.thumbRow}
+        style={styles.listScroll}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator
+        keyboardShouldPersistTaps="handled"
       >
         {items.map((item) => {
           const active = selected?.kind === item.kind && selected.key === item.key;
@@ -209,24 +171,37 @@ export function EditorAssetPicker({
             <Pressable
               key={`${item.kind}-${item.key}`}
               style={[
-                styles.thumbCard,
-                active && styles.thumbCardActive,
-                isAppliedBackground && styles.thumbCardApplied
+                styles.listThumbWrap,
+                { width: thumbSize + 8 },
+                active && styles.listThumbWrapActive,
+                isAppliedBackground && styles.listThumbWrapApplied
               ]}
               onPress={() => selectItem(item)}
+              accessibilityLabel={item.label}
             >
               {item.kind === 'background' && !item.source ? (
-                <View style={[styles.thumbImage, styles.parchmentPreview]} />
-              ) : item.source ? (
-                <Image
-                  source={item.source}
-                  style={styles.thumbImage}
-                  resizeMode={item.kind === 'background' ? 'cover' : 'contain'}
+                <View
+                  style={[
+                    styles.listThumbClip,
+                    styles.parchmentPreview,
+                    { width: thumbSize, height: thumbSize }
+                  ]}
                 />
-              ) : null}
-              <Text style={styles.thumbLabel} numberOfLines={2}>
-                {item.label}
-              </Text>
+              ) : item.source ? (
+                <View style={[styles.listThumbClip, { width: thumbSize, height: thumbSize }]}>
+                  <Image
+                    source={item.source}
+                    style={styles.listThumbImage}
+                    resizeMode={item.kind === 'background' ? 'cover' : 'contain'}
+                  />
+                </View>
+              ) : (
+                <View
+                  style={[styles.listThumbPlaceholder, { width: thumbSize, height: thumbSize }]}
+                >
+                  <Ionicons name="image-outline" size={20} color={figmaColors.grayMuted} />
+                </View>
+              )}
             </Pressable>
           );
         })}
@@ -235,68 +210,66 @@ export function EditorAssetPicker({
   );
 }
 
-function TabButton({
-  label,
+function TabIconButton({
+  icon,
   active,
-  onPress
+  onPress,
+  accessibilityLabel
 }: {
-  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
   active: boolean;
   onPress: () => void;
+  accessibilityLabel: string;
 }) {
   return (
-    <Pressable style={[styles.tab, active && styles.tabActive]} onPress={onPress}>
-      <Text style={[styles.tabText, active && styles.tabTextActive]} numberOfLines={1}>
-        {label}
-      </Text>
+    <Pressable
+      style={[styles.tab, active && styles.tabActive]}
+      onPress={onPress}
+      accessibilityLabel={accessibilityLabel}
+    >
+      <Ionicons
+        name={icon}
+        size={18}
+        color={active ? figmaColors.tabTextActive : figmaColors.tabText}
+      />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   root: {
-    gap: 10,
-    paddingTop: 8
+    flex: 1,
+    gap: 8
   },
   tabs: {
     flexDirection: 'row',
-    gap: 8
+    gap: 6
   },
   tab: {
     flex: 1,
     paddingVertical: 8,
-    paddingHorizontal: 4,
-    borderRadius: 10,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: figmaColors.borderLight,
-    backgroundColor: figmaColors.inputBg,
-    alignItems: 'center'
+    borderColor: 'rgba(139, 115, 85, 0.28)',
+    backgroundColor: 'rgba(253, 249, 242, 0.55)',
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   tabActive: {
-    backgroundColor: figmaColors.tabActiveBg,
-    borderColor: figmaColors.tabActiveBorder
-  },
-  tabText: {
-    fontFamily: appFonts.body,
-    fontSize: 13,
-    color: figmaColors.tabText
-  },
-  tabTextActive: {
-    color: figmaColors.tabTextActive
+    backgroundColor: 'rgba(74, 64, 53, 0.82)',
+    borderColor: 'rgba(61, 52, 41, 0.65)'
   },
   previewPane: {
-    flexDirection: 'row',
-    gap: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
-    borderColor: figmaColors.borderLight,
-    borderRadius: 12,
-    backgroundColor: figmaColors.inputBg,
-    padding: 10,
-    minHeight: 108
+    borderColor: 'rgba(139, 115, 85, 0.28)',
+    borderRadius: 10,
+    backgroundColor: 'rgba(253, 249, 242, 0.45)',
+    padding: 8,
+    minHeight: 88
   },
   previewImage: {
-    width: 88,
-    height: 88,
     backgroundColor: figmaColors.surfaceMuted,
     borderRadius: 8,
     overflow: 'hidden'
@@ -304,86 +277,52 @@ const styles = StyleSheet.create({
   parchmentPreview: {
     backgroundColor: figmaColors.parchment,
     borderWidth: 1,
-    borderColor: figmaColors.borderLight
+    borderColor: 'rgba(139, 115, 85, 0.28)'
   },
   previewPlaceholder: {
-    width: 88,
-    height: 88,
     borderRadius: 8,
-    backgroundColor: figmaColors.surfaceMuted,
+    backgroundColor: 'rgba(237, 228, 212, 0.65)',
     alignItems: 'center',
     justifyContent: 'center'
   },
-  previewCopy: {
+  listScroll: {
     flex: 1,
-    justifyContent: 'center',
-    gap: 4
+    width: '100%'
   },
-  previewTitle: {
-    fontFamily: appFonts.display,
-    fontSize: 16,
-    color: figmaColors.charcoal
-  },
-  previewHint: {
-    fontFamily: appFonts.body,
-    fontSize: 12,
-    lineHeight: 17,
-    color: figmaColors.gray
-  },
-  addButton: {
-    marginTop: 4,
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
+  listContent: {
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: figmaColors.buttonPrimaryBg
-  },
-  addButtonDisabled: {
-    opacity: 0.45
-  },
-  addButtonApplied: {
-    backgroundColor: figmaColors.success
-  },
-  addButtonText: {
-    fontFamily: appFonts.body,
-    fontSize: 12,
-    color: figmaColors.buttonPrimaryText
-  },
-  thumbRow: {
     gap: 8,
-    paddingBottom: 4
+    paddingBottom: 12
   },
-  thumbCard: {
-    width: 76,
+  listThumbWrap: {
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: figmaColors.borderLight,
-    borderRadius: 10,
-    backgroundColor: figmaColors.inputBg,
-    padding: 6,
+    borderColor: 'rgba(139, 115, 85, 0.28)',
+    backgroundColor: 'rgba(253, 249, 242, 0.45)',
+    padding: 4,
     alignItems: 'center',
-    gap: 4
-  },
-  thumbCardActive: {
-    borderColor: figmaColors.accent,
-    backgroundColor: figmaColors.surfaceElevated
-  },
-  thumbCardApplied: {
-    borderColor: figmaColors.success
-  },
-  thumbImage: {
-    width: 56,
-    height: 56,
-    borderRadius: 6,
     overflow: 'hidden'
   },
-  thumbLabel: {
-    fontFamily: appFonts.body,
-    fontSize: 10,
-    lineHeight: 13,
-    color: figmaColors.charcoal,
-    textAlign: 'center'
+  listThumbWrapActive: {
+    borderColor: figmaColors.accent,
+    backgroundColor: 'rgba(247, 241, 228, 0.72)'
+  },
+  listThumbWrapApplied: {
+    borderColor: figmaColors.success
+  },
+  listThumbClip: {
+    borderRadius: 6,
+    overflow: 'hidden',
+    backgroundColor: figmaColors.surfaceMuted
+  },
+  listThumbImage: {
+    width: '100%',
+    height: '100%'
+  },
+  listThumbPlaceholder: {
+    borderRadius: 6,
+    backgroundColor: 'rgba(237, 228, 212, 0.65)',
+    alignItems: 'center',
+    justifyContent: 'center'
   }
 });
