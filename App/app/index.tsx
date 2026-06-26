@@ -1,17 +1,12 @@
 ﻿import { Redirect } from 'expo-router';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { AppSplashScreen } from '@/components/AppSplashScreen';
 import { useAuth } from '@/context/AuthContext';
-import { figmaColors } from '@/constants/figmaColors';
 
 export default function Index() {
   const { session, loading } = useAuth();
 
   if (loading) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" color={figmaColors.charcoal} />
-      </View>
-    );
+    return <AppSplashScreen progress={0.9} message="Loading your research world…" />;
   }
 
   if (session) {
@@ -20,12 +15,3 @@ export default function Index() {
 
   return <Redirect href="/sign-in/sign-in" />;
 }
-
-const styles = StyleSheet.create({
-  loading: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: figmaColors.background
-  }
-});

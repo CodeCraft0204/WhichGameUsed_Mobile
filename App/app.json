@@ -11,8 +11,29 @@
     ],
     "plugins": [
       "expo-router",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/Splash.png",
+          "resizeMode": "cover",
+          "backgroundColor": "#F2EBDC",
+          "enableFullScreenImage_legacy": true,
+          "android": {
+            "resizeMode": "cover"
+          },
+          "ios": {
+            "resizeMode": "cover",
+            "enableFullScreenImage_legacy": true
+          }
+        }
+      ]
     ],
+    "splash": {
+      "image": "./assets/Splash.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#F2EBDC"
+    },
     "experiments": {
       "typedRoutes": true
     },

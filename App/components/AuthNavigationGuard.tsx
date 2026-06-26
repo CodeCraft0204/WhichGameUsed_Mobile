@@ -1,8 +1,7 @@
 import { useRouter, useSegments } from 'expo-router';
 import { useEffect, type ReactNode } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { AppSplashScreen } from '@/components/AppSplashScreen';
 import { useAuth } from '@/context/AuthContext';
-import { figmaColors } from '@/constants/figmaColors';
 import { canAccessRoute, isPublicAuthRoute, shouldRedirectSignedInUser } from '@/lib/auth-routes';
 
 type AuthNavigationGuardProps = {
@@ -34,21 +33,8 @@ export function AuthNavigationGuard({ children }: AuthNavigationGuardProps) {
   }, [challengeActive, loading, router, segments, signedIn]);
 
   if (loading || !allowed) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" color={figmaColors.charcoal} />
-      </View>
-    );
+    return <AppSplashScreen progress={1} message="Loading your research world…" />;
   }
 
   return <>{children}</>;
 }
-
-const styles = StyleSheet.create({
-  loading: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: figmaColors.background
-  }
-});
