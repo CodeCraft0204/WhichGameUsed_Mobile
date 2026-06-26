@@ -14,12 +14,12 @@ import {
 import { appFonts } from '@/constants/appFonts';
 import { bodyText } from '@/constants/appTypography';
 import {
-  getContextHeaderConfig,
   type ContextHeaderMessage,
   type ContextHeaderPageKey
 } from '@/constants/contextHeaderContent';
 import { figmaColors } from '@/constants/figmaColors';
 import { useContextHeaderScroll } from '@/context/ContextHeaderScrollContext';
+import { useContextHeaderMessages } from '@/hooks/useContextHeaderMessages';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import {
   isContextHeaderDismissed,
@@ -52,9 +52,9 @@ function ContextGuidanceStripComponent({
   const router = useRouter();
   const { s, t } = useFigmaLayout();
   const scrollCtx = useContextHeaderScroll();
-  const config = getContextHeaderConfig(pageKey);
+  const { messages } = useContextHeaderMessages(pageKey);
   const styles = useMemo(() => createStyles(s, t), [s, t]);
-  const messages = config.messages.filter((m) => m.text);
+  const tips = messages.filter((m) => m.text);
   const hasIntro = Boolean(fallbackDescription?.trim());
   const [dismissed, setDismissed] = useState(() => isContextHeaderDismissed(pageKey));
   const [phase, setPhase] = useState<Phase>(() =>
@@ -73,11 +73,11 @@ function ContextGuidanceStripComponent({
   messageIndexRef.current = messageIndex;
 
   const targetMode: ContentMode = useMemo(() => {
-    const showTips = !dismissed && !isScrolled && phase === 'tips' && messages.length > 0;
+    const showTips = !dismissed && !isScrolled && phase === 'tips' && tips.length > 0;
     if (showTips) return 'tips';
     if (hasIntro) return 'description';
-    return messages.length > 0 ? 'tips' : 'description';
-  }, [dismissed, hasIntro, isScrolled, messages.length, phase]);
+    return tips.length > 0 ? 'tips' : 'description';
+  }, [dismissed, hasIntro, isScrolled, tips.length, phase]);
 
   useEffect(() => {
     const isDismissed = isContextHeaderDismissed(pageKey);
@@ -156,14 +156,14 @@ function ContextGuidanceStripComponent({
   );
 
   const goNext = useCallback(() => {
-    if (messages.length <= 1 || contentMode !== 'tips') return;
-    fadeToMessage((messageIndex + 1) % messages.length);
-  }, [contentMode, fadeToMessage, messageIndex, messages.length]);
+    if (tips.length <= 1 || contentMode !== 'tips') return;
+    fadeToMessage((messageIndex + 1) % tips.length);
+  }, [contentMode, fadeToMessage, messageIndex, tips.length]);
 
   const goPrev = useCallback(() => {
-    if (messages.length <= 1 || contentMode !== 'tips') return;
-    fadeToMessage((messageIndex - 1 + messages.length) % messages.length);
-  }, [contentMode, fadeToMessage, messageIndex, messages.length]);
+    if (tips.length <= 1 || contentMode !== 'tips') return;
+    fadeToMessage((messageIndex - 1 + tips.length) % tips.length);
+  }, [contentMode, fadeToMessage, messageIndex, tips.length]);
 
   const panResponder = useMemo(
     () =>
@@ -192,17 +192,17 @@ function ContextGuidanceStripComponent({
   }, [dismissed, hasIntro, isScrolled, phase]);
 
   useEffect(() => {
-    if (contentMode !== 'tips' || messages.length <= 1 || dismissed || isScrolled) return;
+    if (contentMode !== 'tips' || tips.length <= 1 || dismissed || isScrolled) return;
 
     const id = setInterval(() => {
-      const next = (messageIndexRef.current + 1) % messages.length;
+      const next = (messageIndexRef.current + 1) % tips.length;
       fadeToMessage(next);
     }, MESSAGE_CYCLE_MS);
 
     return () => clearInterval(id);
-  }, [contentMode, dismissed, fadeToMessage, isScrolled, messages.length]);
+  }, [contentMode, dismissed, fadeToMessage, isScrolled, tips.length]);
 
-  const activeMessage: ContextHeaderMessage | undefined = messages[messageIndex] ?? messages[0];
+  const activeMessage: ContextHeaderMessage | undefined = tips[messageIndex] ?? tips[0];
   const displayText =
     contentMode === 'tips'
       ? activeMessage?.text ?? ''
@@ -235,7 +235,7 @@ function ContextGuidanceStripComponent({
 
   if (dismissed && !hasIntro) return null;
   if (!displayText && dismissed) return null;
-  if (!displayText && messages.length === 0) return null;
+  if (!displayText && tips.length === 0) return null;
 
   const messageNode = (
     <Animated.Text style={[style, styles.message, { opacity: contentOpacity }]}>
@@ -255,7 +255,7 @@ function ContextGuidanceStripComponent({
             {fallbackDescription}
           </Text>
         ) : null}
-        {messages.map((msg) => (
+        {tips.map((msg) => (
           <Text
             key={msg.text}
             style={[style, styles.message]}
