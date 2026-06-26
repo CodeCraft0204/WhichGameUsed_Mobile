@@ -14,6 +14,8 @@ import {
   photoFrameKeys,
   photoFrameLabels,
   photoFrames,
+  photoAssetPreviewBackground,
+  photoAssetPreviewBorder,
   photoShapeKeys,
   photoShapeLabels,
   photoShapes,
@@ -128,6 +130,7 @@ export function EditorAssetPicker({
   };
 
   const isBackgroundTab = tab === 'backgrounds';
+  const previewUsesAssetBg = selected != null && selected.kind !== 'background';
 
   return (
     <View style={styles.root}>
@@ -143,11 +146,21 @@ export function EditorAssetPicker({
         ) : selected?.source ? (
           <Image
             source={selected.source}
-            style={[styles.previewImage, { width: previewSize, height: previewSize }]}
+            style={[
+              styles.previewImage,
+              previewUsesAssetBg && styles.previewImageAsset,
+              { width: previewSize, height: previewSize }
+            ]}
             resizeMode={isBackgroundTab ? 'cover' : 'contain'}
           />
         ) : (
-          <View style={[styles.previewPlaceholder, { width: previewSize, height: previewSize }]}>
+          <View
+            style={[
+              styles.previewPlaceholder,
+              previewUsesAssetBg && styles.previewImageAsset,
+              { width: previewSize, height: previewSize }
+            ]}
+          >
             <Ionicons name="image-outline" size={22} color={figmaColors.grayMuted} />
           </View>
         )}
@@ -165,6 +178,8 @@ export function EditorAssetPicker({
           const isAppliedBackground =
             item.kind === 'background' && item.key === currentBackgroundKey;
 
+          const isFrameOrPin = item.kind === 'frame' || item.kind === 'pin';
+
           return (
             <DraggableAssetThumb
               key={`${item.kind}-${item.key}`}
@@ -172,6 +187,7 @@ export function EditorAssetPicker({
               thumbSize={thumbSize}
               active={active}
               isAppliedBackground={isAppliedBackground}
+              isFrameOrPin={isFrameOrPin}
               onSelect={selectItem}
               onDragStart={onAssetDragStart}
               onDragMove={onAssetDragMove}
@@ -210,6 +226,7 @@ function DraggableAssetThumb({
   thumbSize,
   active,
   isAppliedBackground,
+  isFrameOrPin,
   onSelect,
   onDragStart,
   onDragMove,
@@ -219,6 +236,7 @@ function DraggableAssetThumb({
   thumbSize: number;
   active: boolean;
   isAppliedBackground: boolean;
+  isFrameOrPin: boolean;
   onSelect: (item: PickerAsset) => void;
   onDragStart: (item: PickerAsset) => void;
   onDragMove: (position: { pageX: number; pageY: number }) => void;
@@ -290,7 +308,13 @@ function DraggableAssetThumb({
           ]}
         />
       ) : item.source ? (
-        <View style={[styles.listThumbClip, { width: thumbSize, height: thumbSize }]}>
+        <View
+          style={[
+            styles.listThumbClip,
+            isFrameOrPin && styles.listThumbClipAsset,
+            { width: thumbSize, height: thumbSize }
+          ]}
+        >
           <Image
             source={item.source}
             style={{ width: thumbSize, height: thumbSize }}
@@ -298,7 +322,13 @@ function DraggableAssetThumb({
           />
         </View>
       ) : (
-        <View style={[styles.listThumbPlaceholder, { width: thumbSize, height: thumbSize }]}>
+        <View
+          style={[
+            styles.listThumbPlaceholder,
+            isFrameOrPin && styles.listThumbClipAsset,
+            { width: thumbSize, height: thumbSize }
+          ]}
+        >
           <Ionicons name="image-outline" size={14} color={figmaColors.grayMuted} />
         </View>
       )}
@@ -325,6 +355,11 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     overflow: 'hidden'
   },
+  previewImageAsset: {
+    backgroundColor: photoAssetPreviewBackground,
+    borderWidth: 1,
+    borderColor: photoAssetPreviewBorder
+  },
   parchmentPreview: {
     backgroundColor: figmaColors.parchment,
     borderWidth: 1,
@@ -349,15 +384,15 @@ const styles = StyleSheet.create({
   listThumbWrap: {
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: 'transparent',
-    backgroundColor: 'transparent',
+    borderColor: figmaColors.borderLight,
+    backgroundColor: figmaColors.inputBg,
     padding: 2,
     alignItems: 'center',
     overflow: 'hidden'
   },
   listThumbWrapActive: {
     borderColor: figmaColors.accent,
-    backgroundColor: 'transparent'
+    backgroundColor: figmaColors.navItemActiveBg
   },
   listThumbWrapApplied: {
     borderColor: figmaColors.success
@@ -365,11 +400,16 @@ const styles = StyleSheet.create({
   listThumbClip: {
     borderRadius: 3,
     overflow: 'hidden',
-    backgroundColor: figmaColors.surfaceMuted
+    backgroundColor: figmaColors.white
+  },
+  listThumbClipAsset: {
+    backgroundColor: photoAssetPreviewBackground,
+    borderWidth: 1,
+    borderColor: photoAssetPreviewBorder
   },
   listThumbPlaceholder: {
     borderRadius: 3,
-    backgroundColor: figmaColors.surfaceMuted,
+    backgroundColor: figmaColors.white,
     alignItems: 'center',
     justifyContent: 'center'
   }

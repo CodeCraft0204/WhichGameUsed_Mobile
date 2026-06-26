@@ -30,6 +30,9 @@ export const figmaColors = {
   surfaceElevated: '#F5EDE0',
   surfaceMuted: '#EDE4D4',
   surfaceHighlight: '#E9DFCC',
+  /** Thumbnail backdrop for frame/pin PNGs — contrasts parchment art on cream pages. */
+  assetPreviewBg: '#B5A696',
+  assetPreviewBorder: '#9A8978',
   bottomNav: '#F2EBDC',
   bottomNavBorder: '#D4C4AE',
 

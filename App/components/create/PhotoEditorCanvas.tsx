@@ -11,7 +11,7 @@ import {
   type ViewStyle
 } from 'react-native';
 import { appFonts } from '@/constants/appFonts';
-import { photoFrames, photoShapes } from '@/constants/photoEditorAssets';
+import { photoFrames, photoShapes, photoAssetPreviewBackground } from '@/constants/photoEditorAssets';
 import { getPhotoFrameInsets, type PhotoTemplate } from '@/constants/photoEditorTemplates';
 import { figmaColors } from '@/constants/figmaColors';
 
@@ -25,17 +25,33 @@ type PhotoEditorCanvasProps = {
   onSlotPhotoChange: (slotId: string, uri: string | null) => void;
   onSlotTextChange: (slotId: string, text: string) => void;
   scale?: number;
+  width?: number;
+  height?: number;
   style?: ViewStyle;
 };
 
 export const PhotoEditorCanvas = React.forwardRef<View, PhotoEditorCanvasProps>(
   function PhotoEditorCanvas(
-    { template, slotPhotos, slotTexts, onSlotPhotoChange, onSlotTextChange, scale = 1, style },
+    {
+      template,
+      slotPhotos,
+      slotTexts,
+      onSlotPhotoChange,
+      onSlotTextChange,
+      scale = 1,
+      width,
+      height,
+      style
+    },
     ref
   ) {
-    const styles = useMemo(() => createStyles(scale), [scale]);
-    const w = template.canvasWidth * scale;
-    const h = template.canvasHeight * scale;
+    const layoutScale =
+      width != null && height != null
+        ? width / template.canvasWidth
+        : scale;
+    const styles = useMemo(() => createStyles(layoutScale), [layoutScale]);
+    const w = width ?? template.canvasWidth * scale;
+    const h = height ?? template.canvasHeight * scale;
 
     const pickForSlot = async (slotId: string) => {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -82,7 +98,7 @@ export const PhotoEditorCanvas = React.forwardRef<View, PhotoEditorCanvasProps>(
                   <Image source={{ uri: photoUri }} style={styles.photo} resizeMode="cover" />
                 ) : (
                   <View style={styles.photoPlaceholder}>
-                    <Ionicons name="image-outline" size={22 * scale} color={figmaColors.gray} />
+                    <Ionicons name="image-outline" size={22 * layoutScale} color={figmaColors.gray} />
                     <Text style={styles.placeholderText}>Tap to add photo</Text>
                   </View>
                 )}
@@ -119,24 +135,32 @@ export const PhotoEditorCanvas = React.forwardRef<View, PhotoEditorCanvasProps>(
         ))}
 
         {template.textSlots.map((slot) => (
-          <TextInput
+          <View
             key={slot.id}
             style={[
-              styles.textSlot,
+              styles.textSlotWrap,
               {
                 left: `${slot.left}%`,
                 top: `${slot.top}%`,
                 width: `${slot.width}%`,
-                height: `${slot.height}%`,
-                fontSize: slot.fontSize * scale
+                height: `${slot.height}%`
               }
             ]}
-            value={slotTexts[slot.id] ?? ''}
-            onChangeText={(text) => onSlotTextChange(slot.id, text)}
-            placeholder={slot.placeholder}
-            placeholderTextColor={figmaColors.textMuted}
-            multiline
-          />
+          >
+            <TextInput
+              style={[
+                styles.textSlotInput,
+                { fontSize: slot.fontSize * layoutScale, lineHeight: slot.fontSize * layoutScale * 1.35 }
+              ]}
+              value={slotTexts[slot.id] ?? ''}
+              onChangeText={(text) => onSlotTextChange(slot.id, text)}
+              placeholder={slot.placeholder}
+              placeholderTextColor={figmaColors.textMuted}
+              multiline
+              scrollEnabled
+              textAlignVertical="top"
+            />
+          </View>
         ))}
       </View>
     );
@@ -147,11 +171,7 @@ function createStyles(scale: number) {
   return StyleSheet.create({
     canvas: {
       backgroundColor: figmaColors.parchment,
-      borderWidth: 1,
-      borderColor: figmaColors.borderLight,
-      borderRadius: 8 * scale,
-      overflow: 'hidden',
-      alignSelf: 'center'
+      overflow: 'hidden'
     },
     slot: {
       position: 'absolute'
@@ -159,7 +179,7 @@ function createStyles(scale: number) {
     photoClip: {
       position: 'absolute',
       overflow: 'hidden',
-      backgroundColor: figmaColors.inputBg
+      backgroundColor: photoAssetPreviewBackground
     },
     photo: {
       width: '100%',
@@ -190,12 +210,20 @@ function createStyles(scale: number) {
       width: '100%',
       height: '100%'
     },
-    textSlot: {
+    textSlotWrap: {
       position: 'absolute',
+      overflow: 'hidden',
+      paddingHorizontal: 4 * scale,
+      paddingVertical: 3 * scale
+    },
+    textSlotInput: {
+      flex: 1,
+      width: '100%',
+      height: '100%',
       fontFamily: appFonts.accent,
       color: figmaColors.charcoal,
-      padding: 2 * scale,
-      textAlignVertical: 'top'
+      padding: 0,
+      margin: 0
     }
   });
 }

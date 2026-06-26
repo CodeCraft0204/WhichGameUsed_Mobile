@@ -1,5 +1,11 @@
 /** Photo editor frame and shape assets (Photo Editor folder). */
 
+import { figmaColors } from '@/constants/figmaColors';
+
+/** Shared thumbnail backdrop so parchment frames/pins read on cream app surfaces. */
+export const photoAssetPreviewBackground = figmaColors.assetPreviewBg;
+export const photoAssetPreviewBorder = figmaColors.assetPreviewBorder;
+
 export const photoFrames = {
   kodak: require('@/assets/Photo Editor/Photo Frames/Frames_Kodak Frame.png'),
   paper1: require('@/assets/Photo Editor/Photo Frames/Frames_Paper Frame 1.png'),

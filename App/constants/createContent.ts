@@ -16,7 +16,7 @@ export const editorCopy = {
   startFromBlank: 'Start from blank',
   startFromBlankLead: 'Empty canvas — add photos, frames, and text. Drag, resize, and arrange everything yourself.',
   blankEditorLead: 'Canvas fills the screen. Use the library for frames, pins, and backgrounds. Drag to move; corner handles to resize and rotate.',
-  editorLead: 'Tap any frame to insert a photo. Photos resize to fit inside the frame.',
+  editorLead: 'Tap a frame to add a photo. Scroll inside text boxes for longer headlines and notes.',
   back: '← Back',
   submit: 'SUBMIT FOR REVIEW',
   submitting: 'Uploading…',

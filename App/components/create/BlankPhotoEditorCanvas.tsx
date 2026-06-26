@@ -12,7 +12,7 @@ import {
   type ViewStyle
 } from 'react-native';
 import { appFonts } from '@/constants/appFonts';
-import { photoFrames, photoShapes, type PhotoFrameKey } from '@/constants/photoEditorAssets';
+import { photoFrames, photoShapes, photoAssetPreviewBackground, type PhotoFrameKey } from '@/constants/photoEditorAssets';
 import { getPhotoFrameInsets } from '@/constants/photoEditorTemplates';
 import {
   photoBackgroundSource,
@@ -452,11 +452,11 @@ const styles = StyleSheet.create({
   mediaSlot: {
     flex: 1
   },
-  photoClip: {
-    position: 'absolute',
-    overflow: 'hidden',
-    backgroundColor: figmaColors.inputBg
-  },
+    photoClip: {
+      position: 'absolute',
+      overflow: 'hidden',
+      backgroundColor: photoAssetPreviewBackground
+    },
   photo: {
     width: '100%',
     height: '100%'

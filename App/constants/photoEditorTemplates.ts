@@ -80,7 +80,8 @@ export const photoEditorTemplates: PhotoTemplate[] = [
       }
     ],
     textSlots: [
-      { id: 'caption', left: 10, top: 68, width: 80, height: 12, placeholder: 'Add a caption…', fontSize: 16 }
+      { id: 'title', left: 10, top: 66, width: 80, height: 12, placeholder: 'Headline…', fontSize: 17 },
+      { id: 'body', left: 10, top: 78, width: 80, height: 20, placeholder: 'Supporting details…', fontSize: 14 }
     ]
   },
   {
@@ -101,7 +102,8 @@ export const photoEditorTemplates: PhotoTemplate[] = [
       }
     ],
     textSlots: [
-      { id: 'caption', left: 10, top: 72, width: 80, height: 12, placeholder: 'Research notes…', fontSize: 15 }
+      { id: 'title', left: 10, top: 70, width: 80, height: 12, placeholder: 'Headline…', fontSize: 17 },
+      { id: 'body', left: 10, top: 82, width: 80, height: 16, placeholder: 'Supporting details…', fontSize: 14 }
     ]
   },
   {
@@ -130,7 +132,8 @@ export const photoEditorTemplates: PhotoTemplate[] = [
       }
     ],
     textSlots: [
-      { id: 'caption', left: 8, top: 56, width: 84, height: 14, placeholder: 'Match evidence summary…', fontSize: 15 }
+      { id: 'title', left: 8, top: 54, width: 84, height: 12, placeholder: 'Headline…', fontSize: 16 },
+      { id: 'body', left: 8, top: 66, width: 84, height: 30, placeholder: 'Supporting details…', fontSize: 14 }
     ]
   },
   {
@@ -139,7 +142,7 @@ export const photoEditorTemplates: PhotoTemplate[] = [
     description: 'Three stacked frames for multiple proof images.',
     previewFrame: 'paper3',
     canvasWidth: 360,
-    canvasHeight: 520,
+    canvasHeight: 560,
     slots: [
       {
         id: 'top',
@@ -167,7 +170,8 @@ export const photoEditorTemplates: PhotoTemplate[] = [
       }
     ],
     textSlots: [
-      { id: 'caption', left: 8, top: 88, width: 84, height: 10, placeholder: 'Title or summary…', fontSize: 14 }
+      { id: 'title', left: 8, top: 86, width: 84, height: 8, placeholder: 'Headline…', fontSize: 16 },
+      { id: 'body', left: 8, top: 94, width: 84, height: 6, placeholder: 'Supporting details…', fontSize: 14 }
     ]
   },
   {
@@ -204,8 +208,8 @@ export const photoEditorTemplates: PhotoTemplate[] = [
       }
     ],
     textSlots: [
-      { id: 'title', left: 8, top: 82, width: 84, height: 8, placeholder: 'Headline…', fontSize: 17 },
-      { id: 'body', left: 8, top: 90, width: 84, height: 8, placeholder: 'Supporting details…', fontSize: 14 }
+      { id: 'title', left: 8, top: 80, width: 84, height: 10, placeholder: 'Headline…', fontSize: 17 },
+      { id: 'body', left: 8, top: 90, width: 84, height: 10, placeholder: 'Supporting details…', fontSize: 14 }
     ]
   },
   {
@@ -226,8 +230,8 @@ export const photoEditorTemplates: PhotoTemplate[] = [
       }
     ],
     textSlots: [
-      { id: 'title', left: 10, top: 62, width: 80, height: 8, placeholder: 'Card title…', fontSize: 17 },
-      { id: 'body', left: 10, top: 72, width: 80, height: 20, placeholder: 'Tell the story behind this match…', fontSize: 14 }
+      { id: 'title', left: 10, top: 62, width: 80, height: 10, placeholder: 'Headline…', fontSize: 17 },
+      { id: 'body', left: 10, top: 72, width: 80, height: 26, placeholder: 'Supporting details…', fontSize: 14 }
     ]
   }
 ];

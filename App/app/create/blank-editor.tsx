@@ -34,6 +34,10 @@ import {
 } from '@/components/create/EditorAssetPicker';
 import { appFonts } from '@/constants/appFonts';
 import { editorCopy } from '@/constants/createContent';
+import {
+  photoAssetPreviewBackground,
+  photoAssetPreviewBorder
+} from '@/constants/photoEditorAssets';
 import { BLANK_TEMPLATE_ID } from '@/constants/photoEditorTemplates';
 import { figmaColors } from '@/constants/figmaColors';
 import { useAuth } from '@/context/AuthContext';
@@ -405,11 +409,18 @@ export default function CreateBlankEditorScreen() {
               {draggingAsset.kind === 'background' && !draggingAsset.source ? (
                 <View style={[styles.dragGhostImage, styles.dragGhostParchment]} />
               ) : draggingAsset.source ? (
-                <Image
-                  source={draggingAsset.source}
-                  style={styles.dragGhostImage}
-                  resizeMode={draggingAsset.kind === 'background' ? 'cover' : 'contain'}
-                />
+                <View
+                  style={[
+                    styles.dragGhostImage,
+                    draggingAsset.kind !== 'background' && styles.dragGhostAsset
+                  ]}
+                >
+                  <Image
+                    source={draggingAsset.source}
+                    style={styles.dragGhostAssetImage}
+                    resizeMode={draggingAsset.kind === 'background' ? 'cover' : 'contain'}
+                  />
+                </View>
               ) : (
                 <View style={styles.dragGhostImage}>
                   <Ionicons name="image-outline" size={24} color={figmaColors.grayMuted} />
@@ -750,11 +761,20 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     dragGhostImage: {
       width: '100%',
       height: '100%',
-      borderRadius: 6,
+      borderRadius: 3,
       overflow: 'hidden',
       backgroundColor: figmaColors.white,
       alignItems: 'center',
       justifyContent: 'center'
+    },
+    dragGhostAsset: {
+      backgroundColor: photoAssetPreviewBackground,
+      borderWidth: 1,
+      borderColor: photoAssetPreviewBorder
+    },
+    dragGhostAssetImage: {
+      width: '100%',
+      height: '100%'
     },
     dragGhostParchment: {
       backgroundColor: figmaColors.parchment,

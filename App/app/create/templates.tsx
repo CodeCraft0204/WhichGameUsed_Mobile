@@ -7,7 +7,7 @@ import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import { appFonts } from '@/constants/appFonts';
 import { editorCopy } from '@/constants/createContent';
-import { photoFrames } from '@/constants/photoEditorAssets';
+import { photoFrames, photoAssetPreviewBackground, photoAssetPreviewBorder } from '@/constants/photoEditorAssets';
 import { photoEditorTemplates } from '@/constants/photoEditorTemplates';
 import { figmaColors } from '@/constants/figmaColors';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
@@ -113,7 +113,9 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       width: thumbSize,
       height: thumbSize,
       borderRadius: s(8),
-      backgroundColor: figmaColors.surfaceMuted,
+      backgroundColor: photoAssetPreviewBackground,
+      borderWidth: 1,
+      borderColor: photoAssetPreviewBorder,
       alignItems: 'center',
       justifyContent: 'center',
       overflow: 'hidden'

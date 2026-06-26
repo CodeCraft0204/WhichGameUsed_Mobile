@@ -1,6 +1,15 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  LayoutChangeEvent,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type View as ViewType
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthErrorBanner } from '@/components/auth/AuthErrorBanner';
 import { AuthPrimaryButton } from '@/components/auth/AuthPrimaryButton';
 import {
@@ -32,6 +41,7 @@ function initialTexts(templateId: string): SlotTexts {
 export default function CreateEditorScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ templateId?: string; linkedCardKey?: string }>();
   const templateId = typeof params.templateId === 'string' ? params.templateId : '';
   const linkedCardId =
@@ -42,13 +52,22 @@ export default function CreateEditorScreen() {
   const template = getPhotoTemplate(templateId);
   const { s, t } = useFigmaLayout(1);
   const styles = useMemo(() => createStyles(s, t), [s, t]);
-  const canvasRef = useRef<View>(null);
+  const canvasRef = useRef<ViewType>(null);
+  const canvasStageRef = useRef<ViewType>(null);
 
   const [slotPhotos, setSlotPhotos] = useState<SlotPhotos>(() => initialPhotos(templateId));
   const [slotTexts, setSlotTexts] = useState<SlotTexts>(() => initialTexts(templateId));
+  const [canvasArea, setCanvasArea] = useState({ width: 0, height: 0 });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+
+  const handleCanvasAreaLayout = useCallback((event: LayoutChangeEvent) => {
+    const { width, height } = event.nativeEvent.layout;
+    setCanvasArea((prev) =>
+      prev.width === width && prev.height === height ? prev : { width, height }
+    );
+  }, []);
 
   if (!template) {
     return (
@@ -111,60 +130,134 @@ export default function CreateEditorScreen() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Pressable onPress={() => router.back()}>
-        <Text style={styles.backLink}>{editorCopy.back}</Text>
-      </Pressable>
-      <Text style={styles.heading}>{template.name}</Text>
-      <Text style={styles.lead}>{editorCopy.editorLead}</Text>
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
+      <View style={styles.topBar}>
+        <Pressable onPress={() => router.back()} style={styles.topBarButton}>
+          <Text style={styles.backLink}>{editorCopy.back}</Text>
+        </Pressable>
+        <Text style={styles.topBarTitle} numberOfLines={1}>
+          {template.name}
+        </Text>
+        <Pressable
+          style={[styles.submitChip, busy && styles.submitChipDisabled]}
+          onPress={() => void onSubmit()}
+          disabled={busy}
+        >
+          <Text style={styles.submitChipText}>{busy ? '…' : 'Submit'}</Text>
+        </Pressable>
+      </View>
 
-      <PhotoEditorCanvas
-        ref={canvasRef}
-        template={template}
-        slotPhotos={slotPhotos}
-        slotTexts={slotTexts}
-        scale={0.92}
-        onSlotPhotoChange={(slotId, uri) =>
-          setSlotPhotos((prev) => ({ ...prev, [slotId]: uri }))
-        }
-        onSlotTextChange={(slotId, text) =>
-          setSlotTexts((prev) => ({ ...prev, [slotId]: text }))
-        }
-      />
+      <View ref={canvasStageRef} style={styles.canvasStage} onLayout={handleCanvasAreaLayout}>
+        {canvasArea.width > 0 && canvasArea.height > 0 ? (
+          <PhotoEditorCanvas
+            ref={canvasRef}
+            template={template}
+            slotPhotos={slotPhotos}
+            slotTexts={slotTexts}
+            width={canvasArea.width}
+            height={canvasArea.height}
+            onSlotPhotoChange={(slotId, uri) =>
+              setSlotPhotos((prev) => ({ ...prev, [slotId]: uri }))
+            }
+            onSlotTextChange={(slotId, text) =>
+              setSlotTexts((prev) => ({ ...prev, [slotId]: text }))
+            }
+            style={styles.canvasFill}
+          />
+        ) : null}
+      </View>
 
-      {error ? <AuthErrorBanner message={error} /> : null}
+      {error ? (
+        <View style={[styles.errorBar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+          <AuthErrorBanner message={error} />
+        </View>
+      ) : null}
 
-      <AuthPrimaryButton
-        label={busy ? editorCopy.submitting : editorCopy.submit}
-        onPress={() => void onSubmit()}
-        disabled={busy}
-      />
-      {busy ? <ActivityIndicator color={figmaColors.charcoal} style={styles.loader} /> : null}
-    </ScrollView>
+      {busy ? (
+        <View style={styles.busyOverlay} pointerEvents="none">
+          <ActivityIndicator color={figmaColors.charcoal} />
+        </View>
+      ) : null}
+    </View>
   );
 }
 
 function createStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
-    screen: { flex: 1, backgroundColor: figmaColors.background },
-    content: { padding: s(16), gap: s(14), paddingBottom: s(40) },
+    screen: {
+      flex: 1,
+      backgroundColor: figmaColors.stone
+    },
+    topBar: {
+      flexShrink: 0,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: s(12),
+      paddingVertical: s(8),
+      borderBottomWidth: 1,
+      borderBottomColor: figmaColors.borderLight,
+      gap: s(8),
+      backgroundColor: figmaColors.background
+    },
+    topBarButton: {
+      minWidth: s(72)
+    },
+    topBarTitle: {
+      flex: 1,
+      fontFamily: appFonts.display,
+      fontSize: t(16),
+      color: figmaColors.charcoal,
+      textAlign: 'center'
+    },
     backLink: {
       fontFamily: appFonts.body,
       fontSize: t(15),
       color: figmaColors.accent
     },
-    heading: {
-      fontFamily: appFonts.display,
-      fontSize: t(24),
-      color: figmaColors.charcoal
+    submitChip: {
+      minWidth: s(72),
+      alignItems: 'flex-end',
+      paddingHorizontal: s(14),
+      paddingVertical: s(8),
+      borderRadius: s(8),
+      backgroundColor: figmaColors.buttonPrimaryBg
     },
-    lead: {
+    submitChipDisabled: {
+      opacity: 0.6
+    },
+    submitChipText: {
       fontFamily: appFonts.body,
-      fontSize: t(15),
-      lineHeight: t(21),
-      color: figmaColors.gray
+      fontSize: t(13),
+      color: figmaColors.buttonPrimaryText
     },
-    loader: { marginTop: s(8) },
+    canvasStage: {
+      flex: 1,
+      minHeight: 0,
+      backgroundColor: figmaColors.parchment,
+      overflow: 'hidden'
+    },
+    canvasFill: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0
+    },
+    errorBar: {
+      flexShrink: 0,
+      paddingHorizontal: s(12),
+      paddingTop: s(8),
+      backgroundColor: figmaColors.background,
+      borderTopWidth: 1,
+      borderTopColor: figmaColors.borderLight
+    },
+    busyOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'rgba(247, 241, 228, 0.45)'
+    },
     missing: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: s(24) },
     missingText: {
       fontFamily: appFonts.body,
