@@ -13,6 +13,9 @@ export const createCopy = {
 export const editorCopy = {
   pickTemplate: 'Choose a template',
   pickTemplateLead: 'Fixed layouts with frames and text areas — tap a slot to add a photo from your library.',
+  startFromBlank: 'Start from blank',
+  startFromBlankLead: 'Empty canvas — add photos, frames, and text. Drag, resize, and arrange everything yourself.',
+  blankEditorLead: 'Canvas fills the screen. Use the library for frames, pins, and backgrounds. Drag to move; corner handle to resize.',
   editorLead: 'Tap any frame to insert a photo. Photos resize to fit inside the frame.',
   back: '← Back',
   submit: 'SUBMIT FOR REVIEW',

@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
@@ -30,7 +31,7 @@ export default function CreateTemplatesScreen() {
       <Text style={[page.sectionTitle, styles.heading]}>{editorCopy.pickTemplate}</Text>
       <Text style={styles.lead}>{editorCopy.pickTemplateLead}</Text>
 
-      <View style={styles.grid}>
+      <View style={styles.list}>
         {photoEditorTemplates.map((tpl) => (
           <Pressable
             key={tpl.id}
@@ -42,19 +43,40 @@ export default function CreateTemplatesScreen() {
               })
             }
           >
-            <Image source={photoFrames[tpl.previewFrame]} style={styles.preview} resizeMode="contain" />
-            <Text style={styles.cardTitle}>{tpl.name}</Text>
-            <Text style={styles.cardBody} numberOfLines={2}>
-              {tpl.description}
-            </Text>
+            <View style={styles.thumbWrap}>
+              <Image source={photoFrames[tpl.previewFrame]} style={styles.preview} resizeMode="contain" />
+            </View>
+            <View style={styles.cardCopy}>
+              <Text style={styles.cardTitle}>{tpl.name}</Text>
+              <Text style={styles.cardBody} numberOfLines={3}>
+                {tpl.description}
+              </Text>
+            </View>
           </Pressable>
         ))}
+
+        <Pressable
+          style={[styles.card, styles.blankCard]}
+          onPress={() => router.push('/create/blank-editor')}
+        >
+          <View style={[styles.thumbWrap, styles.blankThumb]}>
+            <Ionicons name="color-wand" size={t(30)} color={figmaColors.accentStrong} />
+          </View>
+          <View style={styles.cardCopy}>
+            <Text style={styles.cardTitle}>{editorCopy.startFromBlank}</Text>
+            <Text style={styles.cardBody} numberOfLines={3}>
+              {editorCopy.startFromBlankLead}
+            </Text>
+          </View>
+        </Pressable>
       </View>
     </FigmaScreen>
   );
 }
 
 function createStyles(s: (n: number) => number, t: (n: number) => number) {
+  const thumbSize = s(72);
+
   return StyleSheet.create({
     backRow: { marginBottom: s(8) },
     backText: {
@@ -70,29 +92,55 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       color: figmaColors.gray,
       marginBottom: s(16)
     },
-    grid: { gap: s(14) },
+    list: { gap: s(10) },
     card: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(12),
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
       borderRadius: s(12),
-      padding: s(14),
-      backgroundColor: figmaColors.inputBg
+      paddingVertical: s(10),
+      paddingHorizontal: s(12),
+      backgroundColor: figmaColors.inputBg,
+      minHeight: thumbSize + s(20)
+    },
+    blankCard: {
+      borderColor: figmaColors.border,
+      borderStyle: 'dashed'
+    },
+    thumbWrap: {
+      width: thumbSize,
+      height: thumbSize,
+      borderRadius: s(8),
+      backgroundColor: figmaColors.surfaceMuted,
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden'
+    },
+    blankThumb: {
+      backgroundColor: figmaColors.surfaceElevated,
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight
     },
     preview: {
-      width: '100%',
-      height: s(120),
-      marginBottom: s(10)
+      width: '88%',
+      height: '88%'
+    },
+    cardCopy: {
+      flex: 1,
+      justifyContent: 'center'
     },
     cardTitle: {
       fontFamily: appFonts.display,
-      fontSize: t(18),
+      fontSize: t(17),
       color: figmaColors.charcoal,
-      marginBottom: s(4)
+      marginBottom: s(3)
     },
     cardBody: {
       fontFamily: appFonts.body,
-      fontSize: t(14),
-      lineHeight: t(20),
+      fontSize: t(13),
+      lineHeight: t(18),
       color: figmaColors.gray
     }
   });

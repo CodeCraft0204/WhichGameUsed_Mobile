@@ -45,6 +45,14 @@ export type PhotoTemplate = {
   decor?: DecorShapeDef[];
 };
 
+export const BLANK_TEMPLATE_ID = 'blank';
+
+export const blankTemplateMeta = {
+  id: BLANK_TEMPLATE_ID,
+  name: 'Start from blank',
+  description: 'Empty canvas — add photos, frames, and text. Drag, resize, and arrange everything yourself.'
+} as const;
+
 export const photoEditorTemplates: PhotoTemplate[] = [
   {
     id: 'polaroid-single',
@@ -230,8 +238,7 @@ export const photoEditorTemplates: PhotoTemplate[] = [
     textSlots: [
       { id: 'title', left: 8, top: 82, width: 84, height: 8, placeholder: 'Headline…', fontSize: 17 },
       { id: 'body', left: 8, top: 90, width: 84, height: 8, placeholder: 'Supporting details…', fontSize: 14 }
-    ],
-    decor: [{ asset: 'tape1', left: 4, top: 2, width: 18, height: 8 }]
+    ]
   },
   {
     id: 'card-story',
@@ -257,10 +264,6 @@ export const photoEditorTemplates: PhotoTemplate[] = [
     textSlots: [
       { id: 'title', left: 10, top: 62, width: 80, height: 8, placeholder: 'Card title…', fontSize: 17 },
       { id: 'body', left: 10, top: 72, width: 80, height: 20, placeholder: 'Tell the story behind this match…', fontSize: 14 }
-    ],
-    decor: [
-      { asset: 'tape2', left: 62, top: 8, width: 20, height: 10 },
-      { asset: 'underline1', left: 12, top: 58, width: 40, height: 4 }
     ]
   }
 ];

@@ -24,3 +24,39 @@ export const photoShapes = {
 } as const;
 
 export type PhotoFrameKey = keyof typeof photoFrames;
+export type PhotoShapeKey = keyof typeof photoShapes;
+
+export const photoFrameLabels: Record<PhotoFrameKey, string> = {
+  kodak: 'Kodak frame',
+  paper1: 'Paper frame 1',
+  paper2: 'Paper frame 2',
+  paper3: 'Paper frame 3',
+  paper4: 'Paper frame 4',
+  polaroid: 'Polaroid'
+};
+
+export const photoShapeLabels: Record<PhotoShapeKey, string> = {
+  arrow1: 'Arrow 1',
+  arrow2: 'Arrow 2',
+  arrow3: 'Arrow 3',
+  checkmark: 'Checkmark',
+  circle: 'Circle',
+  oval: 'Oval',
+  rectangle: 'Rectangle',
+  tape1: 'Tape pin 1',
+  tape2: 'Tape pin 2',
+  underline1: 'Underline 1',
+  underline2: 'Underline 2'
+};
+
+export const photoFrameKeys = Object.keys(photoFrames) as PhotoFrameKey[];
+export const photoShapeKeys = Object.keys(photoShapes) as PhotoShapeKey[];
+
+export {
+  DEFAULT_PHOTO_BACKGROUND,
+  photoBackgroundImageKeys,
+  photoBackgroundLabels,
+  photoBackgrounds,
+  type PhotoBackgroundImageKey,
+  type PhotoBackgroundKey
+} from '@/constants/photoEditorBackgrounds';
