@@ -6,13 +6,13 @@ import {
   PanResponder,
   Pressable,
   StyleSheet,
-  Text,
   TextInput,
   View,
   type ViewStyle
 } from 'react-native';
 import { appFonts } from '@/constants/appFonts';
-import { photoFrames, photoShapes, photoAssetPreviewBackground, type PhotoFrameKey } from '@/constants/photoEditorAssets';
+import { photoFrames, photoShapes, type PhotoFrameKey } from '@/constants/photoEditorAssets';
+import { FramePhotoClip } from '@/components/create/FramePhotoClip';
 import { getPhotoFrameInsets } from '@/constants/photoEditorTemplates';
 import {
   photoBackgroundSource,
@@ -29,9 +29,14 @@ export type BlankLayer = {
   top: number;
   width: number;
   height: number;
-  /** Clockwise rotation in degrees. */
+  /** Clockwise rotation in degrees (whole layer). */
   rotation?: number;
   photoUri?: string | null;
+  /** In-frame photo adjust (inside clip window). */
+  photoScale?: number;
+  photoRotation?: number;
+  photoOffsetX?: number;
+  photoOffsetY?: number;
   frame?: PhotoFrameKey;
   shape?: keyof typeof photoShapes;
   text?: string;
@@ -351,13 +356,60 @@ function BlankLayerView({
       quality: 0.9
     });
     if (!result.canceled && result.assets[0]?.uri) {
-      onChange(layer.id, { photoUri: result.assets[0].uri }, false);
+      onSelect(layer.id);
+      onChange(
+        layer.id,
+        {
+          photoUri: result.assets[0].uri,
+          photoScale: 1,
+          photoRotation: 0,
+          photoOffsetX: 0,
+          photoOffsetY: 0
+        },
+        false
+      );
     }
   };
+
+  const photoTransform = {
+    scale: layer.photoScale ?? 1,
+    rotation: layer.photoRotation ?? 0,
+    offsetX: layer.photoOffsetX ?? 0,
+    offsetY: layer.photoOffsetY ?? 0
+  };
+
+  const patchPhotoTransform = (next: typeof photoTransform, transient = true) => {
+    onChange(
+      layer.id,
+      {
+        photoScale: next.scale,
+        photoRotation: next.rotation,
+        photoOffsetX: next.offsetX,
+        photoOffsetY: next.offsetY
+      },
+      transient
+    );
+  };
+
+  const hasAdjustablePhoto =
+    (layer.kind === 'framed' || layer.kind === 'photo') && Boolean(layer.photoUri);
 
   const photoClipInsets: Pick<ViewStyle, 'top' | 'left' | 'right' | 'bottom'> =
     layer.kind === 'framed' && layer.frame
       ? photoClipInsetsForFrame(layer.frame)
+      : { top: 0, left: 0, right: 0, bottom: 0 };
+
+  const frameInsets =
+    layer.kind === 'framed' && layer.frame
+      ? (() => {
+          const inset = getPhotoFrameInsets(layer.frame);
+          return {
+            top: inset.insetTop,
+            left: inset.insetLeft,
+            right: inset.insetRight,
+            bottom: inset.insetBottom
+          };
+        })()
       : { top: 0, left: 0, right: 0, bottom: 0 };
 
   const rotation = layer.rotation ?? 0;
@@ -373,7 +425,8 @@ function BlankLayerView({
           height: `${layer.height}%`,
           transform: [{ rotate: `${rotation}deg` }]
         },
-        selected && styles.layerSelected
+        selected && styles.layerSelected,
+        selected && styles.layerActive
       ]}
     >
       {layer.kind === 'text' ? (
@@ -390,17 +443,20 @@ function BlankLayerView({
       ) : layer.kind === 'shape' && layer.shape ? (
         <Image source={photoShapes[layer.shape]} style={styles.shapeImage} resizeMode="contain" />
       ) : (
-        <Pressable style={styles.mediaSlot} onPress={() => void pickPhoto()}>
-          <View style={[styles.photoClip, photoClipInsets]}>
-            {layer.photoUri ? (
-              <Image source={{ uri: layer.photoUri }} style={styles.photo} resizeMode="cover" />
-            ) : (
-              <View style={styles.photoPlaceholder}>
-                <Ionicons name="image-outline" size={20 * uiScale} color={figmaColors.gray} />
-                <Text style={[styles.placeholderText, { fontSize: 10 * uiScale }]}>Tap to add</Text>
-              </View>
-            )}
-          </View>
+        <View style={styles.mediaSlot}>
+          <FramePhotoClip
+            photoUri={layer.photoUri ?? null}
+            clipInsets={photoClipInsets}
+            frameInsets={frameInsets}
+            transform={photoTransform}
+            selected={selected && hasAdjustablePhoto}
+            uiScale={uiScale}
+            placeholderLabel="Tap to add"
+            onSelect={() => onSelect(layer.id)}
+            onPickPhoto={() => void pickPhoto()}
+            onTransformChange={patchPhotoTransform}
+            onTransformCommit={onCommit}
+          />
           {layer.kind === 'framed' && layer.frame ? (
             <View pointerEvents="none" style={styles.frameOverlay}>
               <Image
@@ -410,7 +466,7 @@ function BlankLayerView({
               />
             </View>
           ) : null}
-        </Pressable>
+        </View>
       )}
 
       {selected ? (
@@ -449,27 +505,11 @@ const styles = StyleSheet.create({
     borderColor: figmaColors.accent,
     borderRadius: 4
   },
+  layerActive: {
+    zIndex: 20
+  },
   mediaSlot: {
     flex: 1
-  },
-    photoClip: {
-      position: 'absolute',
-      overflow: 'hidden',
-      backgroundColor: photoAssetPreviewBackground
-    },
-  photo: {
-    width: '100%',
-    height: '100%'
-  },
-  photoPlaceholder: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4
-  },
-  placeholderText: {
-    fontFamily: appFonts.body,
-    color: figmaColors.gray
   },
   frameOverlay: {
     ...StyleSheet.absoluteFillObject,
