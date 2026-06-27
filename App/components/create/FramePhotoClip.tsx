@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Image,
   PanResponder,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Text,
   View,
+  type GestureResponderEvent,
   type LayoutChangeEvent,
   type ViewStyle
 } from 'react-native';
@@ -22,12 +23,11 @@ import {
   type FramePhotoTransform
 } from '@/components/create/framePhotoTransform';
 
-const DRAG_THRESHOLD = 4;
+type TransformTool = 'move' | 'rotate' | 'scale';
 
 type Props = {
   photoUri: string | null;
   clipInsets: Pick<ViewStyle, 'top' | 'left' | 'right' | 'bottom'>;
-  /** Inset % used to anchor transform controls on the outer frame corner. */
   frameInsets: FrameInsetPercents;
   transform: FramePhotoTransform;
   selected: boolean;
@@ -38,6 +38,22 @@ type Props = {
   onTransformChange: (next: FramePhotoTransform, transient?: boolean) => void;
   onTransformCommit: () => void;
 };
+
+function touchDistance(
+  a: { pageX: number; pageY: number },
+  b: { pageX: number; pageY: number }
+): number {
+  return Math.hypot(b.pageX - a.pageX, b.pageY - a.pageY);
+}
+
+function touchAngleDeg(
+  centerX: number,
+  centerY: number,
+  pageX: number,
+  pageY: number
+): number {
+  return (Math.atan2(pageY - centerY, pageX - centerX) * 180) / Math.PI;
+}
 
 export function FramePhotoClip({
   photoUri,
@@ -53,12 +69,21 @@ export function FramePhotoClip({
   onTransformCommit
 }: Props) {
   const [clipSize, setClipSize] = useState({ width: 0, height: 0 });
+  const [activeTool, setActiveTool] = useState<TransformTool>('move');
+
   const transformRef = useRef(transform);
   transformRef.current = transform;
   const clipSizeRef = useRef(clipSize);
   clipSizeRef.current = clipSize;
   const photoUriRef = useRef(photoUri);
   photoUriRef.current = photoUri;
+  const selectedRef = useRef(selected);
+  selectedRef.current = selected;
+  const activeToolRef = useRef(activeTool);
+  activeToolRef.current = activeTool;
+
+  const clipOriginRef = useRef({ x: 0, y: 0 });
+  const clipRef = useRef<View>(null);
 
   const handlersRef = useRef({
     onTransformChange,
@@ -68,125 +93,233 @@ export function FramePhotoClip({
   });
   handlersRef.current = { onTransformChange, onTransformCommit, onSelect, onPickPhoto };
 
-  const panOrigin = useRef({ offsetX: 0, offsetY: 0 });
-  const scaleOrigin = useRef({ scale: 1 });
-  const rotateOrigin = useRef({ rotation: 0 });
-  const draggedRef = useRef(false);
+  const moveOrigin = useRef({ offsetX: 0, offsetY: 0, pageX: 0, pageY: 0 });
+  const rotateOrigin = useRef({ rotation: 0, startAngle: 0 });
+  const scaleOrigin = useRef({ scale: 1, startDistance: 0, mode: 'pinch' as 'pinch' | 'drag' });
+  const pinchingRef = useRef(false);
+
+  const applyScale = useCallback((scale: number) => {
+    const nextScale = clampFramePhotoScale(scale);
+    const current = transformRef.current;
+    handlersRef.current.onTransformChange(
+      {
+        ...current,
+        scale: nextScale,
+        offsetX: clampFramePhotoOffset(current.offsetX, nextScale),
+        offsetY: clampFramePhotoOffset(current.offsetY, nextScale)
+      },
+      true
+    );
+  }, []);
+
+  const applyPanFromDelta = useCallback((dx: number, dy: number) => {
+    const { width, height } = clipSizeRef.current;
+    if (width <= 0 || height <= 0) return;
+    const scale = transformRef.current.scale;
+    const dxPct = (dx / width) * 100;
+    const dyPct = (dy / height) * 100;
+    handlersRef.current.onTransformChange(
+      {
+        ...transformRef.current,
+        offsetX: clampFramePhotoOffset(moveOrigin.current.offsetX + dxPct, scale),
+        offsetY: clampFramePhotoOffset(moveOrigin.current.offsetY + dyPct, scale)
+      },
+      true
+    );
+  }, []);
+
+  const syncClipOrigin = useCallback(() => {
+    clipRef.current?.measureInWindow((x, y) => {
+      clipOriginRef.current = { x, y };
+    });
+  }, []);
 
   const handleClipLayout = (event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
     if (width > 0 && height > 0) {
       setClipSize({ width, height });
     }
+    syncClipOrigin();
   };
 
-  const photoPan = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => Boolean(photoUriRef.current),
-        onStartShouldSetPanResponderCapture: () => Boolean(photoUriRef.current),
-        onMoveShouldSetPanResponder: () => Boolean(photoUriRef.current),
-        onMoveShouldSetPanResponderCapture: () => Boolean(photoUriRef.current),
-        onPanResponderTerminationRequest: () => false,
-        onPanResponderGrant: () => {
-          draggedRef.current = false;
-          if (!photoUriRef.current) return;
-          handlersRef.current.onSelect();
-          const current = transformRef.current;
-          panOrigin.current = { offsetX: current.offsetX, offsetY: current.offsetY };
-        },
-        onPanResponderMove: (_, gesture) => {
-          if (!photoUriRef.current) return;
-          if (
-            !draggedRef.current &&
-            (Math.abs(gesture.dx) > DRAG_THRESHOLD || Math.abs(gesture.dy) > DRAG_THRESHOLD)
-          ) {
-            draggedRef.current = true;
-          }
-          if (!draggedRef.current) return;
+  const beginMove = (pageX: number, pageY: number) => {
+    handlersRef.current.onSelect();
+    setActiveTool('move');
+    const current = transformRef.current;
+    moveOrigin.current = {
+      offsetX: current.offsetX,
+      offsetY: current.offsetY,
+      pageX,
+      pageY
+    };
+  };
 
-          const { width, height } = clipSizeRef.current;
-          if (width <= 0 || height <= 0) return;
-          const scale = transformRef.current.scale;
-          const dxPct = (gesture.dx / width) * 100;
-          const dyPct = (gesture.dy / height) * 100;
-          handlersRef.current.onTransformChange(
-            {
-              ...transformRef.current,
-              offsetX: clampFramePhotoOffset(panOrigin.current.offsetX + dxPct, scale),
-              offsetY: clampFramePhotoOffset(panOrigin.current.offsetY + dyPct, scale)
-            },
-            true
-          );
-        },
-        onPanResponderRelease: () => {
-          if (photoUriRef.current) {
-            handlersRef.current.onTransformCommit();
-          }
-          draggedRef.current = false;
-        },
-        onPanResponderTerminate: () => {
-          if (photoUriRef.current) {
-            handlersRef.current.onTransformCommit();
-          }
-          draggedRef.current = false;
-        }
-      }),
-    []
-  );
+  const beginRotate = (pageX: number, pageY: number) => {
+    handlersRef.current.onSelect();
+    setActiveTool('rotate');
+    syncClipOrigin();
+    const { width, height } = clipSizeRef.current;
+    const centerX = clipOriginRef.current.x + width / 2;
+    const centerY = clipOriginRef.current.y + height / 2;
+    rotateOrigin.current = {
+      rotation: transformRef.current.rotation,
+      startAngle: touchAngleDeg(centerX, centerY, pageX, pageY)
+    };
+  };
 
-  const scalePan = useMemo(
+  const beginScaleDrag = (pageY: number) => {
+    handlersRef.current.onSelect();
+    setActiveTool('scale');
+    scaleOrigin.current = {
+      scale: transformRef.current.scale,
+      startDistance: 0,
+      mode: 'drag'
+    };
+    moveOrigin.current.pageY = pageY;
+  };
+
+  const beginPinch = (touches: readonly { pageX: number; pageY: number }[]) => {
+    if (touches.length < 2) return;
+    handlersRef.current.onSelect();
+    setActiveTool('scale');
+    pinchingRef.current = true;
+    scaleOrigin.current = {
+      scale: transformRef.current.scale,
+      startDistance: touchDistance(touches[0], touches[1]),
+      mode: 'pinch'
+    };
+  };
+
+  const handlePhotoTouchStart = (event: GestureResponderEvent) => {
+    if (!photoUriRef.current) return;
+    handlersRef.current.onSelect();
+    syncClipOrigin();
+    const touches = event.nativeEvent.touches;
+    if (touches.length >= 2) {
+      beginPinch(touches);
+      return;
+    }
+    const { pageX, pageY } = event.nativeEvent;
+    const tool = activeToolRef.current;
+    if (tool === 'move') beginMove(pageX, pageY);
+    else if (tool === 'rotate') beginRotate(pageX, pageY);
+    else beginScaleDrag(pageY);
+  };
+
+  const handlePhotoTouchMove = (event: GestureResponderEvent) => {
+    if (!photoUriRef.current) return;
+    const touches = event.nativeEvent.touches;
+
+    if (touches.length >= 2) {
+      if (!pinchingRef.current) beginPinch(touches);
+      const startDistance = scaleOrigin.current.startDistance;
+      if (startDistance <= 0) return;
+      const nextDistance = touchDistance(touches[0], touches[1]);
+      applyScale(scaleOrigin.current.scale * (nextDistance / startDistance));
+      return;
+    }
+
+    pinchingRef.current = false;
+    const { pageX, pageY } = event.nativeEvent;
+    const tool = activeToolRef.current;
+
+    if (tool === 'move') {
+      applyPanFromDelta(pageX - moveOrigin.current.pageX, pageY - moveOrigin.current.pageY);
+      return;
+    }
+
+    if (tool === 'rotate') {
+      const { width, height } = clipSizeRef.current;
+      const centerX = clipOriginRef.current.x + width / 2;
+      const centerY = clipOriginRef.current.y + height / 2;
+      const angle = touchAngleDeg(centerX, centerY, pageX, pageY);
+      handlersRef.current.onTransformChange(
+        {
+          ...transformRef.current,
+          rotation: rotateOrigin.current.rotation + (angle - rotateOrigin.current.startAngle)
+        },
+        true
+      );
+      return;
+    }
+
+    if (tool === 'scale' && scaleOrigin.current.mode === 'drag') {
+      const delta = (pageY - moveOrigin.current.pageY) / 120;
+      applyScale(scaleOrigin.current.scale - delta);
+    }
+  };
+
+  const handlePhotoTouchEnd = () => {
+    if (!photoUriRef.current) return;
+    pinchingRef.current = false;
+    handlersRef.current.onTransformCommit();
+  };
+
+  const moveButtonPan = useMemo(
     () =>
       PanResponder.create({
         onStartShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponder: () => true,
         onPanResponderTerminationRequest: () => false,
-        onPanResponderGrant: () => {
-          handlersRef.current.onSelect();
-          scaleOrigin.current = { scale: transformRef.current.scale };
+        onPanResponderGrant: (_, gesture) => {
+          beginMove(gesture.x0, gesture.y0);
+        },
+        onPanResponderMove: (_, gesture) => {
+          applyPanFromDelta(gesture.dx, gesture.dy);
+        },
+        onPanResponderRelease: () => handlersRef.current.onTransformCommit(),
+        onPanResponderTerminate: () => handlersRef.current.onTransformCommit()
+      }),
+    [applyPanFromDelta]
+  );
+
+  const rotateButtonPan = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderTerminationRequest: () => false,
+        onPanResponderGrant: (event) => {
+          beginRotate(event.nativeEvent.pageX, event.nativeEvent.pageY);
+        },
+        onPanResponderMove: (event) => {
+          const { width, height } = clipSizeRef.current;
+          const centerX = clipOriginRef.current.x + width / 2;
+          const centerY = clipOriginRef.current.y + height / 2;
+          const { pageX, pageY } = event.nativeEvent;
+          const angle = touchAngleDeg(centerX, centerY, pageX, pageY);
+          handlersRef.current.onTransformChange(
+            {
+              ...transformRef.current,
+              rotation: rotateOrigin.current.rotation + (angle - rotateOrigin.current.startAngle)
+            },
+            true
+          );
+        },
+        onPanResponderRelease: () => handlersRef.current.onTransformCommit(),
+        onPanResponderTerminate: () => handlersRef.current.onTransformCommit()
+      }),
+    []
+  );
+
+  const scaleButtonPan = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderTerminationRequest: () => false,
+        onPanResponderGrant: (_, gesture) => {
+          beginScaleDrag(gesture.y0);
+          moveOrigin.current.pageY = gesture.y0;
         },
         onPanResponderMove: (_, gesture) => {
           const delta = (gesture.dx - gesture.dy) / 140;
-          const scale = clampFramePhotoScale(scaleOrigin.current.scale + delta);
-          handlersRef.current.onTransformChange(
-            {
-              ...transformRef.current,
-              scale,
-              offsetX: clampFramePhotoOffset(transformRef.current.offsetX, scale),
-              offsetY: clampFramePhotoOffset(transformRef.current.offsetY, scale)
-            },
-            true
-          );
+          applyScale(scaleOrigin.current.scale + delta);
         },
         onPanResponderRelease: () => handlersRef.current.onTransformCommit(),
         onPanResponderTerminate: () => handlersRef.current.onTransformCommit()
       }),
-    []
-  );
-
-  const rotatePan = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
-        onPanResponderTerminationRequest: () => false,
-        onPanResponderGrant: () => {
-          handlersRef.current.onSelect();
-          rotateOrigin.current.rotation = transformRef.current.rotation;
-        },
-        onPanResponderMove: (_, gesture) => {
-          handlersRef.current.onTransformChange(
-            {
-              ...transformRef.current,
-              rotation: rotateOrigin.current.rotation + gesture.dx * 0.45
-            },
-            true
-          );
-        },
-        onPanResponderRelease: () => handlersRef.current.onTransformCommit(),
-        onPanResponderTerminate: () => handlersRef.current.onTransformCommit()
-      }),
-    []
+    [applyScale]
   );
 
   const activeTransform = transform ?? DEFAULT_FRAME_PHOTO_TRANSFORM;
@@ -194,14 +327,26 @@ export function FramePhotoClip({
   const translateY = (activeTransform.offsetY / 100) * clipSize.height;
   const handlePos = frameTopLeftHandlePosition(frameInsets);
 
+  const toolBtn = (tool: TransformTool, isActive: boolean): ViewStyle[] =>
+    isActive
+      ? [styles.transformBtn, styles.transformBtnActive]
+      : [styles.transformBtn];
+
   return (
     <View
+      ref={clipRef}
       style={[styles.photoClip, clipInsets, selected && photoUri && styles.photoClipSelected]}
       collapsable={false}
       onLayout={handleClipLayout}
     >
       {photoUri ? (
-        <View style={styles.photoClipInner} {...photoPan.panHandlers}>
+        <View
+          style={styles.photoClipInner}
+          onTouchStart={handlePhotoTouchStart}
+          onTouchMove={handlePhotoTouchMove}
+          onTouchEnd={handlePhotoTouchEnd}
+          onTouchCancel={handlePhotoTouchEnd}
+        >
           <View style={styles.photoStage}>
             {clipSize.width > 0 && clipSize.height > 0 ? (
               <View
@@ -238,20 +383,24 @@ export function FramePhotoClip({
 
       {selected && photoUri ? (
         <View
-          style={[
-            styles.transformBar,
-            handlePos,
-            { transform: [{ scale: uiScale }] }
-          ]}
+          style={[styles.transformBar, handlePos, { transform: [{ scale: uiScale }] }]}
           pointerEvents="box-none"
         >
-          <View style={styles.transformBtn} {...photoPan.panHandlers}>
-            <Ionicons name="move" size={11} color={figmaColors.buttonPrimaryText} />
+          <View style={toolBtn('move', activeTool === 'move')} {...moveButtonPan.panHandlers}>
+            <Pressable style={styles.transformBtnInner} onPress={() => setActiveTool('move')}>
+              <Ionicons name="move" size={11} color={figmaColors.buttonPrimaryText} />
+            </Pressable>
           </View>
-          <View style={[styles.transformBtn, styles.transformBtnAccent]} {...rotatePan.panHandlers}>
-            <Ionicons name="refresh" size={10} color={figmaColors.white} />
+          <View style={[...toolBtn('rotate', activeTool === 'rotate'), styles.transformBtnAccent]} {...rotateButtonPan.panHandlers}>
+            <Pressable style={styles.transformBtnInner} onPress={() => setActiveTool('rotate')}>
+              <Ionicons name="refresh" size={10} color={figmaColors.white} />
+            </Pressable>
           </View>
-          <View style={[styles.transformBtn, styles.transformBtnAccent]} {...scalePan.panHandlers} />
+          <View style={[...toolBtn('scale', activeTool === 'scale'), styles.transformBtnAccent]} {...scaleButtonPan.panHandlers}>
+            <Pressable style={styles.transformBtnInner} onPress={() => setActiveTool('scale')}>
+              <Ionicons name="scan-outline" size={10} color={figmaColors.white} />
+            </Pressable>
+          </View>
           <Pressable style={styles.transformBtn} onPress={onPickPhoto} hitSlop={4}>
             <Ionicons name="swap-horizontal" size={11} color={figmaColors.buttonPrimaryText} />
           </Pressable>
@@ -312,10 +461,21 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: figmaColors.white
   },
+  transformBtnActive: {
+    borderColor: figmaColors.accentStrong,
+    backgroundColor: figmaColors.navItemActiveBg
+  },
   transformBtnAccent: {
     width: 18,
     height: 18,
     borderRadius: 9,
     backgroundColor: figmaColors.accentStrong
+  },
+  transformBtnInner: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center'
   }
 });
