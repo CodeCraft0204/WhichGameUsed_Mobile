@@ -39,6 +39,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
 
   return StyleSheet.create({
     button: {
+      width: '100%',
       minHeight: height,
       borderRadius: s(12),
       backgroundColor: figmaColors.buttonPrimaryBg,
@@ -46,8 +47,8 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       borderColor: figmaColors.buttonPrimaryBorder,
       alignItems: 'center',
       justifyContent: 'center',
-      marginTop: s(10),
-      marginHorizontal: s(150)
+      paddingHorizontal: s(20),
+      marginTop: s(10)
     },
     buttonPressed: {
       opacity: 0.88
@@ -57,7 +58,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     label: {
       fontFamily: appFonts.display,
-      fontSize: t(authLayout.primaryButtonFontSize/1.5),
+      fontSize: t(authLayout.primaryButtonFontSize),
       lineHeight: t(28),
       color: figmaColors.buttonPrimaryText,
       letterSpacing: 0.4,
