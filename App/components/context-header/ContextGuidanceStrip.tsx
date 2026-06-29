@@ -28,8 +28,9 @@ import {
 
 type Props = {
   pageKey: ContextHeaderPageKey;
-  /** Main page description — shown first, while scrolling, and after dismiss. */
   fallbackDescription?: string;
+  /** Page-header layout: hug current text, no min-height reservation. */
+  headerMode?: boolean;
   style?: StyleProp<TextStyle>;
   containerStyle?: StyleProp<ViewStyle>;
 };
@@ -46,6 +47,7 @@ type Phase = 'intro' | 'tips';
 function ContextGuidanceStripComponent({
   pageKey,
   fallbackDescription,
+  headerMode = false,
   style,
   containerStyle
 }: Props) {
@@ -53,7 +55,7 @@ function ContextGuidanceStripComponent({
   const { s, t } = useFigmaLayout();
   const scrollCtx = useContextHeaderScroll();
   const { messages } = useContextHeaderMessages(pageKey);
-  const styles = useMemo(() => createStyles(s, t), [s, t]);
+  const styles = useMemo(() => createStyles(s, t, headerMode), [s, t, headerMode]);
   const tips = messages.filter((m) => m.text);
   const hasIntro = Boolean(fallbackDescription?.trim());
   const [dismissed, setDismissed] = useState(() => isContextHeaderDismissed(pageKey));
@@ -63,7 +65,8 @@ function ContextGuidanceStripComponent({
   const [messageIndex, setMessageIndex] = useState(0);
   const [isScrolled, setIsScrolled] = useState(false);
   const [contentMode, setContentMode] = useState<ContentMode>(hasIntro ? 'description' : 'tips');
-  const [slotHeight, setSlotHeight] = useState(0);
+  const [reservedHeight, setReservedHeight] = useState(0);
+
   const contentOpacity = useRef(new Animated.Value(1)).current;
   const messageIndexRef = useRef(messageIndex);
   const scrolledRef = useRef(false);
@@ -95,7 +98,7 @@ function ContextGuidanceStripComponent({
     contentOpacity.setValue(1);
     scrolledRef.current = false;
     setIsScrolled(false);
-    setSlotHeight(0);
+    setReservedHeight(0);
     heightsRef.current = { description: 0, tipMax: 0 };
     setContentMode(hasIntro ? 'description' : 'tips');
     if (!isContextHeaderDismissed(pageKey) && fallbackDescription?.trim()) {
@@ -105,7 +108,6 @@ function ContextGuidanceStripComponent({
 
   useEffect(() => {
     if (!scrollCtx) return;
-
     const id = scrollCtx.scrollY.addListener(({ value }) => {
       const nextScrolled = value > SCROLL_DESCRIPTION_THRESHOLD;
       if (nextScrolled !== scrolledRef.current) {
@@ -113,7 +115,6 @@ function ContextGuidanceStripComponent({
         setIsScrolled(nextScrolled);
       }
     });
-
     return () => scrollCtx.scrollY.removeListener(id);
   }, [scrollCtx]);
 
@@ -182,23 +183,19 @@ function ContextGuidanceStripComponent({
 
   useEffect(() => {
     if (dismissed || phase !== 'intro' || !hasIntro || isScrolled) return;
-
     const id = setTimeout(() => {
       setPhase('tips');
       setMessageIndex(0);
     }, INTRO_DELAY_MS);
-
     return () => clearTimeout(id);
   }, [dismissed, hasIntro, isScrolled, phase]);
 
   useEffect(() => {
     if (contentMode !== 'tips' || tips.length <= 1 || dismissed || isScrolled) return;
-
     const id = setInterval(() => {
       const next = (messageIndexRef.current + 1) % tips.length;
       fadeToMessage(next);
     }, MESSAGE_CYCLE_MS);
-
     return () => clearInterval(id);
   }, [contentMode, dismissed, fadeToMessage, isScrolled, tips.length]);
 
@@ -223,7 +220,7 @@ function ContextGuidanceStripComponent({
       heightsRef.current.tipMax = Math.max(heightsRef.current.tipMax, height);
     }
     const stable = Math.max(heightsRef.current.description, heightsRef.current.tipMax);
-    setSlotHeight((prev) => (stable > prev ? stable : prev));
+    setReservedHeight((prev) => (stable > prev ? stable : prev));
   }, []);
 
   const onVisibleLayout = useCallback(
@@ -243,9 +240,40 @@ function ContextGuidanceStripComponent({
     </Animated.Text>
   );
 
+  const content = tipRoute ? (
+    <Pressable
+      onPress={openRoute}
+      style={styles.messagePressable}
+      accessibilityRole="link"
+      accessibilityLabel={displayText}
+      accessibilityHint="Opens related page"
+    >
+      {messageNode}
+    </Pressable>
+  ) : (
+    messageNode
+  );
+
+  if (headerMode) {
+    return (
+      <View
+        style={[styles.collapseWrap, containerStyle]}
+        {...(contentMode === 'tips' ? panResponder.panHandlers : {})}
+      >
+        {content}
+      </View>
+    );
+  }
+
   return (
-    <View style={[styles.collapseWrap, containerStyle, slotHeight > 0 ? { minHeight: slotHeight } : null]}>
-      {/* Hidden measure pass — reserve tallest description/tip height to prevent header jump */}
+    <View
+      style={[
+        styles.collapseWrap,
+        containerStyle,
+        reservedHeight > 0 ? { minHeight: reservedHeight } : null
+      ]}
+    >
+      {/* Hidden measure pass — reserve tallest description/tip height to prevent jump */}
       <View style={styles.measureLayer} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no">
         {hasIntro ? (
           <Text
@@ -271,19 +299,7 @@ function ContextGuidanceStripComponent({
         onLayout={(e) => onVisibleLayout(e.nativeEvent.layout.height)}
         {...(contentMode === 'tips' ? panResponder.panHandlers : {})}
       >
-        {tipRoute ? (
-          <Pressable
-            onPress={openRoute}
-            style={styles.messagePressable}
-            accessibilityRole="link"
-            accessibilityLabel={displayText}
-            accessibilityHint="Opens related page"
-          >
-            {messageNode}
-          </Pressable>
-        ) : (
-          messageNode
-        )}
+        {content}
       </View>
     </View>
   );
@@ -291,13 +307,13 @@ function ContextGuidanceStripComponent({
 
 export const ContextGuidanceStrip = memo(ContextGuidanceStripComponent);
 
-function createStyles(s: (n: number) => number, t: (n: number) => number) {
+function createStyles(s: (n: number) => number, t: (n: number) => number, headerMode: boolean) {
   const tb = (n: number) => bodyText(t, n);
 
   return StyleSheet.create({
     collapseWrap: {
       width: '100%',
-      marginTop: s(12),
+      marginTop: headerMode ? s(8) : s(12),
       position: 'relative'
     },
     measureLayer: {
