@@ -3,6 +3,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
+  Linking,
   Pressable,
   ScrollView,
   Share,
@@ -41,10 +43,12 @@ import {
   getCardById,
   listAuthenticatedAssetsForCard,
   listCatalogCards,
+  listCatalogCardsByMemorabiliaPiece,
   type AuthenticatedAssetSummary,
   type CardDetail,
   type CardSummary
 } from '@/lib/cards';
+import { listMemorabiliaPieceImages, type MemorabiliaPieceImage } from '@/lib/card-images';
 import {
   getCardResearchRatings,
   setUserResearchRating,
@@ -112,6 +116,7 @@ export default function CardDetailScreen() {
   const [card, setCard] = useState<CardDetail | null>(null);
   const [assets, setAssets] = useState<AuthenticatedAssetSummary[]>([]);
   const [related, setRelated] = useState<CardSummary[]>([]);
+  const [memorabiliaImages, setMemorabiliaImages] = useState<MemorabiliaPieceImage[]>([]);
   const [threads, setThreads] = useState<ForumThreadSummary[]>([]);
   const [onWishlist, setOnWishlist] = useState(false);
   const [wishBusy, setWishBusy] = useState(false);
@@ -136,7 +141,15 @@ export default function CardDetailScreen() {
 
       const loadedCard = cardResult.card;
       let relatedItems: CardSummary[] = [];
-      if (loadedCard) {
+      let pieceImages: MemorabiliaPieceImage[] = [];
+      if (loadedCard?.memorabilia_piece_id) {
+        const [relatedResult, imagesResult] = await Promise.all([
+          listCatalogCardsByMemorabiliaPiece(loadedCard.memorabilia_piece_id, loadedCard.id, 8),
+          listMemorabiliaPieceImages(loadedCard.memorabilia_piece_id)
+        ]);
+        relatedItems = relatedResult.items.slice(0, 6);
+        pieceImages = imagesResult.items;
+      } else if (loadedCard) {
         const query = loadedCard.player_name ?? loadedCard.title;
         const relatedResult = await listCatalogCards({ query, limit: 8 });
         relatedItems = relatedResult.items.filter((c) => c.id !== loadedCard.id).slice(0, 6);
@@ -146,6 +159,7 @@ export default function CardDetailScreen() {
       setCard(loadedCard);
       setAssets(assetsResult.items);
       setRelated(relatedItems);
+      setMemorabiliaImages(pieceImages);
       setThreads(forumResult.items);
       setOnWishlist(!!wishEntry.itemId);
       setResearchRatings(ratingsResult.ratings);
@@ -430,6 +444,52 @@ export default function CardDetailScreen() {
               ) : null}
             </SectionPanel>
 
+            {card.memorabilia_piece_label ? (
+              <SectionPanel title={cardDetailCopy.sharedMemorabilia} s={s} t={t}>
+                <View style={styles.provenanceRow}>
+                  <Ionicons name="git-branch-outline" size={s(18)} color={figmaColors.bronze} />
+                  <View style={styles.provenanceBody}>
+                    <Text style={styles.provenanceLabel}>{card.memorabilia_piece_label}</Text>
+                    <Text style={styles.provenanceValue}>{cardDetailCopy.sharedMemorabiliaHint}</Text>
+                  </View>
+                </View>
+                {memorabiliaImages.length > 0 ? (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    <View style={styles.memorabiliaImageRow}>
+                      {memorabiliaImages.map((item) => (
+                        <Pressable
+                          key={item.id}
+                          style={styles.memorabiliaImageCard}
+                          onPress={() => {
+                            if (item.isVideo) void Linking.openURL(item.url);
+                          }}
+                          disabled={!item.isVideo}
+                        >
+                          {item.isVideo ? (
+                            <View style={styles.memorabiliaVideoThumb}>
+                              <Ionicons name="videocam" size={s(28)} color={figmaColors.bronze} />
+                              <Text style={styles.memorabiliaVideoLabel}>Video proof</Text>
+                            </View>
+                          ) : (
+                            <Image
+                              source={{ uri: item.url }}
+                              style={styles.memorabiliaImage}
+                              resizeMode="cover"
+                            />
+                          )}
+                          {item.imageType ? (
+                            <Text style={styles.memorabiliaImageCaption}>
+                              {item.imageType.replace('_', ' ')}
+                            </Text>
+                          ) : null}
+                        </Pressable>
+                      ))}
+                    </View>
+                  </ScrollView>
+                ) : null}
+              </SectionPanel>
+            ) : null}
+
             <View
               onLayout={(e) => {
                 registerSection('evidence', e.nativeEvent.layout.y);
@@ -466,9 +526,19 @@ export default function CardDetailScreen() {
               </SectionPanel>
             </View>
 
-            <SectionPanel title={cardDetailCopy.relatedCards} s={s} t={t}>
+            <SectionPanel
+              title={
+                card.memorabilia_piece_id ? cardDetailCopy.sharedMemorabilia : cardDetailCopy.relatedCards
+              }
+              s={s}
+              t={t}
+            >
               {related.length === 0 ? (
-                <Text style={styles.empty}>{cardDetailCopy.noRelated}</Text>
+                <Text style={styles.empty}>
+                  {card.memorabilia_piece_id
+                    ? cardDetailCopy.noSharedMemorabilia
+                    : cardDetailCopy.noRelated}
+                </Text>
               ) : (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                   <View style={styles.relatedRow}>
@@ -741,6 +811,39 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     relatedRow: { flexDirection: 'row', gap: s(12), paddingVertical: s(4) },
     relatedCard: { width: s(280) },
+    memorabiliaImageRow: { flexDirection: 'row', gap: s(10), paddingTop: s(8), paddingBottom: s(4) },
+    memorabiliaImageCard: { width: s(132) },
+    memorabiliaImage: {
+      width: s(132),
+      height: s(100),
+      borderRadius: s(10),
+      borderWidth: 1,
+      borderColor: figmaColors.divider,
+      backgroundColor: figmaColors.creamLight
+    },
+    memorabiliaVideoThumb: {
+      width: s(132),
+      height: s(100),
+      borderRadius: s(10),
+      borderWidth: 1,
+      borderColor: figmaColors.divider,
+      backgroundColor: figmaColors.creamLight,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: s(6)
+    },
+    memorabiliaVideoLabel: {
+      fontFamily: appFonts.body,
+      fontSize: tb(12),
+      color: figmaColors.bronze
+    },
+    memorabiliaImageCaption: {
+      fontFamily: appFonts.body,
+      fontSize: tb(11),
+      color: figmaColors.textMuted,
+      marginTop: s(6),
+      textTransform: 'capitalize'
+    },
     threadRow: {
       borderBottomWidth: 1,
       borderBottomColor: figmaColors.divider,

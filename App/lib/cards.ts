@@ -14,6 +14,9 @@ export type CardSummary = {
   sport_name: string | null;
   manufacturer_name: string | null;
   memorabilia_type: string | null;
+  memorabilia_piece_id: string | null;
+  memorabilia_piece_label: string | null;
+  memorabilia_piece_slug: string | null;
   authenticated_count: number;
   published_at: string | null;
   imageUrl: string | null;
@@ -29,7 +32,7 @@ export type CatalogStats = {
 };
 
 const SUMMARY_COLUMNS =
-  'id, title, card_number, player_name, team_name, product_name, product_full_name, year, sport_name, manufacturer_name, memorabilia_type, authenticated_count, published_at';
+  'id, title, card_number, player_name, team_name, product_name, product_full_name, year, sport_name, manufacturer_name, memorabilia_type, memorabilia_piece_id, memorabilia_piece_label, memorabilia_piece_slug, authenticated_count, published_at';
 
 type CardImageIds = {
   front: string | null;
@@ -320,6 +323,30 @@ export async function getAuthenticatedAssetById(
 
   if (error) return { asset: null, error: error.message };
   return { asset: (data as AuthenticatedAssetSummary & { card_id: string }) ?? null, error: null };
+}
+
+export async function listCatalogCardsByMemorabiliaPiece(
+  pieceId: string,
+  excludeCardId?: string,
+  limit = 8
+): Promise<{ items: CardSummary[]; error: string | null }> {
+  let request = supabase
+    .from('card_public_summary')
+    .select(SUMMARY_COLUMNS)
+    .eq('status', 'approved')
+    .eq('memorabilia_piece_id', pieceId)
+    .order('year', { ascending: true, nullsFirst: false })
+    .order('title', { ascending: true })
+    .limit(limit);
+
+  const { data, error } = await request;
+  if (error) return { items: [], error: error.message };
+
+  const rows = ((data ?? []) as Omit<CardSummary, 'imageUrl'>[]).filter(
+    (row) => row.id !== excludeCardId
+  );
+  const items = await attachImageUrls(rows);
+  return { items, error: null };
 }
 
 export async function getCardById(
