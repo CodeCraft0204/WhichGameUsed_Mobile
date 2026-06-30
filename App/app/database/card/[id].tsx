@@ -213,6 +213,8 @@ export default function CardDetailScreen() {
 
   const subtitle = card?.product_full_name ?? card?.product_name ?? undefined;
   const isAuthenticated = (card?.authenticated_count ?? 0) > 0;
+  const hasFrontImage = !!card?.imageUrl;
+  const hasBackImage = !!card?.backImageUrl;
   const heroMeta = card ? cardToMeta(card) : [];
 
   return (
@@ -241,13 +243,13 @@ export default function CardDetailScreen() {
               <View style={styles.imageWrap}>
                 <CardImagePager
                   frontSource={
-                    card.imageUrl ? { uri: card.imageUrl } : databaseIcons.cardPlaceholder
+                    hasFrontImage ? { uri: card.imageUrl! } : databaseIcons.cardPlaceholder
                   }
                   backSource={
-                    card.backImageUrl
-                      ? { uri: card.backImageUrl }
-                      : databaseIcons.cardPlaceholder
+                    hasBackImage ? { uri: card.backImageUrl! } : databaseIcons.cardPlaceholder
                   }
+                  hasFrontImage={hasFrontImage}
+                  hasBackImage={hasBackImage}
                   s={s}
                   t={t}
                 />

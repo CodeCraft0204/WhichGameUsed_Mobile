@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import {
   Image,
@@ -17,60 +18,137 @@ import { figmaColors } from '@/constants/figmaColors';
 type CardImagePagerProps = {
   frontSource: { uri: string } | number;
   backSource: { uri: string } | number;
+  hasFrontImage?: boolean;
+  hasBackImage?: boolean;
   s: (n: number) => number;
   t: (n: number) => number;
 };
 
-export function CardImagePager({ frontSource, backSource, s, t }: CardImagePagerProps) {
+function NoImagePlaceholder({ s, t }: { s: (n: number) => number; t: (n: number) => number }) {
+  const styles = useMemo(() => createPlaceholderStyles(s, t), [s, t]);
+  return (
+    <View style={styles.wrap}>
+      <View style={styles.box}>
+        <Ionicons name="image-outline" size={s(32)} color={figmaColors.bronze} />
+        <Text style={styles.label}>No card image on file</Text>
+        <Text style={styles.hint}>Reference images can be added from the admin portal.</Text>
+      </View>
+    </View>
+  );
+}
+
+export function CardImagePager({
+  frontSource,
+  backSource,
+  hasFrontImage = true,
+  hasBackImage = true,
+  s,
+  t
+}: CardImagePagerProps) {
   const { width: windowWidth } = useWindowDimensions();
   const styles = useMemo(() => createStyles(s, t), [s, t]);
   const [activeIndex, setActiveIndex] = useState(0);
   const pageWidth = windowWidth - s(32);
+
+  if (!hasFrontImage && !hasBackImage) {
+    return <NoImagePlaceholder s={s} t={t} />;
+  }
+
   const slides = [
-    { key: 'front', label: databaseCopy.frontLabel, source: frontSource },
-    { key: 'back', label: databaseCopy.backLabel, source: backSource }
+    ...(hasFrontImage
+      ? [{ key: 'front' as const, label: databaseCopy.frontLabel, source: frontSource }]
+      : []),
+    ...(hasBackImage
+      ? [{ key: 'back' as const, label: databaseCopy.backLabel, source: backSource }]
+      : [])
   ];
 
   const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (slides.length < 2) return;
     const index = Math.round(e.nativeEvent.contentOffset.x / pageWidth);
     setActiveIndex(index);
   };
 
   return (
     <View style={styles.wrap}>
-      <ScrollView
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={onScrollEnd}
-        decelerationRate="fast"
-        snapToInterval={pageWidth}
-        snapToAlignment="start"
-        contentContainerStyle={styles.scrollContent}
-      >
-        {slides.map((slide) => (
-          <View key={slide.key} style={[styles.page, { width: pageWidth }]}>
-            <Text style={styles.label}>{slide.label}</Text>
-            <Image source={slide.source} style={styles.image} resizeMode="contain" />
-          </View>
-        ))}
-      </ScrollView>
+      {slides.length > 1 ? (
+        <ScrollView
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={onScrollEnd}
+          decelerationRate="fast"
+          snapToInterval={pageWidth}
+          snapToAlignment="start"
+          contentContainerStyle={styles.scrollContent}
+        >
+          {slides.map((slide) => (
+            <View key={slide.key} style={[styles.page, { width: pageWidth }]}>
+              <Text style={styles.label}>{slide.label}</Text>
+              <Image source={slide.source} style={styles.image} resizeMode="contain" />
+            </View>
+          ))}
+        </ScrollView>
+      ) : (
+        <View style={[styles.page, { width: pageWidth }]}>
+          <Text style={styles.label}>{slides[0].label}</Text>
+          <Image source={slides[0].source} style={styles.image} resizeMode="contain" />
+        </View>
+      )}
 
-      <View style={styles.dots}>
-        {slides.map((slide, i) => (
-          <View key={slide.key} style={[styles.dot, i === activeIndex && styles.dotActive]} />
-        ))}
-      </View>
-      <Text style={styles.hint}>Swipe for front / back</Text>
+      {slides.length > 1 ? (
+        <>
+          <View style={styles.dots}>
+            {slides.map((slide, i) => (
+              <View key={slide.key} style={[styles.dot, i === activeIndex && styles.dotActive]} />
+            ))}
+          </View>
+          <Text style={styles.hint}>Swipe for front / back</Text>
+        </>
+      ) : null}
     </View>
   );
+}
+
+function createPlaceholderStyles(s: (n: number) => number, t: (n: number) => number) {
+  const tb = (n: number) => bodyText(t, n);
+  return StyleSheet.create({
+    wrap: { marginBottom: s(8) },
+    box: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: s(6),
+      minHeight: s(100),
+      maxHeight: s(120),
+      paddingVertical: s(16),
+      paddingHorizontal: s(20),
+      borderRadius: s(12),
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      backgroundColor: figmaColors.surfaceMuted
+    },
+    label: {
+      fontFamily: appFonts.accent,
+      fontSize: tb(12),
+      color: figmaColors.brown,
+      letterSpacing: 0.6,
+      textTransform: 'uppercase'
+    },
+    hint: {
+      fontFamily: appFonts.body,
+      fontSize: tb(13),
+      lineHeight: tb(18),
+      color: figmaColors.textMuted,
+      textAlign: 'center'
+    }
+  });
 }
 
 function createStyles(s: (n: number) => number, t: (n: number) => number) {
   const tb = (n: number) => bodyText(t, n);
 
   return StyleSheet.create({
-    wrap: { marginBottom: s(18) },
+    wrap: { marginBottom: s(12) },
     scrollContent: { alignItems: 'center' },
     page: { alignItems: 'center' },
     label: {
@@ -84,6 +162,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     image: {
       width: '100%',
+      maxHeight: s(340),
       aspectRatio: 3 / 4,
       borderRadius: s(12),
       backgroundColor: figmaColors.divider,
