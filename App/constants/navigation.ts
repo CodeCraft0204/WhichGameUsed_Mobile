@@ -114,3 +114,7 @@ export function discussionSavedHref(): Href {
 export function discussionFeedPreferencesHref(): Href {
   return '/discussion/feed-preferences' as unknown as Href;
 }
+
+export function publicProfileHref(id: string): Href {
+  return { pathname: '/profile/[id]', params: { id } } as unknown as Href;
+}

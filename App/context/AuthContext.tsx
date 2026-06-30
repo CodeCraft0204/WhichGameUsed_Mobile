@@ -20,12 +20,12 @@ import {
   verifyMobileOtp
 } from '@/lib/mobile-auth';
 import { supabase } from '@/lib/supabase';
-import type { AppRole, Profile } from '@/types/profile';
+import type { AppRole, MyProfile } from '@/types/profile';
 
 type AuthResult = { error: string | null };
 
 type AuthSessionResult = AuthResult & {
-  profile: Profile | null;
+  profile: MyProfile | null;
   isAdmin: boolean;
 };
 
@@ -36,7 +36,7 @@ type PasswordResetCompleteResult = AuthResult & {
 type AuthState = {
   session: Session | null;
   user: User | null;
-  profile: Profile | null;
+  profile: MyProfile | null;
   loading: boolean;
   profileLoading: boolean;
   isAdmin: boolean;
@@ -78,10 +78,12 @@ function isJwtClockSkewError(message: string): boolean {
 
 async function fetchProfile(
   userId: string
-): Promise<{ profile: Profile | null; clockSkew: boolean }> {
+): Promise<{ profile: MyProfile | null; clockSkew: boolean }> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, role, display_name, username, avatar_url, about, location_text')
+    .select(
+      'id, role, display_name, username, avatar_url, about, location_text, is_public, leaderboard_eligible'
+    )
     .eq('id', userId)
     .maybeSingle();
 
@@ -96,7 +98,7 @@ async function fetchProfile(
     }
     return { profile: null, clockSkew };
   }
-  return { profile: data as Profile | null, clockSkew: false };
+  return { profile: data as MyProfile | null, clockSkew: false };
 }
 
 async function profileAfterSession(): Promise<AuthSessionResult> {
@@ -116,7 +118,7 @@ async function profileAfterSession(): Promise<AuthSessionResult> {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<MyProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
   const [otpChallengeActive, setOtpChallengeActive] = useState(false);

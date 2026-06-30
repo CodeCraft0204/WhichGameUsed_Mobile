@@ -17,7 +17,8 @@ export type LeaderboardRank = {
   highlight?: boolean;
 };
 
-export const leaderboardPeriodTabs = ['THIS MONTH', 'THIS YEAR', 'ALL-TIME'] as const;
+/** THIS YEAR hidden until leaderboard_yearly DB view exists. */
+export const leaderboardPeriodTabs = ['THIS MONTH', 'ALL-TIME'] as const;
 
 export const leaderboardRanks: LeaderboardRank[] = [
   {
