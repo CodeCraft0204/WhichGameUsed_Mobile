@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { appFonts } from '@/constants/appFonts';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -9,14 +9,15 @@ import {
   Text,
   View
 } from 'react-native';
-import { chipOptionsFromLabels, FigmaChipRow } from '@/components/figma/FigmaChipRow';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaHubBottomNav } from '@/components/figma/FigmaHubBottomNav';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
+import { LeaderboardPeriodTabs } from '@/components/figma/LeaderboardPeriodTabs';
 import { LeaderboardPodium } from '@/components/figma/LeaderboardPodium';
 import { LeaderboardPointsExplainer } from '@/components/figma/LeaderboardPointsExplainer';
 import { LeaderboardRankCard } from '@/components/figma/LeaderboardRankCard';
+import { LeaderboardResetBanner } from '@/components/figma/LeaderboardResetBanner';
 import { LeaderboardSelfCard } from '@/components/figma/LeaderboardSelfCard';
 import {
   ContextHeaderScrollProvider,
@@ -29,6 +30,7 @@ import { figmaColors } from '@/constants/figmaColors';
 import { bodyText } from '@/constants/appTypography';
 import { useAuth } from '@/context/AuthContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
+import { useLeaderboardRealtime } from '@/hooks/useLeaderboardRealtime';
 import {
   listLeaderboard,
   getMyStanding,
@@ -36,7 +38,6 @@ import {
   type LeaderboardPeriod
 } from '@/lib/leaderboard';
 
-/** Map chip label → API period key */
 function tabToPeriod(tab: string): LeaderboardPeriod {
   return tab === 'ALL-TIME' ? 'all_time' : 'month';
 }
@@ -63,18 +64,25 @@ function LeaderboardScreenBody() {
   const [items, setItems] = useState<LeaderboardEntry[]>([]);
   const [selfEntry, setSelfEntry] = useState<LeaderboardEntry | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const initialLoadDone = useRef(false);
 
   const isEligible = profile?.leaderboard_eligible !== false;
+  const period = tabToPeriod(activeTab);
 
-  const load = useCallback(async (tab: string) => {
-    setLoading(true);
+  const load = useCallback(async (tab: string, opts?: { silent?: boolean }) => {
+    const silent = opts?.silent && initialLoadDone.current;
+    if (!silent) setLoading(true);
+    else setRefreshing(true);
+
     setError(null);
-    const period = tabToPeriod(tab);
+    const p = tabToPeriod(tab);
     const [rankResult, selfResult] = await Promise.all([
-      listLeaderboard(period, 20),
-      user ? getMyStanding(user.id, period) : Promise.resolve({ entry: null, rank: null, error: null })
+      listLeaderboard(p, 20),
+      user ? getMyStanding(user.id, p) : Promise.resolve({ entry: null, rank: null, error: null })
     ]);
+
     if (rankResult.error) {
       setError(rankResult.error);
       setItems([]);
@@ -83,11 +91,19 @@ function LeaderboardScreenBody() {
     }
     setSelfEntry(selfResult.entry);
     setLoading(false);
+    setRefreshing(false);
+    initialLoadDone.current = true;
   }, [user]);
 
   useFocusEffect(
     useCallback(() => { void load(activeTab); }, [load, activeTab])
   );
+
+  const silentRefresh = useCallback(() => {
+    void load(activeTab, { silent: true });
+  }, [load, activeTab]);
+
+  useLeaderboardRealtime(silentRefresh, initialLoadDone.current);
 
   const handleTabChange = useCallback((tab: string) => {
     setActiveTab(tab as (typeof leaderboardPeriodTabs)[number]);
@@ -95,15 +111,29 @@ function LeaderboardScreenBody() {
   }, [load]);
 
   const handlePressUser = useCallback((entry: LeaderboardEntry) => {
-    router.push(publicProfileHref(entry.userId));
-  }, [router]);
+    router.push(publicProfileHref(entry.userId, {
+      rank: entry.rank,
+      points: entry.points,
+      period
+    }));
+  }, [router, period]);
 
   const handleGoToSettings = useCallback(() => {
     router.push('/settings/settings');
   }, [router]);
 
+  const handleViewOwnProfile = useCallback(() => {
+    if (!user || !selfEntry) return;
+    router.push(publicProfileHref(user.id, {
+      rank: selfEntry.rank,
+      points: selfEntry.points,
+      period
+    }));
+  }, [router, user, selfEntry, period]);
+
   const top3 = items.slice(0, 3);
   const rest = items.slice(3);
+  const showMonthBanner = period === 'month';
 
   return (
     <FigmaScreen
@@ -120,35 +150,38 @@ function LeaderboardScreenBody() {
         s={s}
         page={page}
       >
-        <FigmaChipRow
-          options={chipOptionsFromLabels(leaderboardPeriodTabs)}
+        <LeaderboardPeriodTabs
+          tabs={leaderboardPeriodTabs}
           value={activeTab}
           onChange={handleTabChange}
           s={s}
           t={t}
-          style={styles.chipRow}
         />
       </FigmaPageHeader>
 
-      {/* ── Self standing ─────────────────────────────────────────────── */}
+      {showMonthBanner ? <LeaderboardResetBanner s={s} t={t} /> : null}
+
+      {refreshing ? (
+        <Text style={styles.refreshingText}>{leaderboardCopy.refreshing}</Text>
+      ) : null}
+
       {user ? (
         <LeaderboardSelfCard
           entry={selfEntry}
           isEligible={isEligible}
           onGoToSettings={handleGoToSettings}
+          onViewProfile={selfEntry ? handleViewOwnProfile : undefined}
           s={s}
           t={t}
         />
       ) : null}
 
-      {/* ── Loading ───────────────────────────────────────────────────── */}
       {loading ? (
         <View style={styles.centred}>
           <ActivityIndicator size="large" color={figmaColors.charcoal} />
           <Text style={styles.loadingText}>{leaderboardCopy.loading}</Text>
         </View>
       ) : error ? (
-        /* ── Error ─────────────────────────────────────────────────────── */
         <View style={styles.centred}>
           <Text style={styles.errorText}>{leaderboardCopy.error}</Text>
           <Pressable
@@ -160,13 +193,11 @@ function LeaderboardScreenBody() {
           </Pressable>
         </View>
       ) : items.length === 0 ? (
-        /* ── Empty ─────────────────────────────────────────────────────── */
         <View style={styles.centred}>
           <Text style={styles.emptyText}>{leaderboardCopy.empty}</Text>
         </View>
       ) : (
         <>
-          {/* ── Podium top 3 ──────────────────────────────────────────── */}
           <LeaderboardPodium
             top3={top3}
             currentUserId={user?.id}
@@ -175,12 +206,16 @@ function LeaderboardScreenBody() {
             t={t}
           />
 
-          {/* ── Section header ────────────────────────────────────────── */}
           <View style={page.sectionHeaderRow}>
             <Text style={page.sectionTitle}>{leaderboardCopy.sectionRanking}</Text>
           </View>
 
-          {/* ── Ranks 4–20 ────────────────────────────────────────────── */}
+          {rest.length === 0 && items.length > 0 ? (
+            <Text style={styles.rankingHint}>
+              {leaderboardCopy.rankingListShort(items.length)}
+            </Text>
+          ) : null}
+
           {rest.map((entry) => (
             <LeaderboardRankCard
               key={entry.userId}
@@ -189,7 +224,6 @@ function LeaderboardScreenBody() {
               username={entry.username}
               avatarUrl={entry.avatarUrl}
               points={entry.points}
-              highlight={false}
               isCurrentUser={user?.id === entry.userId}
               onPress={() => handlePressUser(entry)}
               s={s}
@@ -197,12 +231,10 @@ function LeaderboardScreenBody() {
             />
           ))}
 
-          {/* ── Points explainer ──────────────────────────────────────── */}
           <LeaderboardPointsExplainer s={s} t={t} />
         </>
       )}
 
-      {/* ── CTA card (always visible) ────────────────────────────────── */}
       <View style={page.ctaCard}>
         <Image source={leaderboardIcons.ctaTrophy} style={styles.ctaIcon} resizeMode="contain" />
         <View style={page.ctaTextWrap}>
@@ -219,9 +251,21 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
   const tb = (n: number) => bodyText(t, n);
 
   return StyleSheet.create({
-    chipRow: {
-      marginTop: s(20),
-      marginBottom: 0
+    refreshingText: {
+      fontFamily: appFonts.body,
+      fontSize: tb(13),
+      color: figmaColors.gray,
+      textAlign: 'center',
+      marginBottom: s(8)
+    },
+    rankingHint: {
+      fontFamily: appFonts.body,
+      fontSize: tb(15),
+      lineHeight: tb(21),
+      color: figmaColors.gray,
+      textAlign: 'center',
+      paddingHorizontal: s(12),
+      marginBottom: s(12)
     },
     centred: {
       alignItems: 'center',

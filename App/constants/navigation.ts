@@ -1,4 +1,5 @@
 ﻿import type { Href } from 'expo-router';
+import type { LeaderboardPeriod } from '@/lib/leaderboard';
 
 export const authNav: Array<{ label: string; href: Href }> = [
   { label: 'Sign In', href: '/sign-in/sign-in' },
@@ -115,6 +116,17 @@ export function discussionFeedPreferencesHref(): Href {
   return '/discussion/feed-preferences' as unknown as Href;
 }
 
-export function publicProfileHref(id: string): Href {
-  return { pathname: '/profile/[id]', params: { id } } as unknown as Href;
+export function publicProfileHref(
+  id: string,
+  extras?: { rank?: number; points?: number; period?: LeaderboardPeriod }
+): Href {
+  return {
+    pathname: '/profile/[id]',
+    params: {
+      id,
+      ...(extras?.rank != null ? { rank: String(extras.rank) } : {}),
+      ...(extras?.points != null ? { points: String(extras.points) } : {}),
+      ...(extras?.period ? { period: extras.period } : {})
+    }
+  } as unknown as Href;
 }
