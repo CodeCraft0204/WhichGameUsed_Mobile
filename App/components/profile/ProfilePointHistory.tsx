@@ -1,10 +1,12 @@
 import React, { useMemo } from 'react';
 import { appFonts } from '@/constants/appFonts';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { leaderboardEventLabel } from '@/constants/leaderboardEventLabels';
+import { BREAKDOWN_ICONS } from '@/constants/leaderboardAssets';
 import { figmaColors } from '@/constants/figmaColors';
 import { bodyText } from '@/constants/appTypography';
 import { formatPoints, formatRelativeTime } from '@/lib/leaderboard';
+import { eventCategoryLabel, eventGroupKey } from '@/lib/leaderboard-ui';
 import type { PointEvent } from '@/lib/leaderboard';
 
 type Props = {
@@ -20,22 +22,32 @@ export function ProfilePointHistory({ events, s, t }: Props) {
 
   return (
     <View style={styles.list}>
-      {events.map((ev) => (
-        <View key={ev.id} style={styles.row}>
-          <View style={styles.dot} />
-          <View style={styles.body}>
-            <Text style={styles.title}>{leaderboardEventLabel(ev.eventType)}</Text>
-            {ev.reason ? (
-              <Text style={styles.reason} numberOfLines={2}>{ev.reason}</Text>
-            ) : null}
-            <Text style={styles.time}>{formatRelativeTime(ev.createdAt)}</Text>
+      {events.map((ev, idx) => {
+        const groupKey = eventGroupKey(ev.eventType);
+        const icon = BREAKDOWN_ICONS[groupKey];
+
+        return (
+          <View key={ev.id}>
+            <View style={styles.row}>
+              <Image source={icon} style={styles.icon} resizeMode="contain" />
+              <View style={styles.body}>
+                <Text style={styles.title} numberOfLines={2}>
+                  {ev.reason?.trim() || leaderboardEventLabel(ev.eventType)}
+                </Text>
+                <Text style={styles.category}>{eventCategoryLabel(ev.eventType)}</Text>
+              </View>
+              <View style={styles.meta}>
+                <Text style={[styles.points, ev.points < 0 && styles.pointsNeg]}>
+                  {ev.points > 0 ? '+' : ''}
+                  {formatPoints(ev.points)} PTS
+                </Text>
+                <Text style={styles.time}>{formatRelativeTime(ev.createdAt)}</Text>
+              </View>
+            </View>
+            {idx < events.length - 1 ? <View style={styles.divider} /> : null}
           </View>
-          <Text style={[styles.points, ev.points < 0 && styles.pointsNeg]}>
-            {ev.points > 0 ? '+' : ''}
-            {formatPoints(ev.points)}
-          </Text>
-        </View>
-      ))}
+        );
+      })}
     </View>
   );
 }
@@ -45,28 +57,29 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
 
   return StyleSheet.create({
     list: {
-      gap: s(10)
+      backgroundColor: figmaColors.cream,
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      borderRadius: s(14),
+      paddingHorizontal: s(12),
+      paddingVertical: s(4)
     },
     row: {
       flexDirection: 'row',
       alignItems: 'flex-start',
       gap: s(10),
-      backgroundColor: figmaColors.cream,
-      borderWidth: 1,
-      borderColor: figmaColors.borderLight,
-      borderRadius: s(12),
-      padding: s(12)
+      paddingVertical: s(12)
     },
-    dot: {
-      width: s(8),
-      height: s(8),
-      borderRadius: s(4),
-      backgroundColor: figmaColors.accent,
-      marginTop: s(6)
+    icon: {
+      width: s(36),
+      height: s(36),
+      flexShrink: 0,
+      marginTop: s(2)
     },
     body: {
       flex: 1,
-      gap: s(2)
+      gap: s(2),
+      minWidth: 0
     },
     title: {
       fontFamily: appFonts.bodyBold,
@@ -74,26 +87,32 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       lineHeight: tb(20),
       color: figmaColors.charcoal
     },
-    reason: {
+    category: {
       fontFamily: appFonts.body,
       fontSize: tb(14),
-      lineHeight: tb(18),
       color: figmaColors.gray
     },
-    time: {
-      fontFamily: appFonts.body,
-      fontSize: tb(12),
-      color: figmaColors.grayMuted,
-      marginTop: s(2)
+    meta: {
+      alignItems: 'flex-end',
+      flexShrink: 0,
+      gap: s(2)
     },
     points: {
       fontFamily: appFonts.bodyBold,
       fontSize: tb(15),
-      color: figmaColors.textAccent,
-      flexShrink: 0
+      color: figmaColors.textAccent
     },
     pointsNeg: {
       color: figmaColors.error
+    },
+    time: {
+      fontFamily: appFonts.body,
+      fontSize: tb(13),
+      color: figmaColors.grayMuted
+    },
+    divider: {
+      height: 1,
+      backgroundColor: figmaColors.divider
     }
   });
 }

@@ -3,7 +3,6 @@ import { appFonts } from '@/constants/appFonts';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -16,6 +15,7 @@ import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import { LeaderboardPeriodTabs } from '@/components/figma/LeaderboardPeriodTabs';
 import { LeaderboardPodium } from '@/components/figma/LeaderboardPodium';
 import { LeaderboardPointsExplainer } from '@/components/figma/LeaderboardPointsExplainer';
+import { LeaderboardPrizeCard } from '@/components/figma/LeaderboardPrizeCard';
 import { LeaderboardRankCard } from '@/components/figma/LeaderboardRankCard';
 import { LeaderboardResetBanner } from '@/components/figma/LeaderboardResetBanner';
 import { LeaderboardSelfCard } from '@/components/figma/LeaderboardSelfCard';
@@ -53,7 +53,7 @@ export default function LeaderboardScreen() {
 function LeaderboardScreenBody() {
   const router = useRouter();
   const { user, profile } = useAuth();
-  const { s, t } = useFigmaLayout();
+  const { s, t } = useFigmaLayout(0.92);
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
   const scrollProps = useContextHeaderScrollProps({ contentContainerStyle: page.scrollContent });
@@ -66,6 +66,7 @@ function LeaderboardScreenBody() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [listExpanded, setListExpanded] = useState(false);
   const initialLoadDone = useRef(false);
 
   const isEligible = profile?.leaderboard_eligible !== false;
@@ -133,7 +134,10 @@ function LeaderboardScreenBody() {
 
   const top3 = items.slice(0, 3);
   const rest = items.slice(3);
+  const listEntries = rest.length > 0 ? rest : items;
   const showMonthBanner = period === 'month';
+  const visibleList = listExpanded ? listEntries : listEntries.slice(0, 7);
+  const rankingHint = leaderboardCopy.rankingListShort(items.length);
 
   return (
     <FigmaScreen
@@ -165,17 +169,6 @@ function LeaderboardScreenBody() {
         <Text style={styles.refreshingText}>{leaderboardCopy.refreshing}</Text>
       ) : null}
 
-      {user ? (
-        <LeaderboardSelfCard
-          entry={selfEntry}
-          isEligible={isEligible}
-          onGoToSettings={handleGoToSettings}
-          onViewProfile={selfEntry ? handleViewOwnProfile : undefined}
-          s={s}
-          t={t}
-        />
-      ) : null}
-
       {loading ? (
         <View style={styles.centred}>
           <ActivityIndicator size="large" color={figmaColors.charcoal} />
@@ -198,27 +191,40 @@ function LeaderboardScreenBody() {
         </View>
       ) : (
         <>
-          <LeaderboardPodium
-            top3={top3}
-            currentUserId={user?.id}
-            onPressUser={handlePressUser}
-            s={s}
-            t={t}
-          />
-
-          <View style={page.sectionHeaderRow}>
-            <Text style={page.sectionTitle}>{leaderboardCopy.sectionRanking}</Text>
-          </View>
-
-          {rest.length === 0 && items.length > 0 ? (
-            <Text style={styles.rankingHint}>
-              {leaderboardCopy.rankingListShort(items.length)}
-            </Text>
+          {top3.length > 0 ? (
+            <LeaderboardPodium
+              top3={top3}
+              currentUserId={user?.id}
+              onPressUser={handlePressUser}
+              s={s}
+              t={t}
+            />
           ) : null}
 
-          {rest.map((entry) => (
+          {user ? (
+            <LeaderboardSelfCard
+              entry={selfEntry}
+              isEligible={isEligible}
+              onGoToSettings={handleGoToSettings}
+              onViewProfile={selfEntry ? handleViewOwnProfile : undefined}
+              s={s}
+              t={t}
+            />
+          ) : null}
+
+          <View style={styles.sectionHeader}>
+            <Text style={page.sectionTitle}>{leaderboardCopy.sectionRanking}</Text>
+            <Text style={styles.pointsHeader}>{leaderboardCopy.pointsColumn}</Text>
+          </View>
+
+          {rankingHint ? (
+            <Text style={styles.rankingHint}>{rankingHint}</Text>
+          ) : null}
+
+          {visibleList.map((entry) => (
             <LeaderboardRankCard
               key={entry.userId}
+              userId={entry.userId}
               rank={entry.rank}
               displayName={entry.displayName}
               username={entry.username}
@@ -231,18 +237,24 @@ function LeaderboardScreenBody() {
             />
           ))}
 
-          <LeaderboardPointsExplainer s={s} t={t} />
+          {listEntries.length > 7 ? (
+            <Pressable
+              style={styles.viewAllBtn}
+              onPress={() => setListExpanded((v) => !v)}
+              accessibilityRole="button"
+            >
+              <Text style={styles.viewAllText}>
+                {listExpanded ? 'Show less' : leaderboardCopy.viewFullTop20}
+              </Text>
+            </Pressable>
+          ) : null}
+
+          <View style={styles.bottomCards}>
+            <LeaderboardPointsExplainer s={s} t={t} />
+            {period === 'month' ? <LeaderboardPrizeCard s={s} t={t} /> : null}
+          </View>
         </>
       )}
-
-      <View style={page.ctaCard}>
-        <Image source={leaderboardIcons.ctaTrophy} style={styles.ctaIcon} resizeMode="contain" />
-        <View style={page.ctaTextWrap}>
-          <Text style={page.ctaTitle}>{leaderboardCopy.ctaTitle}</Text>
-          <Text style={page.ctaBody}>{leaderboardCopy.ctaBody}</Text>
-        </View>
-        <Image source={leaderboardIcons.ctaArrow} style={styles.ctaArrow} resizeMode="contain" />
-      </View>
     </FigmaScreen>
   );
 }
@@ -258,14 +270,49 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       textAlign: 'center',
       marginBottom: s(8)
     },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderTopWidth: 1,
+      borderTopColor: figmaColors.divider,
+      paddingTop: s(8),
+      marginBottom: s(8)
+    },
+    pointsHeader: {
+      fontFamily: appFonts.accent,
+      fontSize: tb(14),
+      color: figmaColors.gray,
+      textTransform: 'uppercase',
+      letterSpacing: 0.8
+    },
     rankingHint: {
       fontFamily: appFonts.body,
-      fontSize: tb(15),
-      lineHeight: tb(21),
+      fontSize: tb(17),
+      lineHeight: tb(24),
       color: figmaColors.gray,
       textAlign: 'center',
       paddingHorizontal: s(12),
       marginBottom: s(12)
+    },
+    bottomCards: {
+      flexDirection: 'row',
+      gap: s(8),
+      marginTop: s(16),
+      marginBottom: s(8),
+      alignItems: 'stretch'
+    },
+    viewAllBtn: {
+      alignItems: 'center',
+      paddingVertical: s(10),
+      marginBottom: s(8)
+    },
+    viewAllText: {
+      fontFamily: appFonts.accent,
+      fontSize: tb(14),
+      color: figmaColors.gray,
+      letterSpacing: 0.6,
+      textTransform: 'uppercase'
     },
     centred: {
       alignItems: 'center',
@@ -274,19 +321,19 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     loadingText: {
       fontFamily: appFonts.body,
-      fontSize: tb(17),
+      fontSize: tb(19),
       color: figmaColors.gray
     },
     errorText: {
       fontFamily: appFonts.body,
-      fontSize: tb(17),
+      fontSize: tb(19),
       color: figmaColors.error,
       textAlign: 'center'
     },
     emptyText: {
       fontFamily: appFonts.body,
-      fontSize: tb(17),
-      lineHeight: tb(24),
+      fontSize: tb(19),
+      lineHeight: tb(26),
       color: figmaColors.gray,
       textAlign: 'center',
       paddingHorizontal: s(16)
@@ -303,15 +350,6 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       color: figmaColors.buttonPrimaryText,
       textTransform: 'uppercase',
       letterSpacing: 1.2
-    },
-    ctaIcon: {
-      width: s(72),
-      height: s(72)
-    },
-    ctaArrow: {
-      width: s(32),
-      height: s(21),
-      marginRight: s(6)
     }
   });
 }

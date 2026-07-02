@@ -12,7 +12,7 @@ type PeriodTabsProps<T extends string> = {
   t: (n: number) => number;
 };
 
-/** Underline-style period switcher (THIS MONTH / ALL-TIME). */
+/** Segmented pill toggle — Figma THIS MONTH / ALL-TIME. */
 export function LeaderboardPeriodTabs<T extends string>({
   tabs,
   value,
@@ -23,19 +23,18 @@ export function LeaderboardPeriodTabs<T extends string>({
   const styles = useMemo(() => createStyles(s, t), [s, t]);
 
   return (
-    <View style={styles.row}>
+    <View style={styles.track}>
       {tabs.map((tab) => {
         const active = tab === value;
         return (
           <Pressable
             key={tab}
             onPress={() => onChange(tab)}
-            style={styles.tab}
+            style={[styles.segment, active && styles.segmentActive]}
             accessibilityRole="tab"
             accessibilityState={{ selected: active }}
           >
             <Text style={[styles.label, active && styles.labelActive]}>{tab}</Text>
-            {active ? <View style={styles.underline} /> : null}
           </Pressable>
         );
       })}
@@ -47,36 +46,36 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
   const tb = (n: number) => bodyText(t, n);
 
   return StyleSheet.create({
-    row: {
+    track: {
       flexDirection: 'row',
-      gap: s(28),
+      alignSelf: 'flex-start',
+      borderWidth: 1.5,
+      borderColor: figmaColors.tabInactiveBorder,
+      borderRadius: s(24),
+      backgroundColor: figmaColors.tabInactiveBg,
+      padding: s(3),
       marginTop: s(16),
-      marginBottom: s(4),
-      borderBottomWidth: 1,
-      borderBottomColor: figmaColors.divider
+      marginBottom: s(8)
     },
-    tab: {
-      paddingBottom: s(10),
+    segment: {
+      paddingHorizontal: s(18),
+      paddingVertical: s(8),
+      borderRadius: s(20),
+      minWidth: s(120),
       alignItems: 'center'
+    },
+    segmentActive: {
+      backgroundColor: figmaColors.tabActiveBg
     },
     label: {
       fontFamily: appFonts.accent,
-      fontSize: tb(13),
-      color: figmaColors.gray,
-      letterSpacing: 1.4,
+      fontSize: tb(11),
+      color: figmaColors.tabText,
+      letterSpacing: 1.1,
       textTransform: 'uppercase'
     },
     labelActive: {
-      color: figmaColors.charcoal
-    },
-    underline: {
-      position: 'absolute',
-      bottom: -1,
-      left: 0,
-      right: 0,
-      height: 3,
-      backgroundColor: figmaColors.charcoal,
-      borderRadius: 2
+      color: figmaColors.tabTextActive
     }
   });
 }
