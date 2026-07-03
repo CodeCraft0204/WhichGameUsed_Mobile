@@ -21,7 +21,7 @@ import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { LEADERBOARD_EVENT_GROUPS } from '@/constants/leaderboardEventLabels';
 import { leaderboardCopy } from '@/constants/leaderboardCopy';
-import { BREAKDOWN_ICONS, leaderboardAssets } from '@/constants/leaderboardAssets';
+import { BREAKDOWN_ICONS, leaderboardAssets, PODIUM_RANK_THEME } from '@/constants/leaderboardAssets';
 import { figmaIcons } from '@/constants/figmaIcons';
 import { figmaColors } from '@/constants/figmaColors';
 import { bodyText } from '@/constants/appTypography';
@@ -42,7 +42,6 @@ import {
   profileTagline,
   rankTheme
 } from '@/lib/leaderboard-ui';
-import { LeaderboardRankSeal } from '@/components/figma/LeaderboardRankSeal';
 import { useLeaderboardRealtime } from '@/hooks/useLeaderboardRealtime';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 
@@ -150,6 +149,8 @@ export default function PublicProfileScreen() {
     ? new Date(profile.joinedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
     : null;
   const rankVisual = rank != null ? rankTheme(rank) : null;
+  const isTopThree = rank === 1 || rank === 2 || rank === 3;
+  const podiumTheme = isTopThree ? PODIUM_RANK_THEME[rank] : null;
 
   return (
     <FigmaScreen scrollProps={{ contentContainerStyle: page.scrollContent }}>
@@ -164,12 +165,19 @@ export default function PublicProfileScreen() {
       <View style={styles.heroRow}>
         <View style={styles.heroMain}>
           <View style={styles.avatarStack}>
-            <Image source={leaderboardAssets.avatarRingGold} style={styles.avatarRing} resizeMode="contain" />
+            <Image
+              source={podiumTheme?.avatarRing ?? leaderboardAssets.avatarRingGold}
+              style={styles.avatarRing}
+              resizeMode="contain"
+            />
             <ProfileAvatar url={profile.avatarUrl} name={nameLabel} size={s(112)} />
-            {rank != null ? (
-              <View style={styles.rankShieldWrap}>
-                <LeaderboardRankSeal rank={rank} s={s} t={t} size="sm" />
-              </View>
+            {podiumTheme ? (
+              <Image
+                source={podiumTheme.laurel}
+                style={styles.rankBadge}
+                resizeMode="contain"
+                accessibilityLabel={`Rank ${rank}`}
+              />
             ) : null}
           </View>
 
@@ -201,11 +209,6 @@ export default function PublicProfileScreen() {
             <Text style={[styles.globalRankLabel, { color: rankVisual.accent }]}>
               {leaderboardCopy.profile.globalRank}
             </Text>
-            {rankVisual.laurel ? (
-              <Image source={rankVisual.laurel} style={styles.globalLaurel} resizeMode="contain" />
-            ) : (
-              <View style={styles.globalLaurelSpacer} />
-            )}
             <Text style={[styles.globalRankValue, { color: rankVisual.accent }]}>{rank}</Text>
             <Text style={[styles.globalRankPct, { color: rankVisual.accentMuted }]}>
               {formatTopPercent(rank)}
@@ -383,20 +386,23 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     avatarStack: {
       width: s(118),
-      height: s(118),
+      height: s(132),
       alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0
+      justifyContent: 'flex-start',
+      flexShrink: 0,
+      paddingTop: s(3)
     },
     avatarRing: {
       position: 'absolute',
+      top: s(3),
       width: s(118),
       height: s(118)
     },
-    rankShieldWrap: {
+    rankBadge: {
       position: 'absolute',
-      bottom: -s(4),
-      right: -s(6)
+      bottom: 0,
+      width: s(40),
+      height: s(40)
     },
     identity: {
       flex: 1,
@@ -446,9 +452,11 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       backgroundColor: figmaColors.tabActiveBg,
       borderRadius: s(12),
       alignItems: 'center',
-      paddingVertical: s(12),
+      justifyContent: 'center',
+      paddingVertical: s(16),
       paddingHorizontal: s(8),
-      flexShrink: 0
+      flexShrink: 0,
+      gap: s(4)
     },
     globalRankLabel: {
       fontFamily: appFonts.accent,
@@ -457,18 +465,10 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       letterSpacing: 0.6,
       textAlign: 'center'
     },
-    globalLaurel: {
-      width: s(48),
-      height: s(48),
-      marginVertical: s(4)
-    },
-    globalLaurelSpacer: {
-      height: s(12)
-    },
     globalRankValue: {
       fontFamily: appFonts.display,
-      fontSize: t(36),
-      lineHeight: t(38)
+      fontSize: t(40),
+      lineHeight: t(42)
     },
     globalRankPct: {
       fontFamily: appFonts.accent,

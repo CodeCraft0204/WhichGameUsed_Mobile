@@ -20,51 +20,53 @@ type Props = {
 export function ProfilePointsDonut({ groups, totalPoints, size, t }: Props) {
   const styles = useMemo(() => createStyles(t), [t]);
   const stroke = size * 0.14;
+  const cx = size / 2;
+  const cy = size / 2;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
-  const total = Math.max(
-    totalPoints,
-    groups.reduce((sum, g) => sum + Math.abs(g.points), 0),
-    1
-  );
 
-  let offset = 0;
+  const activeGroups = groups.filter((g) => Math.abs(g.points) > 0);
+  const chartTotal =
+    activeGroups.reduce((sum, g) => sum + Math.abs(g.points), 0) || Math.max(Math.abs(totalPoints), 1);
+
+  let cumulative = 0;
 
   return (
     <View style={[styles.wrap, { width: size, height: size }]}>
       <Svg width={size} height={size}>
-        <G rotation="-90" origin={`${size / 2}, ${size / 2}`}>
+        <G transform={`rotate(-90 ${cx} ${cy})`}>
           <Circle
-            cx={size / 2}
-            cy={size / 2}
+            cx={cx}
+            cy={cy}
             r={radius}
             stroke={figmaColors.stone}
             strokeWidth={stroke}
             fill="none"
           />
-          {groups.map((group, idx) => {
-            const pct = Math.abs(group.points) / total;
-            const dash = circumference * pct;
+          {activeGroups.map((group, idx) => {
+            const share = Math.abs(group.points) / chartTotal;
+            const dash = circumference * share;
+            const gap = Math.max(circumference - dash, 0.001);
             const segment = (
               <Circle
                 key={group.key}
-                cx={size / 2}
-                cy={size / 2}
+                cx={cx}
+                cy={cy}
                 r={radius}
                 stroke={SEGMENT_COLORS[idx % SEGMENT_COLORS.length]}
                 strokeWidth={stroke}
                 fill="none"
-                strokeDasharray={`${dash} ${circumference - dash}`}
-                strokeDashoffset={-offset}
+                strokeDasharray={`${dash} ${gap}`}
+                strokeDashoffset={-cumulative}
                 strokeLinecap="butt"
               />
             );
-            offset += dash;
+            cumulative += dash;
             return segment;
           })}
         </G>
       </Svg>
-      <View style={styles.center}>
+      <View style={styles.center} pointerEvents="none">
         <Image source={leaderboardAssets.ctaTrophy} style={styles.trophy} resizeMode="contain" />
         <Text style={styles.pts}>{formatPoints(totalPoints)}</Text>
         <Text style={styles.ptsLabel}>PTS</Text>
