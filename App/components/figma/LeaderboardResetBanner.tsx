@@ -6,7 +6,7 @@ import { leaderboardAssets } from '@/constants/leaderboardAssets';
 import { figmaColors } from '@/constants/figmaColors';
 import { bodyText } from '@/constants/appTypography';
 import { daysUntilMonthEnd } from '@/lib/leaderboard';
-import { leaderboardCopy } from '@/constants/leaderboardCopy';
+import { resetBannerText } from '@/lib/prize-display';
 
 /** Torn-paper strip asset is 410×35 — keep width-driven height as a floor. */
 const BANNER_ASPECT = 410 / 35;
@@ -14,13 +14,15 @@ const BANNER_ASPECT = 410 / 35;
 type BannerProps = {
   s: (n: number) => number;
   t: (n: number) => number;
+  prize?: import('@/lib/leaderboard').MonthlyPrize | null;
 };
 
-export function LeaderboardResetBanner({ s, t }: BannerProps) {
+export function LeaderboardResetBanner({ s, t, prize }: BannerProps) {
   const [dismissed, setDismissed] = useState(false);
   const [bannerWidth, setBannerWidth] = useState(0);
   const styles = useMemo(() => createStyles(s, t, bannerWidth), [s, t, bannerWidth]);
   const daysLeft = daysUntilMonthEnd();
+  const bannerText = resetBannerText(daysLeft, prize);
 
   if (dismissed || daysLeft <= 0) return null;
 
@@ -39,7 +41,7 @@ export function LeaderboardResetBanner({ s, t }: BannerProps) {
         resizeMode="stretch"
       >
         <Image source={figmaIcons.hourglassPending} style={styles.icon} resizeMode="contain" />
-        <Text style={styles.text}>{leaderboardCopy.resetBanner(daysLeft)}</Text>
+        <Text style={styles.text}>{bannerText}</Text>
         <Pressable
           onPress={() => setDismissed(true)}
           hitSlop={12}

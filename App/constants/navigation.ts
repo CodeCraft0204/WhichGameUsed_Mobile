@@ -134,3 +134,7 @@ export function publicProfileHref(
 export function pointsWorkHref(): Href {
   return '/leaderboard/points-work' as unknown as Href;
 }
+
+export function monthlyPrizeHref(): Href {
+  return '/leaderboard/prize' as unknown as Href;
+}

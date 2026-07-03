@@ -28,13 +28,15 @@ export const leaderboardCopy = {
 
   resetBanner: (days: number) =>
     `${days} day${days === 1 ? '' : 's'} left until this month's leaderboard prize.`,
+  resetBannerWithPrize: (days: number, prizeName: string) =>
+    `${days} day${days === 1 ? '' : 's'} left to win ${prizeName}`,
 
   ctaTitle: 'LEARN, PARTICIPATE, EARN.',
-  ctaBody: 'Each month, 1st place earns sealed product, classic game-used cards, and cash.',
+  ctaBody: 'Each month, the #1 collector earns $50 cash on the monthly leaderboard.',
 
   howPointsTitle: 'HOW POINTS WORK',
   prizeTitle: "THIS MONTH'S PRIZE",
-  prizeBody: 'Top collector wins a premium WGU Card Display Case + exclusive badge!',
+  prizeBody: '$50 cash for the #1 monthly collector.',
   prizeLearnMore: 'LEARN MORE',
   pointsColumn: 'Points',
   viewFullTop20: 'View Full Top 20',

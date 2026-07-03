@@ -1,3 +1,8 @@
+import {
+  MONTHLY_CASH_PRIZE,
+  MONTHLY_CASH_PRIZE_AMOUNT_CENTS,
+  currentMonthStartIso
+} from '@/constants/monthlyPrizeDefaults';
 import { supabase } from '@/lib/supabase';
 import { displayName } from '@/lib/profile';
 
@@ -19,6 +24,18 @@ export type LeaderboardPointRule = {
   basePoints: number;
   dailyCap: number | null;
   description: string | null;
+};
+
+export type MonthlyPrize = {
+  id: string;
+  month: string;
+  title: string;
+  subtitle: string | null;
+  description: string | null;
+  prizeAmountCents: number;
+  heroImageUrl: string | null;
+  learnMorePath: string | null;
+  endsAt: string | null;
 };
 
 export type PointEvent = {
@@ -210,6 +227,62 @@ export async function listLeaderboardPointRules(): Promise<{
     })),
     error: null
   };
+}
+
+// ─── Monthly prize ───────────────────────────────────────────────────────────
+
+function mapMonthlyPrizeRow(row: Record<string, unknown>): MonthlyPrize {
+  return {
+    id: row.id as string,
+    month: row.month as string,
+    title: row.title as string,
+    subtitle: (row.subtitle as string | null) ?? null,
+    description: (row.description as string | null) ?? null,
+    prizeAmountCents: (row.prize_amount_cents as number | undefined) ?? MONTHLY_CASH_PRIZE_AMOUNT_CENTS,
+    heroImageUrl: (row.hero_image_url as string | null) ?? null,
+    learnMorePath: (row.learn_more_path as string | null) ?? null,
+    endsAt: (row.ends_at as string | null) ?? null
+  };
+}
+
+function defaultMonthlyPrize(): MonthlyPrize {
+  return {
+    id: 'default',
+    month: currentMonthStartIso(),
+    title: MONTHLY_CASH_PRIZE.title,
+    subtitle: MONTHLY_CASH_PRIZE.subtitle,
+    description: MONTHLY_CASH_PRIZE.description,
+    prizeAmountCents: MONTHLY_CASH_PRIZE.amountCents,
+    heroImageUrl: null,
+    learnMorePath: '/leaderboard/prize',
+    endsAt: null
+  };
+}
+
+export async function fetchActiveMonthlyPrize(): Promise<{
+  prize: MonthlyPrize | null;
+  error: string | null;
+}> {
+  const { data, error } = await supabase.rpc('active_leaderboard_prize');
+
+  if (error) {
+    const monthStart = currentMonthStart();
+    const { data: fallback, error: fallbackError } = await supabase
+      .from('leaderboard_monthly_prizes')
+      .select(
+        'id, month, title, subtitle, description, prize_amount_cents, hero_image_url, learn_more_path, ends_at'
+      )
+      .eq('month', monthStart)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (fallbackError) return { prize: defaultMonthlyPrize(), error: fallbackError.message };
+    return { prize: fallback ? mapMonthlyPrizeRow(fallback) : defaultMonthlyPrize(), error: null };
+  }
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) return { prize: defaultMonthlyPrize(), error: null };
+  return { prize: mapMonthlyPrizeRow(row as Record<string, unknown>), error: null };
 }
 
 // ─── Point history ───────────────────────────────────────────────────────────

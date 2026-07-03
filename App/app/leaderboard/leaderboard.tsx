@@ -24,16 +24,18 @@ import {
 } from '@/context/ContextHeaderScrollContext';
 import { leaderboardIcons, leaderboardPeriodTabs } from '@/constants/leaderboardContent';
 import { leaderboardCopy } from '@/constants/leaderboardCopy';
-import { publicProfileHref, pointsWorkHref } from '@/constants/navigation';
+import { publicProfileHref, pointsWorkHref, monthlyPrizeHref } from '@/constants/navigation';
 import { figmaColors } from '@/constants/figmaColors';
 import { bodyText } from '@/constants/appTypography';
 import { useAuth } from '@/context/AuthContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import { useLeaderboardRealtime } from '@/hooks/useLeaderboardRealtime';
 import {
+  fetchActiveMonthlyPrize,
   listLeaderboard,
   type LeaderboardEntry,
-  type LeaderboardPeriod
+  type LeaderboardPeriod,
+  type MonthlyPrize
 } from '@/lib/leaderboard';
 
 function tabToPeriod(tab: string): LeaderboardPeriod {
@@ -60,6 +62,7 @@ function LeaderboardScreenBody() {
     leaderboardPeriodTabs[0]
   );
   const [items, setItems] = useState<LeaderboardEntry[]>([]);
+  const [monthlyPrize, setMonthlyPrize] = useState<MonthlyPrize | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,7 +78,10 @@ function LeaderboardScreenBody() {
 
     setError(null);
     const p = tabToPeriod(tab);
-    const rankResult = await listLeaderboard(p, 20);
+    const [rankResult, prizeResult] = await Promise.all([
+      listLeaderboard(p, 20),
+      fetchActiveMonthlyPrize()
+    ]);
 
     if (rankResult.error) {
       setError(rankResult.error);
@@ -83,6 +89,7 @@ function LeaderboardScreenBody() {
     } else {
       setItems(rankResult.items);
     }
+    setMonthlyPrize(prizeResult.prize);
     setLoading(false);
     setRefreshing(false);
     initialLoadDone.current = true;
@@ -113,6 +120,10 @@ function LeaderboardScreenBody() {
 
   const handleViewPointsWork = useCallback(() => {
     router.push(pointsWorkHref());
+  }, [router]);
+
+  const handleViewMonthlyPrize = useCallback(() => {
+    router.push(monthlyPrizeHref());
   }, [router]);
 
   const top3 = items.slice(0, 3);
@@ -146,7 +157,9 @@ function LeaderboardScreenBody() {
         />
       </FigmaPageHeader>
 
-      {showMonthBanner ? <LeaderboardResetBanner s={s} t={t} /> : null}
+      {showMonthBanner ? (
+        <LeaderboardResetBanner s={s} t={t} prize={monthlyPrize} />
+      ) : null}
 
       {refreshing ? (
         <Text style={styles.refreshingText}>{leaderboardCopy.refreshing}</Text>
@@ -224,7 +237,12 @@ function LeaderboardScreenBody() {
           <View style={styles.bottomCards}>
             <LeaderboardPointsExplainer s={s} t={t} onSeeAll={handleViewPointsWork} />
             {period === 'month' ? (
-              <LeaderboardPrizeCard s={s} t={t} onLearnMore={handleViewPointsWork} />
+              <LeaderboardPrizeCard
+              prize={monthlyPrize}
+              s={s}
+              t={t}
+              onLearnMore={handleViewMonthlyPrize}
+            />
             ) : null}
           </View>
         </>

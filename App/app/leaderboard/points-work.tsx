@@ -18,12 +18,13 @@ import { PointsSummaryTiles } from '@/components/points-work/PointsSummaryTiles'
 import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
-import { leaderboardCopy } from '@/constants/leaderboardCopy';
 import { pointsWorkCopy } from '@/constants/pointsWorkCopy';
 import { bodyText } from '@/constants/appTypography';
 import { figmaColors } from '@/constants/figmaColors';
+import { monthlyPrizeHref } from '@/constants/navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
-import { listLeaderboardPointRules, type LeaderboardPointRule } from '@/lib/leaderboard';
+import { fetchActiveMonthlyPrize, listLeaderboardPointRules, type LeaderboardPointRule, type MonthlyPrize } from '@/lib/leaderboard';
+import { buildPrizeCardDisplay } from '@/lib/prize-display';
 import {
   fallbackPointRules,
   groupPointRulesForDisplay
@@ -36,6 +37,7 @@ export default function PointsWorkScreen() {
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
 
   const [rules, setRules] = useState<LeaderboardPointRule[]>([]);
+  const [monthlyPrize, setMonthlyPrize] = useState<MonthlyPrize | null>(null);
   const [loading, setLoading] = useState(true);
   const [usingFallback, setUsingFallback] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +46,12 @@ export default function PointsWorkScreen() {
     setLoading(true);
     setError(null);
 
-    const { items, error: fetchError } = await listLeaderboardPointRules();
+    const [{ items, error: fetchError }, prizeResult] = await Promise.all([
+      listLeaderboardPointRules(),
+      fetchActiveMonthlyPrize()
+    ]);
+
+    setMonthlyPrize(prizeResult.prize);
 
     if (items.length > 0) {
       setRules(items);
@@ -64,6 +71,8 @@ export default function PointsWorkScreen() {
     () => groupPointRulesForDisplay(rules),
     [rules]
   );
+
+  const prizeDisplay = useMemo(() => buildPrizeCardDisplay(monthlyPrize), [monthlyPrize]);
 
   return (
     <FigmaScreen scrollProps={{ contentContainerStyle: page.scrollContent }}>
@@ -119,10 +128,17 @@ export default function PointsWorkScreen() {
           <PointsRankingSteps s={s} t={t} />
           <PointsActionLinks s={s} t={t} />
 
-          <View style={styles.prizePanel}>
-            <Text style={styles.prizeTitle}>{pointsWorkCopy.prizeTitle}</Text>
-            <Text style={styles.prizeBody}>{leaderboardCopy.prizeBody}</Text>
-          </View>
+          <Pressable
+            style={styles.prizePanel}
+            onPress={() => router.push(monthlyPrizeHref())}
+            accessibilityRole="button"
+          >
+            <Text style={styles.prizeTitle}>{prizeDisplay.sectionLabel}</Text>
+            <Text style={styles.prizeBody}>{prizeDisplay.prizeName}</Text>
+            {prizeDisplay.summary ? (
+              <Text style={styles.prizeSummary}>{prizeDisplay.summary}</Text>
+            ) : null}
+          </Pressable>
         </>
       )}
     </FigmaScreen>
@@ -177,10 +193,17 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       marginBottom: s(6)
     },
     prizeBody: {
-      fontFamily: appFonts.body,
+      fontFamily: appFonts.bodyBold,
       fontSize: tb(15),
       lineHeight: tb(21),
       color: figmaColors.charcoal
+    },
+    prizeSummary: {
+      fontFamily: appFonts.body,
+      fontSize: tb(14),
+      lineHeight: tb(19),
+      color: figmaColors.gray,
+      marginTop: s(4)
     }
   });
 }

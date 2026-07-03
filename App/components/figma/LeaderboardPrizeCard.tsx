@@ -5,20 +5,25 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { leaderboardCopy } from '@/constants/leaderboardCopy';
 import { figmaColors } from '@/constants/figmaColors';
 import { bodyText } from '@/constants/appTypography';
+import { buildPrizeCardDisplay } from '@/lib/prize-display';
+import type { MonthlyPrize } from '@/lib/leaderboard';
 
 type Props = {
+  prize: MonthlyPrize | null;
   s: (n: number) => number;
   t: (n: number) => number;
   onLearnMore?: () => void;
 };
 
-export function LeaderboardPrizeCard({ s, t, onLearnMore }: Props) {
+export function LeaderboardPrizeCard({ prize, s, t, onLearnMore }: Props) {
   const styles = useMemo(() => createStyles(s, t), [s, t]);
+  const display = useMemo(() => buildPrizeCardDisplay(prize), [prize]);
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>{leaderboardCopy.prizeTitle}</Text>
-      <Text style={styles.body}>{leaderboardCopy.prizeBody}</Text>
+      <Text style={styles.title}>{display.sectionLabel}</Text>
+      <Text style={styles.body}>{display.prizeName}</Text>
+      {display.summary ? <Text style={styles.summary}>{display.summary}</Text> : null}
 
       {onLearnMore ? (
         <Pressable
@@ -49,7 +54,6 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       justifyContent: 'center'
     },
     title: {
-      flex: 1,
       fontFamily: appFonts.display,
       fontSize: t(13),
       lineHeight: t(15),
@@ -58,18 +62,25 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       letterSpacing: 0.8
     },
     body: {
+      fontFamily: appFonts.display,
+      fontSize: t(18),
+      lineHeight: t(22),
+      color: figmaColors.charcoal
+    },
+    summary: {
       fontFamily: appFonts.body,
-      fontSize: tb(14),
-      lineHeight: tb(19),
-      color: figmaColors.charcoal,
-      marginTop: 0,
-      marginBottom: s(10)
+      fontSize: tb(13),
+      lineHeight: tb(18),
+      color: figmaColors.gray,
+      marginTop: s(4),
+      marginBottom: s(8)
     },
     learnRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: s(2),
-      alignSelf: 'flex-start'
+      alignSelf: 'flex-start',
+      marginTop: s(4)
     },
     learnPressed: {
       opacity: 0.85
