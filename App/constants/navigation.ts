@@ -130,3 +130,7 @@ export function publicProfileHref(
     }
   } as unknown as Href;
 }
+
+export function pointsWorkHref(): Href {
+  return '/leaderboard/points-work' as unknown as Href;
+}

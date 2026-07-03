@@ -25,6 +25,8 @@ import { BREAKDOWN_ICONS, leaderboardAssets, PODIUM_RANK_THEME } from '@/constan
 import { figmaIcons } from '@/constants/figmaIcons';
 import { figmaColors } from '@/constants/figmaColors';
 import { bodyText } from '@/constants/appTypography';
+import { pointsWorkCopy } from '@/constants/pointsWorkCopy';
+import { pointsWorkHref } from '@/constants/navigation';
 import {
   buildPointBreakdown,
   fetchPublicProfile,
@@ -285,9 +287,18 @@ export default function PublicProfileScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitleInline}>{leaderboardCopy.profile.pointsBreakdown}</Text>
-            <Text style={styles.sectionMeta}>
-              Total {formatPoints(points ?? 0)} PTS
-            </Text>
+            <View style={styles.sectionHeaderRight}>
+              <Text style={styles.sectionMeta}>
+                Total {formatPoints(points ?? 0)} PTS
+              </Text>
+              <Pressable
+                onPress={() => router.push(pointsWorkHref())}
+                accessibilityRole="button"
+                hitSlop={8}
+              >
+                <Text style={styles.pointsGuideLink}>{pointsWorkCopy.seeFullGuide}</Text>
+              </Pressable>
+            </View>
           </View>
           <ProfilePointsBreakdown groups={breakdown} totalPoints={points ?? 0} s={s} t={t} />
         </View>
@@ -538,6 +549,16 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       fontFamily: appFonts.bodyBold,
       fontSize: tb(14),
       color: figmaColors.charcoal
+    },
+    sectionHeaderRight: {
+      alignItems: 'flex-end',
+      gap: s(2)
+    },
+    pointsGuideLink: {
+      fontFamily: appFonts.accent,
+      fontSize: tb(11),
+      color: figmaColors.navActive,
+      letterSpacing: 0.3
     },
     aboutRow: {
       flexDirection: 'row',

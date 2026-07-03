@@ -25,7 +25,7 @@ import {
 } from '@/context/ContextHeaderScrollContext';
 import { leaderboardIcons, leaderboardPeriodTabs } from '@/constants/leaderboardContent';
 import { leaderboardCopy } from '@/constants/leaderboardCopy';
-import { publicProfileHref } from '@/constants/navigation';
+import { publicProfileHref, pointsWorkHref } from '@/constants/navigation';
 import { figmaColors } from '@/constants/figmaColors';
 import { bodyText } from '@/constants/appTypography';
 import { useAuth } from '@/context/AuthContext';
@@ -118,6 +118,10 @@ function LeaderboardScreenBody() {
       period
     }));
   }, [router, period]);
+
+  const handleViewPointsWork = useCallback(() => {
+    router.push(pointsWorkHref());
+  }, [router]);
 
   const handleGoToSettings = useCallback(() => {
     router.push('/settings/settings');
@@ -250,8 +254,10 @@ function LeaderboardScreenBody() {
           ) : null}
 
           <View style={styles.bottomCards}>
-            <LeaderboardPointsExplainer s={s} t={t} />
-            {period === 'month' ? <LeaderboardPrizeCard s={s} t={t} /> : null}
+            <LeaderboardPointsExplainer s={s} t={t} onSeeAll={handleViewPointsWork} />
+            {period === 'month' ? (
+              <LeaderboardPrizeCard s={s} t={t} onLearnMore={handleViewPointsWork} />
+            ) : null}
           </View>
         </>
       )}

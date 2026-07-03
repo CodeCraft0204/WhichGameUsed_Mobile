@@ -17,6 +17,7 @@ export type LeaderboardPointRule = {
   eventType: string;
   label: string;
   basePoints: number;
+  dailyCap: number | null;
   description: string | null;
 };
 
@@ -194,7 +195,7 @@ export async function listLeaderboardPointRules(): Promise<{
 }> {
   const { data, error } = await supabase
     .from('leaderboard_point_rules')
-    .select('event_type, label, base_points, description')
+    .select('event_type, label, base_points, daily_cap, description')
     .eq('is_active', true)
     .order('sort_order', { ascending: true });
 
@@ -204,6 +205,7 @@ export async function listLeaderboardPointRules(): Promise<{
       eventType: row.event_type as string,
       label: row.label as string,
       basePoints: row.base_points as number,
+      dailyCap: (row.daily_cap as number | null) ?? null,
       description: row.description as string | null
     })),
     error: null
