@@ -414,6 +414,7 @@ export type PublicProfile = {
   about: string | null;
   locationText: string | null;
   joinedAt: string | null;
+  showForumActivityOnProfile: boolean;
 };
 
 export async function fetchPublicProfile(
@@ -421,7 +422,9 @@ export async function fetchPublicProfile(
 ): Promise<{ profile: PublicProfile | null; error: string | null }> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, display_name, username, avatar_url, about, location_text, is_public, created_at')
+    .select(
+      'id, display_name, username, avatar_url, about, location_text, is_public, created_at, show_forum_activity_on_profile'
+    )
     .eq('id', userId)
     .eq('is_public', true)
     .maybeSingle();
@@ -440,7 +443,8 @@ export async function fetchPublicProfile(
       avatarUrl: data.avatar_url as string | null,
       about: data.about as string | null,
       locationText: data.location_text as string | null,
-      joinedAt: data.created_at as string | null
+      joinedAt: data.created_at as string | null,
+      showForumActivityOnProfile: Boolean(data.show_forum_activity_on_profile ?? true)
     },
     error: null
   };

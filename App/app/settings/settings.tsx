@@ -16,7 +16,14 @@ import { ProfileToggleRow } from '@/components/profile/ProfileToggleRow';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { settingsCopy } from '@/constants/settingsContent';
+import { socialCopy, messagePermissionOptions } from '@/constants/socialCopy';
 import { figmaColors } from '@/constants/figmaColors';
+import {
+  messagesInboxHref,
+  profileFollowingHref,
+  socialNotificationsHref
+} from '@/constants/navigation';
+import type { MessagePermission } from '@/lib/social';
 import { useAuth } from '@/context/AuthContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import { fetchMyProfile, updateMyProfile } from '@/lib/profile';
@@ -47,6 +54,8 @@ export default function SettingsScreen() {
   const [success, setSuccess] = useState<string | null>(null);
   const [isPublic, setIsPublic] = useState(true);
   const [leaderboardEligible, setLeaderboardEligible] = useState(true);
+  const [messagePermission, setMessagePermission] = useState<MessagePermission>('everyone');
+  const [showForumActivity, setShowForumActivity] = useState(true);
 
   const loadProfile = useCallback(async () => {
     if (!user) return;
@@ -57,6 +66,8 @@ export default function SettingsScreen() {
     if (row) {
       setIsPublic(row.is_public);
       setLeaderboardEligible(row.leaderboard_eligible);
+      setMessagePermission(row.message_permission ?? 'everyone');
+      setShowForumActivity(row.show_forum_activity_on_profile ?? true);
     }
     setLoading(false);
   }, [user]);
@@ -70,6 +81,8 @@ export default function SettingsScreen() {
   const savePrivacy = async (patch: {
     is_public?: boolean;
     leaderboard_eligible?: boolean;
+    message_permission?: MessagePermission;
+    show_forum_activity_on_profile?: boolean;
   }) => {
     if (!user) return;
     setSavingPrivacy(true);
@@ -94,6 +107,16 @@ export default function SettingsScreen() {
   const handleLeaderboardChange = (next: boolean) => {
     setLeaderboardEligible(next);
     void savePrivacy({ leaderboard_eligible: next });
+  };
+
+  const handleMessagePermission = (next: MessagePermission) => {
+    setMessagePermission(next);
+    void savePrivacy({ message_permission: next });
+  };
+
+  const handleForumActivityChange = (next: boolean) => {
+    setShowForumActivity(next);
+    void savePrivacy({ show_forum_activity_on_profile: next });
   };
 
   const handleSignOut = () => {
@@ -163,6 +186,48 @@ export default function SettingsScreen() {
           {savingPrivacy ? (
             <Text style={styles.savingHint}>Saving preferences…</Text>
           ) : null}
+        </ProfileSection>
+
+        <ProfileSection title={settingsCopy.social.section} s={s} t={t}>
+          <ProfileMenuRow
+            label={settingsCopy.social.messages}
+            onPress={() => router.push(messagesInboxHref())}
+            s={s}
+            t={t}
+          />
+          {user ? (
+            <ProfileMenuRow
+              label={settingsCopy.social.following}
+              onPress={() => router.push(profileFollowingHref(user.id))}
+              s={s}
+              t={t}
+            />
+          ) : null}
+          <ProfileMenuRow
+            label={settingsCopy.social.notifications}
+            onPress={() => router.push(socialNotificationsHref())}
+            s={s}
+            t={t}
+          />
+          <Text style={styles.groupHint}>{settingsCopy.social.whoCanMessageHint}</Text>
+          {messagePermissionOptions.map((opt) => (
+            <ProfileMenuRow
+              key={opt.value}
+              label={opt.label}
+              value={messagePermission === opt.value ? '✓' : undefined}
+              onPress={() => handleMessagePermission(opt.value)}
+              s={s}
+              t={t}
+            />
+          ))}
+          <ProfileToggleRow
+            label={settingsCopy.social.showForumActivity}
+            hint={settingsCopy.social.showForumActivityHint}
+            value={showForumActivity}
+            onValueChange={handleForumActivityChange}
+            s={s}
+            t={t}
+          />
         </ProfileSection>
 
         <ProfileSection title={settingsCopy.sections.account} s={s} t={t}>
@@ -260,6 +325,12 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       fontFamily: appFonts.body,
       fontSize: t(16),
       color: figmaColors.textMuted
+    },
+    groupHint: {
+      fontFamily: appFonts.body,
+      fontSize: t(15),
+      color: figmaColors.gray,
+      marginBottom: s(4)
     },
     bannerError: {
       borderRadius: s(12),

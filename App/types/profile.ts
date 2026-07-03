@@ -10,10 +10,14 @@ export type Profile = {
   location_text: string | null;
 };
 
+export type MessagePermission = 'everyone' | 'followers_only' | 'nobody';
+
 /** Full profile row for the signed-in user's settings screen. */
 export type MyProfile = Profile & {
   is_public: boolean;
   leaderboard_eligible: boolean;
+  message_permission: MessagePermission;
+  show_forum_activity_on_profile: boolean;
 };
 
 export type MyProfileUpdate = {
@@ -24,4 +28,6 @@ export type MyProfileUpdate = {
   location_text?: string | null;
   is_public?: boolean;
   leaderboard_eligible?: boolean;
+  message_permission?: MessagePermission;
+  show_forum_activity_on_profile?: boolean;
 };

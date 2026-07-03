@@ -26,7 +26,14 @@ import { figmaIcons } from '@/constants/figmaIcons';
 import { figmaColors } from '@/constants/figmaColors';
 import { bodyText } from '@/constants/appTypography';
 import { pointsWorkCopy } from '@/constants/pointsWorkCopy';
-import { pointsWorkHref } from '@/constants/navigation';
+import {
+  discussionThreadHref,
+  messageComposeHref,
+  pointsWorkHref,
+  profileFollowersHref,
+  profileFollowingHref
+} from '@/constants/navigation';
+import { socialCopy } from '@/constants/socialCopy';
 import {
   buildPointBreakdown,
   fetchPublicProfile,
@@ -46,6 +53,15 @@ import {
 } from '@/lib/leaderboard-ui';
 import { useLeaderboardRealtime } from '@/hooks/useLeaderboardRealtime';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
+import { useAuth } from '@/context/AuthContext';
+import {
+  canMessageUser,
+  checkIsFollowing,
+  fetchFollowCounts,
+  listUserForumThreads,
+  toggleFollow,
+  type FollowCounts
+} from '@/lib/social';
 
 function parsePeriod(raw: string | string[] | undefined): LeaderboardPeriod {
   if (raw === 'all_time' || raw === 'month') return raw;
@@ -68,6 +84,7 @@ export default function PublicProfileScreen() {
   }>();
   const { id, rank: rankParam, points: pointsParam, period: periodParam } = params;
   const router = useRouter();
+  const { user } = useAuth();
   const { s, t } = useFigmaLayout(1);
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
@@ -80,20 +97,50 @@ export default function PublicProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAllActivity, setShowAllActivity] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followBusy, setFollowBusy] = useState(false);
+  const [followCounts, setFollowCounts] = useState<FollowCounts>({ followers: 0, following: 0 });
+  const [messageAllowed, setMessageAllowed] = useState(false);
+  const [forumThreads, setForumThreads] = useState<
+    Awaited<ReturnType<typeof listUserForumThreads>>['items']
+  >([]);
+
+  const isSelf = Boolean(user?.id && id && user.id === id);
 
   const load = useCallback(async (opts?: { silent?: boolean }) => {
     if (!id) return;
     if (!opts?.silent) setLoading(true);
     setError(null);
 
-    const [profileRes, standingRes, eventsRes] = await Promise.all([
+    const socialPromises = !isSelf && user
+      ? Promise.all([
+          checkIsFollowing(id),
+          canMessageUser(id)
+        ])
+      : Promise.resolve([
+          { isFollowing: false, error: null },
+          { allowed: false, error: null }
+        ] as const);
+
+    const [profileRes, standingRes, eventsRes, countsRes, threadsRes, socialRes] = await Promise.all([
       fetchPublicProfile(id),
       getUserStanding(id, period),
-      listUserPointEvents(id, { period, limit: 200 })
+      listUserPointEvents(id, { period, limit: 200 }),
+      fetchFollowCounts(id),
+      listUserForumThreads(id, 5),
+      socialPromises
     ]);
 
     setProfile(profileRes.profile);
     setError(profileRes.error);
+    setFollowCounts(countsRes.counts);
+    setForumThreads(threadsRes.items);
+
+    if (!isSelf && user) {
+      const [followRes, messageRes] = socialRes;
+      setIsFollowing(followRes.isFollowing);
+      setMessageAllowed(messageRes.allowed);
+    }
 
     if (standingRes.entry) {
       setRank(standingRes.entry.rank);
@@ -102,7 +149,7 @@ export default function PublicProfileScreen() {
 
     setEvents(eventsRes.items);
     setLoading(false);
-  }, [id, period]);
+  }, [id, isSelf, period, user]);
 
   useFocusEffect(useCallback(() => { void load(); }, [load]));
   useLeaderboardRealtime(() => { void load({ silent: true }); }, !!id);
@@ -118,6 +165,25 @@ export default function PublicProfileScreen() {
   const badges = useMemo(() => buildProfileBadges(breakdown), [breakdown]);
   const tagline = useMemo(() => profileTagline(breakdown), [breakdown]);
   const activitySlice = showAllActivity ? events.slice(0, 25) : events.slice(0, 5);
+
+  const handleToggleFollow = async () => {
+    if (!id || isSelf || followBusy) return;
+    setFollowBusy(true);
+    const { isFollowing: next, error: followError } = await toggleFollow(id);
+    setFollowBusy(false);
+    if (followError) {
+      setError(followError);
+      return;
+    }
+    setIsFollowing(next);
+    const { counts } = await fetchFollowCounts(id);
+    setFollowCounts(counts);
+  };
+
+  const handleMessage = () => {
+    if (!id || !messageAllowed) return;
+    router.push(messageComposeHref(id, profile?.displayName));
+  };
 
   if (loading && !profile) {
     return (
@@ -219,6 +285,26 @@ export default function PublicProfileScreen() {
         ) : null}
       </View>
 
+      {/* Follow counts */}
+      <View style={styles.followRow}>
+        <Pressable
+          onPress={() => router.push(profileFollowersHref(id))}
+          style={styles.followStat}
+          accessibilityRole="button"
+        >
+          <Text style={styles.followValue}>{followCounts.followers}</Text>
+          <Text style={styles.followLabel}>{leaderboardCopy.profile.followers}</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => router.push(profileFollowingHref(id))}
+          style={styles.followStat}
+          accessibilityRole="button"
+        >
+          <Text style={styles.followValue}>{followCounts.following}</Text>
+          <Text style={styles.followLabel}>{leaderboardCopy.profile.followingCount}</Text>
+        </Pressable>
+      </View>
+
       {/* Badge pills */}
       <View style={styles.badgesRow}>
         {badges.map((badge) => (
@@ -304,6 +390,32 @@ export default function PublicProfileScreen() {
         </View>
       ) : null}
 
+      {/* Recent forum threads */}
+      {profile.showForumActivityOnProfile ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{socialCopy.profile.recentDiscussions}</Text>
+          {forumThreads.length > 0 ? (
+            forumThreads.map((thread) => (
+              <Pressable
+                key={thread.id}
+                onPress={() => router.push(discussionThreadHref(thread.id))}
+                style={styles.threadRow}
+                accessibilityRole="button"
+              >
+                <Text style={styles.threadTitle} numberOfLines={2}>
+                  {thread.title}
+                </Text>
+                <Text style={styles.threadMeta}>
+                  {thread.topicTitle} · {thread.commentCount} replies
+                </Text>
+              </Pressable>
+            ))
+          ) : (
+            <Text style={styles.emptyActivity}>{socialCopy.profile.noDiscussions}</Text>
+          )}
+        </View>
+      ) : null}
+
       {/* Recent activity */}
       <View style={styles.section}>
         <View style={styles.sectionHeaderRow}>
@@ -324,16 +436,35 @@ export default function PublicProfileScreen() {
       </View>
 
       {/* Actions */}
-      <View style={styles.actionsRow}>
-        <Pressable style={styles.messageBtn} accessibilityRole="button">
-          <Image source={BREAKDOWN_ICONS.forum} style={styles.actionIcon} resizeMode="contain" />
-          <Text style={styles.messageBtnText}>{leaderboardCopy.profile.message}</Text>
-        </Pressable>
-        <Pressable style={styles.followBtn} accessibilityRole="button">
-          <Image source={leaderboardAssets.viewProfileIcon} style={styles.actionIconLight} resizeMode="contain" />
-          <Text style={styles.followBtnText}>{leaderboardCopy.profile.follow}</Text>
-        </Pressable>
-      </View>
+      {!isSelf ? (
+        <View style={styles.actionsRow}>
+          <Pressable
+            style={[styles.messageBtn, !messageAllowed && styles.actionDisabled]}
+            accessibilityRole="button"
+            disabled={!messageAllowed}
+            onPress={handleMessage}
+          >
+            <Image source={BREAKDOWN_ICONS.forum} style={styles.actionIcon} resizeMode="contain" />
+            <Text style={styles.messageBtnText}>{leaderboardCopy.profile.message}</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.followBtn, isFollowing ? styles.followBtnOutline : styles.followBtnPrimary]}
+            accessibilityRole="button"
+            accessibilityLabel={isFollowing ? 'Unfollow collector' : 'Follow collector'}
+            disabled={followBusy}
+            onPress={() => void handleToggleFollow()}
+          >
+            <Image
+              source={leaderboardAssets.viewProfileIcon}
+              style={[styles.actionIconLight, isFollowing && styles.actionIconDark]}
+              resizeMode="contain"
+            />
+            <Text style={[styles.followBtnText, isFollowing && styles.followBtnTextOutline]}>
+              {isFollowing ? leaderboardCopy.profile.unfollow : leaderboardCopy.profile.follow}
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
     </FigmaScreen>
   );
 }
@@ -493,6 +624,43 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       gap: s(6),
       marginBottom: s(14)
     },
+    followRow: {
+      flexDirection: 'row',
+      gap: s(24),
+      marginBottom: s(12)
+    },
+    followStat: { alignItems: 'center', gap: s(2) },
+    followValue: {
+      fontFamily: appFonts.bodyBold,
+      fontSize: tb(18),
+      color: figmaColors.charcoal
+    },
+    followLabel: {
+      fontFamily: appFonts.accent,
+      fontSize: tb(10),
+      color: figmaColors.gray,
+      letterSpacing: 0.5,
+      textTransform: 'uppercase'
+    },
+    threadRow: {
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      borderRadius: s(12),
+      backgroundColor: figmaColors.cream,
+      padding: s(12),
+      marginBottom: s(8),
+      gap: s(4)
+    },
+    threadTitle: {
+      fontFamily: appFonts.bodyBold,
+      fontSize: tb(16),
+      color: figmaColors.charcoal
+    },
+    threadMeta: {
+      fontFamily: appFonts.body,
+      fontSize: tb(13),
+      color: figmaColors.gray
+    },
     badgePill: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -629,8 +797,15 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       justifyContent: 'center',
       gap: s(8),
       borderRadius: s(12),
-      backgroundColor: figmaColors.tabActiveBg,
       paddingVertical: s(14)
+    },
+    followBtnPrimary: {
+      backgroundColor: figmaColors.tabActiveBg
+    },
+    followBtnOutline: {
+      borderWidth: 1.5,
+      borderColor: figmaColors.borderStrong,
+      backgroundColor: figmaColors.cream
     },
     followBtnText: {
       fontFamily: appFonts.accent,
@@ -638,6 +813,13 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       color: '#C9A84C',
       letterSpacing: 0.8
     },
+    followBtnTextOutline: {
+      color: figmaColors.charcoal
+    },
+    actionIconDark: {
+      tintColor: figmaColors.charcoal
+    },
+    actionDisabled: { opacity: 0.45 },
     actionIcon: {
       width: s(20),
       height: s(20)

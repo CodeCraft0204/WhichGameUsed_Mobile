@@ -57,6 +57,10 @@ export const leaderboardCopy = {
     viewAll: 'View All',
     message: 'MESSAGE',
     follow: 'FOLLOW',
+    unfollow: 'UNFOLLOW',
+    following: 'FOLLOWING',
+    followers: 'Followers',
+    followingCount: 'Following',
     noActivity: 'No point events yet for this period.',
     privateTitle: 'Private Profile',
     privateBody: 'This user has set their profile to private.'

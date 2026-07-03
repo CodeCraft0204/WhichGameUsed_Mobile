@@ -14,6 +14,16 @@ export const settingsCopy = {
     leaderboard: 'Leaderboard eligible',
     leaderboardHint: 'Include your activity in monthly rankings and prizes.'
   },
+  social: {
+    section: 'SOCIAL & MESSAGING',
+    messages: 'Messages inbox',
+    following: 'Collectors you follow',
+    notifications: 'Social notifications',
+    whoCanMessage: 'Who can message me',
+    whoCanMessageHint: 'Control who can start a private conversation.',
+    showForumActivity: 'Show forum activity on profile',
+    showForumActivityHint: 'Display your recent discussion threads on your public profile.'
+  },
   account: {
     editProfile: 'Edit profile',
     email: 'Email',

@@ -43,9 +43,11 @@ import {
 } from '@/constants/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
-import { countForumFeedFilters, listForumThreads, listForumTopics, searchForumThreads } from '@/lib/forum';
+import { countForumFeedFilters, listFollowingForumThreads, listForumThreads, listForumTopics, searchForumThreads } from '@/lib/forum';
 
 const SEARCH_DEBOUNCE_MS = 300;
+const feedFilters = ['ALL', 'FOLLOWING'] as const;
+type FeedFilter = (typeof feedFilters)[number];
 
 export default function DiscussionScreen() {
   const router = useRouter();
@@ -63,6 +65,7 @@ export default function DiscussionScreen() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [hiddenCount, setHiddenCount] = useState(0);
+  const [feedFilter, setFeedFilter] = useState<FeedFilter>('ALL');
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search.trim()), SEARCH_DEBOUNCE_MS);
@@ -87,7 +90,9 @@ export default function DiscussionScreen() {
       const trimmed = debouncedSearch;
       const threadsRes = trimmed
         ? await searchForumThreads(trimmed, { sort, limit: 20 })
-        : await listForumThreads({ sort, limit: 12 });
+        : feedFilter === 'FOLLOWING'
+          ? await listFollowingForumThreads({ sort, limit: 12 })
+          : await listForumThreads({ sort, limit: 12 });
 
       if (threadsRes.error) setError(threadsRes.error);
       else setThreads(threadsRes.items);
@@ -95,7 +100,7 @@ export default function DiscussionScreen() {
       setThreadsLoading(false);
       setRefreshing(false);
     },
-    [activeTab, debouncedSearch]
+    [activeTab, debouncedSearch, feedFilter]
   );
 
   const loadAll = useCallback(
@@ -116,9 +121,12 @@ export default function DiscussionScreen() {
 
   useEffect(() => {
     void loadThreads();
-  }, [activeTab, debouncedSearch, loadThreads]);
+  }, [activeTab, debouncedSearch, feedFilter, loadThreads]);
 
-  const sectionTitle = discussionThreadsSectionTitle(activeTab, Boolean(debouncedSearch));
+  const sectionTitle =
+    feedFilter === 'FOLLOWING' && !debouncedSearch
+      ? 'FROM COLLECTORS YOU FOLLOW'
+      : discussionThreadsSectionTitle(activeTab, Boolean(debouncedSearch));
 
   return (
     <ContextHeaderScrollProvider>
@@ -156,6 +164,17 @@ export default function DiscussionScreen() {
             <Text style={styles.tabHint}>
               {debouncedSearch ? 'Matching threads across all topics.' : discussionTabHint(activeTab)}
             </Text>
+
+            {!debouncedSearch && user ? (
+              <FigmaChipRow
+                options={chipOptionsFromLabels([...feedFilters])}
+                value={feedFilter}
+                onChange={(value) => setFeedFilter(value as FeedFilter)}
+                s={s}
+                t={t}
+                style={styles.feedFilterRow}
+              />
+            ) : null}
 
             <View style={styles.searchRow}>
               <TextInput
@@ -242,7 +261,9 @@ export default function DiscussionScreen() {
             <Text style={styles.emptyText}>
               {debouncedSearch
                 ? 'No threads match your search.'
-                : 'No threads yet. Start the conversation.'}
+                : feedFilter === 'FOLLOWING'
+                  ? 'Follow collectors to see their threads here.'
+                  : 'No threads yet. Start the conversation.'}
             </Text>
           ) : (
             threads.map((thread) => {
@@ -348,6 +369,9 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     chipRow: {
       marginVertical: 0
+    },
+    feedFilterRow: {
+      marginBottom: s(8)
     },
     tabHint: {
       fontFamily: appFonts.body,

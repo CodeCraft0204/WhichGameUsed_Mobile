@@ -138,3 +138,42 @@ export function pointsWorkHref(): Href {
 export function monthlyPrizeHref(): Href {
   return '/leaderboard/prize' as unknown as Href;
 }
+
+export function messagesInboxHref(): Href {
+  return '/messages/inbox' as unknown as Href;
+}
+
+export function messageConversationHref(conversationId: string): Href {
+  return {
+    pathname: '/messages/[id]',
+    params: { id: conversationId }
+  } as unknown as Href;
+}
+
+export function messageComposeHref(recipientId: string, recipientName?: string): Href {
+  return {
+    pathname: '/messages/compose',
+    params: {
+      recipientId,
+      ...(recipientName ? { recipientName } : {})
+    }
+  } as unknown as Href;
+}
+
+export function profileFollowersHref(userId: string): Href {
+  return {
+    pathname: '/profile/followers',
+    params: { userId }
+  } as unknown as Href;
+}
+
+export function profileFollowingHref(userId: string): Href {
+  return {
+    pathname: '/profile/following',
+    params: { userId }
+  } as unknown as Href;
+}
+
+export function socialNotificationsHref(): Href {
+  return '/messages/notifications' as unknown as Href;
+}

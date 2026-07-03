@@ -248,6 +248,42 @@ export async function listForumThreads(opts?: {
   return { items, error: null };
 }
 
+export async function listFollowingForumThreads(opts?: {
+  sort?: ForumSort;
+  limit?: number;
+}): Promise<{ items: ForumThreadSummary[]; error: string | null }> {
+  const sort = opts?.sort ?? 'newest';
+  const limit = opts?.limit ?? 25;
+
+  const { data: authorIds, error: followError } = await supabase.rpc('collector_followed_author_ids');
+  if (followError) return { items: [], error: followError.message };
+
+  const ids = (authorIds ?? []) as string[];
+  if (ids.length === 0) return { items: [], error: null };
+
+  let q = supabase.from('forum_threads_enriched').select('*').in('author_id', ids);
+
+  q = q.order('is_pinned', { ascending: false });
+  if (sort === 'hottest' || sort === 'all_time') {
+    q = q
+      .order('vote_score', { ascending: false })
+      .order('comment_count', { ascending: false })
+      .order('created_at', { ascending: false });
+  } else {
+    q = q.order('created_at', { ascending: false });
+  }
+
+  const { data, error } = await q.limit(limit);
+  if (error) return { items: [], error: error.message };
+
+  let items = ((data ?? []) as ForumThreadSummary[]).map((row) => mapThreadRow(row));
+  items = await applyFeedFilters(items);
+  items = await attachSavedThreads(items);
+  items = sortThreads(items, sort);
+
+  return { items, error: null };
+}
+
 export async function listSavedForumThreads(opts?: {
   sort?: ForumSort;
   limit?: number;
