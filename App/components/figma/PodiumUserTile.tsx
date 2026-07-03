@@ -20,9 +20,9 @@ type Props = {
 };
 
 const TIER = {
-  1: { flex: 1.12, avatar: 72, badge: 34, lift: 0 },
-  2: { flex: 1, avatar: 58, badge: 28, lift: 8 },
-  3: { flex: 1, avatar: 54, badge: 26, lift: 12 }
+  1: { flex: 1.2, avatar: 150, badge: 60, lift: 0 },
+  2: { flex: 1, avatar: 120, badge: 55, lift: 6 },
+  3: { flex: 1, avatar: 100, badge: 50, lift: 10 }
 } as const;
 
 const POINTS_COLOR: Record<PodiumRank, string> = {
@@ -43,13 +43,12 @@ export function PodiumUserTile({ entry, rank, isSelf, onPress, s, t }: Props) {
       style={({ pressed }) => [
         styles.tile,
         { flex: tier.flex, marginTop: s(tier.lift) },
-        isSelf && styles.tileSelf,
         pressed && onPress && styles.pressed
       ]}
       onPress={onPress}
       disabled={!onPress}
       accessibilityRole="button"
-      accessibilityLabel={`Rank ${rank}: ${nameLabel}, ${formatPoints(entry.points)} points`}
+      accessibilityLabel={`Rank ${rank}: ${nameLabel}${isSelf ? ' (you)' : ''}, ${formatPoints(entry.points)} points`}
     >
       <View style={styles.avatarBlock}>
         <ProfileAvatar url={entry.avatarUrl} name={nameLabel} size={s(tier.avatar)} />
@@ -63,13 +62,12 @@ export function PodiumUserTile({ entry, rank, isSelf, onPress, s, t }: Props) {
 
       <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
         {nameLabel}
+        {isSelf ? <Text style={styles.youInline}>(you)</Text> : null}
       </Text>
 
       <Text style={[styles.points, { color: POINTS_COLOR[rank] }]}>
         {formatPoints(entry.points)} pts
       </Text>
-
-      {isSelf ? <Text style={styles.you}>YOU</Text> : null}
     </Pressable>
   );
 }
@@ -90,10 +88,6 @@ function createStyles(
       paddingHorizontal: s(4),
       paddingVertical: s(6),
       minWidth: 0
-    },
-    tileSelf: {
-      backgroundColor: 'rgba(139, 111, 82, 0.08)',
-      borderRadius: s(10)
     },
     pressed: {
       opacity: 0.88
@@ -118,20 +112,16 @@ function createStyles(
       textAlign: 'center',
       width: '100%'
     },
+    youInline: {
+      fontFamily: appFonts.body,
+      fontSize: tb(14),
+      color: figmaColors.navActive
+    },
     points: {
       fontFamily: appFonts.bodyBold,
       fontSize: tb(13),
       lineHeight: tb(16),
       marginTop: s(2),
-      textAlign: 'center'
-    },
-    you: {
-      fontFamily: appFonts.accent,
-      fontSize: tb(10),
-      color: figmaColors.navActive,
-      letterSpacing: 0.6,
-      textTransform: 'uppercase',
-      marginTop: s(4),
       textAlign: 'center'
     }
   });

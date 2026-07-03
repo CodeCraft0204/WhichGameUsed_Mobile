@@ -18,7 +18,6 @@ import { LeaderboardPointsExplainer } from '@/components/figma/LeaderboardPoints
 import { LeaderboardPrizeCard } from '@/components/figma/LeaderboardPrizeCard';
 import { LeaderboardRankCard } from '@/components/figma/LeaderboardRankCard';
 import { LeaderboardResetBanner } from '@/components/figma/LeaderboardResetBanner';
-import { LeaderboardSelfCard } from '@/components/figma/LeaderboardSelfCard';
 import {
   ContextHeaderScrollProvider,
   useContextHeaderScrollProps
@@ -33,7 +32,6 @@ import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import { useLeaderboardRealtime } from '@/hooks/useLeaderboardRealtime';
 import {
   listLeaderboard,
-  getMyStanding,
   type LeaderboardEntry,
   type LeaderboardPeriod
 } from '@/lib/leaderboard';
@@ -52,7 +50,7 @@ export default function LeaderboardScreen() {
 
 function LeaderboardScreenBody() {
   const router = useRouter();
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const { s, t } = useFigmaLayout(0.92);
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
@@ -62,14 +60,12 @@ function LeaderboardScreenBody() {
     leaderboardPeriodTabs[0]
   );
   const [items, setItems] = useState<LeaderboardEntry[]>([]);
-  const [selfEntry, setSelfEntry] = useState<LeaderboardEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [listExpanded, setListExpanded] = useState(false);
   const initialLoadDone = useRef(false);
 
-  const isEligible = profile?.leaderboard_eligible !== false;
   const period = tabToPeriod(activeTab);
 
   const load = useCallback(async (tab: string, opts?: { silent?: boolean }) => {
@@ -79,10 +75,7 @@ function LeaderboardScreenBody() {
 
     setError(null);
     const p = tabToPeriod(tab);
-    const [rankResult, selfResult] = await Promise.all([
-      listLeaderboard(p, 20),
-      user ? getMyStanding(user.id, p) : Promise.resolve({ entry: null, rank: null, error: null })
-    ]);
+    const rankResult = await listLeaderboard(p, 20);
 
     if (rankResult.error) {
       setError(rankResult.error);
@@ -90,11 +83,10 @@ function LeaderboardScreenBody() {
     } else {
       setItems(rankResult.items);
     }
-    setSelfEntry(selfResult.entry);
     setLoading(false);
     setRefreshing(false);
     initialLoadDone.current = true;
-  }, [user]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => { void load(activeTab); }, [load, activeTab])
@@ -122,19 +114,6 @@ function LeaderboardScreenBody() {
   const handleViewPointsWork = useCallback(() => {
     router.push(pointsWorkHref());
   }, [router]);
-
-  const handleGoToSettings = useCallback(() => {
-    router.push('/settings/settings');
-  }, [router]);
-
-  const handleViewOwnProfile = useCallback(() => {
-    if (!user || !selfEntry) return;
-    router.push(publicProfileHref(user.id, {
-      rank: selfEntry.rank,
-      points: selfEntry.points,
-      period
-    }));
-  }, [router, user, selfEntry, period]);
 
   const top3 = items.slice(0, 3);
   const rest = items.slice(3);
@@ -200,17 +179,6 @@ function LeaderboardScreenBody() {
               top3={top3}
               currentUserId={user?.id}
               onPressUser={handlePressUser}
-              s={s}
-              t={t}
-            />
-          ) : null}
-
-          {user ? (
-            <LeaderboardSelfCard
-              entry={selfEntry}
-              isEligible={isEligible}
-              onGoToSettings={handleGoToSettings}
-              onViewProfile={selfEntry ? handleViewOwnProfile : undefined}
               s={s}
               t={t}
             />

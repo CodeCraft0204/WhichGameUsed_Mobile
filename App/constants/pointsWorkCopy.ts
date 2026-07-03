@@ -11,7 +11,7 @@ export const pointsWorkCopy = {
   prizeTitle: "THIS MONTH'S PRIZE",
   penaltiesTitle: 'PENALTIES & ADJUSTMENTS',
 
-  seeFullGuide: 'See full guide',
+  seeFullGuide: 'SEE FULL GUIDE',
   loading: 'Loading point rules…',
   error: 'Could not load the latest point rules.',
   retry: 'Try again',

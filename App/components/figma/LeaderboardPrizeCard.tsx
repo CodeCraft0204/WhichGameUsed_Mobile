@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { appFonts } from '@/constants/appFonts';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { leaderboardAssets } from '@/constants/leaderboardAssets';
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { leaderboardCopy } from '@/constants/leaderboardCopy';
 import { figmaColors } from '@/constants/figmaColors';
 import { bodyText } from '@/constants/appTypography';
@@ -17,23 +17,19 @@ export function LeaderboardPrizeCard({ s, t, onLearnMore }: Props) {
 
   return (
     <View style={styles.card}>
-      <View style={styles.header}>
-        <Image source={leaderboardAssets.giftIcon} style={styles.gift} resizeMode="contain" />
-        <Text style={styles.title}>{leaderboardCopy.prizeTitle}</Text>
-      </View>
-
+      <Text style={styles.title}>{leaderboardCopy.prizeTitle}</Text>
       <Text style={styles.body}>{leaderboardCopy.prizeBody}</Text>
 
-      <Pressable
-        onPress={onLearnMore}
-        disabled={!onLearnMore}
-        accessibilityRole="button"
-        style={styles.learnBtn}
-      >
-        <Image source={leaderboardAssets.learnMoreBtn} style={styles.learnArt} resizeMode="contain" />
-      </Pressable>
-
-      <Image source={leaderboardAssets.prizeDisplayCase} style={styles.prizeArt} resizeMode="contain" />
+      {onLearnMore ? (
+        <Pressable
+          onPress={onLearnMore}
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.learnRow, pressed && styles.learnPressed]}
+        >
+          <Text style={styles.learnText}>{leaderboardCopy.prizeLearnMore}</Text>
+          <Ionicons name="chevron-forward" size={s(14)} color={figmaColors.navActive} />
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -50,45 +46,39 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       borderRadius: s(14),
       padding: s(12),
       minWidth: 0,
-      alignItems: 'stretch'
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: s(6),
-      marginBottom: s(8)
-    },
-    gift: {
-      width: s(24),
-      height: s(24)
+      justifyContent: 'center'
     },
     title: {
       flex: 1,
       fontFamily: appFonts.display,
       fontSize: t(13),
+      lineHeight: t(15),
       color: figmaColors.charcoal,
       textTransform: 'uppercase',
-      letterSpacing: 0.3
+      letterSpacing: 0.8
     },
     body: {
       fontFamily: appFonts.body,
-      fontSize: tb(12),
-      lineHeight: tb(17),
-      color: figmaColors.gray,
+      fontSize: tb(14),
+      lineHeight: tb(19),
+      color: figmaColors.charcoal,
+      marginTop: 0,
       marginBottom: s(10)
     },
-    learnBtn: {
-      alignSelf: 'flex-start',
-      marginBottom: s(8)
+    learnRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(2),
+      alignSelf: 'flex-start'
     },
-    learnArt: {
-      width: s(112),
-      height: s(34)
+    learnPressed: {
+      opacity: 0.85
     },
-    prizeArt: {
-      width: '100%',
-      height: s(72),
-      alignSelf: 'center'
+    learnText: {
+      fontFamily: appFonts.accent,
+      fontSize: tb(12),
+      color: figmaColors.navActive,
+      letterSpacing: 0.4
     }
   });
 }
