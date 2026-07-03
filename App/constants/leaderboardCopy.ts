@@ -6,6 +6,8 @@ export const leaderboardCopy = {
     'Track the top 20 users each month. Rankings reward authentication work, helpful discussion, and research contributions.',
 
   sectionRanking: 'TOP 20 RANKING',
+  topCollectorsTitle: 'TOP COLLECTORS',
+  topCollectorsSubtitle: 'Leading contributors this period.',
   rankingListShort: (count: number) =>
     count < 10
       ? `${count} collector${count === 1 ? '' : 's'} ranked — open slots fill in as more people earn points.`
