@@ -10,6 +10,8 @@ import { AppBootstrapGate } from '@/components/AppBootstrapGate';
 import { AppSplashScreen } from '@/components/AppSplashScreen';
 import { AuthNavigationGuard } from '@/components/AuthNavigationGuard';
 import { AuthProvider } from '@/context/AuthContext';
+import { SocialNotificationsProvider } from '@/context/SocialNotificationsContext';
+import { SocialNotificationBanner } from '@/components/social/SocialNotificationBanner';
 import { useBootstrapProgress } from '@/hooks/useBootstrapProgress';
 
 export default function RootLayout() {
@@ -36,9 +38,14 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <AuthProvider>
         <AppBootstrapGate fontsReady={fontsLoaded}>
-          <AuthNavigationGuard>
-            <Stack screenOptions={{ headerShown: false }} />
-          </AuthNavigationGuard>
+          <SocialNotificationsProvider>
+            <AuthNavigationGuard>
+              <>
+                <Stack screenOptions={{ headerShown: false }} />
+                <SocialNotificationBanner />
+              </>
+            </AuthNavigationGuard>
+          </SocialNotificationsProvider>
         </AppBootstrapGate>
       </AuthProvider>
     </SafeAreaProvider>

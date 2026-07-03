@@ -2,7 +2,7 @@ import type { MyProfile, MyProfileUpdate } from '@/types/profile';
 import { supabase } from '@/lib/supabase';
 
 const PROFILE_COLUMNS =
-  'id, role, display_name, username, avatar_url, about, location_text, is_public, leaderboard_eligible, message_permission, show_forum_activity_on_profile';
+  'id, role, display_name, username, avatar_url, about, location_text, is_public, leaderboard_eligible, message_permission, show_forum_activity_on_profile, notify_push_messages, notify_push_follows';
 
 const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
 const AVATAR_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']);

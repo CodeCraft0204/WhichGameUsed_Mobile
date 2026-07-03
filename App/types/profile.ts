@@ -18,6 +18,8 @@ export type MyProfile = Profile & {
   leaderboard_eligible: boolean;
   message_permission: MessagePermission;
   show_forum_activity_on_profile: boolean;
+  notify_push_messages: boolean;
+  notify_push_follows: boolean;
 };
 
 export type MyProfileUpdate = {
@@ -30,4 +32,6 @@ export type MyProfileUpdate = {
   leaderboard_eligible?: boolean;
   message_permission?: MessagePermission;
   show_forum_activity_on_profile?: boolean;
+  notify_push_messages?: boolean;
+  notify_push_follows?: boolean;
 };

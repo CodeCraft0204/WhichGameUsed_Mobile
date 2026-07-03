@@ -19,6 +19,7 @@ import {
 } from '@/constants/navigation';
 import { socialCopy } from '@/constants/socialCopy';
 import { useAuth } from '@/context/AuthContext';
+import { useSocialNotifications } from '@/context/SocialNotificationsContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import { listInboxConversations } from '@/lib/social';
 import { appFonts } from '@/constants/appFonts';
@@ -28,6 +29,7 @@ import { Pressable } from 'react-native';
 export default function MessagesInboxScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { refreshCounts } = useSocialNotifications();
   const { s, t } = useFigmaLayout(1);
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
@@ -53,7 +55,10 @@ export default function MessagesInboxScreen() {
     setRefreshing(false);
   }, [user]);
 
-  useFocusEffect(useCallback(() => { void load(); }, [load]));
+  useFocusEffect(useCallback(() => {
+    void load();
+    void refreshCounts();
+  }, [load, refreshCounts]));
 
   if (!user) {
     return (

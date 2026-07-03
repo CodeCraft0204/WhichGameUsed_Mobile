@@ -25,6 +25,7 @@ import {
 } from '@/constants/navigation';
 import type { MessagePermission } from '@/lib/social';
 import { useAuth } from '@/context/AuthContext';
+import { useSocialNotifications } from '@/context/SocialNotificationsContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import { fetchMyProfile, updateMyProfile } from '@/lib/profile';
 function formatMemberSince(iso: string | undefined): string {
@@ -44,6 +45,7 @@ function signInMethodLabel(provider: string | undefined): string {
 export default function SettingsScreen() {
   const router = useRouter();
   const { user, signOut, refreshProfile } = useAuth();
+  const { unreadInboxCount, unreadNotificationCount, refreshCounts } = useSocialNotifications();
   const { s, t } = useFigmaLayout(1);
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
@@ -56,6 +58,8 @@ export default function SettingsScreen() {
   const [leaderboardEligible, setLeaderboardEligible] = useState(true);
   const [messagePermission, setMessagePermission] = useState<MessagePermission>('everyone');
   const [showForumActivity, setShowForumActivity] = useState(true);
+  const [notifyPushMessages, setNotifyPushMessages] = useState(true);
+  const [notifyPushFollows, setNotifyPushFollows] = useState(true);
 
   const loadProfile = useCallback(async () => {
     if (!user) return;
@@ -68,6 +72,8 @@ export default function SettingsScreen() {
       setLeaderboardEligible(row.leaderboard_eligible);
       setMessagePermission(row.message_permission ?? 'everyone');
       setShowForumActivity(row.show_forum_activity_on_profile ?? true);
+      setNotifyPushMessages(row.notify_push_messages ?? true);
+      setNotifyPushFollows(row.notify_push_follows ?? true);
     }
     setLoading(false);
   }, [user]);
@@ -75,7 +81,8 @@ export default function SettingsScreen() {
   useFocusEffect(
     useCallback(() => {
       void loadProfile();
-    }, [loadProfile])
+      void refreshCounts();
+    }, [loadProfile, refreshCounts])
   );
 
   const savePrivacy = async (patch: {
@@ -83,6 +90,8 @@ export default function SettingsScreen() {
     leaderboard_eligible?: boolean;
     message_permission?: MessagePermission;
     show_forum_activity_on_profile?: boolean;
+    notify_push_messages?: boolean;
+    notify_push_follows?: boolean;
   }) => {
     if (!user) return;
     setSavingPrivacy(true);
@@ -117,6 +126,16 @@ export default function SettingsScreen() {
   const handleForumActivityChange = (next: boolean) => {
     setShowForumActivity(next);
     void savePrivacy({ show_forum_activity_on_profile: next });
+  };
+
+  const handlePushMessagesChange = (next: boolean) => {
+    setNotifyPushMessages(next);
+    void savePrivacy({ notify_push_messages: next });
+  };
+
+  const handlePushFollowsChange = (next: boolean) => {
+    setNotifyPushFollows(next);
+    void savePrivacy({ notify_push_follows: next });
   };
 
   const handleSignOut = () => {
@@ -191,6 +210,7 @@ export default function SettingsScreen() {
         <ProfileSection title={settingsCopy.social.section} s={s} t={t}>
           <ProfileMenuRow
             label={settingsCopy.social.messages}
+            value={unreadInboxCount > 0 ? String(unreadInboxCount) : undefined}
             onPress={() => router.push(messagesInboxHref())}
             s={s}
             t={t}
@@ -205,7 +225,24 @@ export default function SettingsScreen() {
           ) : null}
           <ProfileMenuRow
             label={settingsCopy.social.notifications}
+            value={unreadNotificationCount > 0 ? String(unreadNotificationCount) : undefined}
             onPress={() => router.push(socialNotificationsHref())}
+            s={s}
+            t={t}
+          />
+          <ProfileToggleRow
+            label={settingsCopy.social.pushMessages}
+            hint={settingsCopy.social.pushMessagesHint}
+            value={notifyPushMessages}
+            onValueChange={handlePushMessagesChange}
+            s={s}
+            t={t}
+          />
+          <ProfileToggleRow
+            label={settingsCopy.social.pushFollows}
+            hint={settingsCopy.social.pushFollowsHint}
+            value={notifyPushFollows}
+            onValueChange={handlePushFollowsChange}
             s={s}
             t={t}
           />

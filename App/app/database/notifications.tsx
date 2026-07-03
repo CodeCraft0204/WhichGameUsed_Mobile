@@ -14,6 +14,7 @@ import { appFonts } from '@/constants/appFonts';
 import { databaseCopy } from '@/constants/databaseCopy';
 import { figmaColors } from '@/constants/figmaColors';
 import { databaseCardHref } from '@/constants/navigation';
+import { hrefFromNotificationLink } from '@/lib/notification-navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import {
   listMyNotifications,
@@ -46,6 +47,11 @@ export default function NotificationsScreen() {
   const openItem = async (item: UserNotification) => {
     if (!item.read_at) await markNotificationRead(item.id);
     reload();
+    const href = hrefFromNotificationLink(item.link_path);
+    if (href) {
+      router.push(href);
+      return;
+    }
     if (item.link_path?.startsWith('/database/card/')) {
       const cardId = item.link_path.replace('/database/card/', '');
       if (cardId) router.push(databaseCardHref(cardId));

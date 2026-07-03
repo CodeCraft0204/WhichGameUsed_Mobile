@@ -10,52 +10,48 @@ import {
 } from 'react-native';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
-import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader';
 import { appFonts } from '@/constants/appFonts';
 import { bodyText } from '@/constants/appTypography';
 import { figmaColors } from '@/constants/figmaColors';
-import {
-  messageConversationHref,
-  publicProfileHref
-} from '@/constants/navigation';
 import { socialCopy } from '@/constants/socialCopy';
-import { useAuth } from '@/context/AuthContext';
-import { useFigmaLayout } from '@/hooks/useFigmaLayout';
+import { useSocialNotifications } from '@/context/SocialNotificationsContext';
+import { defaultHrefForNotification } from '@/lib/notification-navigation';
 import {
-  listSocialNotifications,
-  markAllSocialNotificationsRead,
-  type SocialNotification
-} from '@/lib/social';
+  listMyNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+  type UserNotification
+} from '@/lib/notifications';
+import { useFigmaLayout } from '@/hooks/useFigmaLayout';
+import { isSocialNotification } from '@/lib/notification-navigation';
 
 export default function SocialNotificationsScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { refreshCounts } = useSocialNotifications();
   const { s, t } = useFigmaLayout(1);
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
-  const [items, setItems] = useState<SocialNotification[]>([]);
+  const [items, setItems] = useState<UserNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async (isRefresh = false) => {
-    if (!user) return;
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
-    const { items: rows } = await listSocialNotifications();
-    setItems(rows);
+    const { items: rows } = await listMyNotifications(50);
+    setItems(rows.filter(isSocialNotification));
     setLoading(false);
     setRefreshing(false);
-  }, [user]);
+    await refreshCounts();
+  }, [refreshCounts]);
 
   useFocusEffect(useCallback(() => { void load(); }, [load]));
 
-  const openNotification = async (row: SocialNotification) => {
-    if (row.type === 'new_message' && row.conversationId) {
-      router.push(messageConversationHref(row.conversationId));
-      return;
-    }
-    if (row.actorId) router.push(publicProfileHref(row.actorId));
+  const openNotification = async (row: UserNotification) => {
+    if (!row.read_at) await markNotificationRead(row.id);
+    await load(true);
+    router.push(defaultHrefForNotification(row));
   };
 
   return (
@@ -74,7 +70,7 @@ export default function SocialNotificationsScreen() {
       />
 
       <Pressable
-        onPress={() => void markAllSocialNotificationsRead().then(() => load(true))}
+        onPress={() => void markAllNotificationsRead().then(() => load(true))}
         style={styles.markAll}
         accessibilityRole="button"
       >
@@ -90,23 +86,14 @@ export default function SocialNotificationsScreen() {
           <Pressable
             key={row.id}
             onPress={() => void openNotification(row)}
-            style={[styles.row, !row.readAt && styles.unread]}
+            style={[styles.row, !row.read_at && styles.unread]}
             accessibilityRole="button"
           >
-            <ProfileAvatar
-              url={row.actorAvatarUrl}
-              name={row.actorDisplayName ?? 'Collector'}
-              size={s(40)}
-            />
             <View style={styles.textCol}>
-              <Text style={styles.body}>
-                <Text style={styles.name}>{row.actorDisplayName ?? 'Someone'}</Text>{' '}
-                {row.type === 'new_follower'
-                  ? socialCopy.notifications.newFollower
-                  : socialCopy.notifications.newMessage}
-              </Text>
+              <Text style={styles.title}>{row.title}</Text>
+              {row.body ? <Text style={styles.body}>{row.body}</Text> : null}
               <Text style={styles.when}>
-                {new Date(row.createdAt).toLocaleString(undefined, {
+                {new Date(row.created_at).toLocaleString(undefined, {
                   month: 'short',
                   day: 'numeric',
                   hour: 'numeric',
@@ -137,21 +124,23 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       color: figmaColors.gray
     },
     row: {
-      flexDirection: 'row',
-      gap: s(12),
       paddingVertical: s(12),
       borderBottomWidth: 1,
       borderBottomColor: figmaColors.divider
     },
     unread: { backgroundColor: figmaColors.cream },
-    textCol: { flex: 1, gap: s(4) },
+    textCol: { gap: s(4) },
+    title: {
+      fontFamily: appFonts.bodyBold,
+      fontSize: tb(16),
+      color: figmaColors.charcoal
+    },
     body: {
       fontFamily: appFonts.body,
-      fontSize: tb(16),
-      color: figmaColors.charcoal,
-      lineHeight: tb(22)
+      fontSize: tb(15),
+      lineHeight: tb(21),
+      color: figmaColors.gray
     },
-    name: { fontFamily: appFonts.bodyBold },
     when: {
       fontFamily: appFonts.body,
       fontSize: tb(13),

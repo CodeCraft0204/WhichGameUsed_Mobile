@@ -13,6 +13,14 @@
       "expo-router",
       "expo-web-browser",
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/Splash.png",
+          "color": "#F2EBDC",
+          "sounds": []
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/Splash.png",
