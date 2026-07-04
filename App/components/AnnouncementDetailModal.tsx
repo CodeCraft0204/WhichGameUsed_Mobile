@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -15,6 +15,7 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { SwipeDismissAnnouncementRow } from '@/components/announcements/SwipeDismissAnnouncementRow';
 import { appFonts } from '@/constants/appFonts';
 import { bodyText } from '@/constants/appTypography';
 import { databaseIcons } from '@/constants/databaseContent';
@@ -46,19 +47,22 @@ export function AnnouncementDetailModal({
   const router = useRouter();
   const { s, t } = useFigmaLayout();
   const screenHeight = Dimensions.get('window').height;
-  const scrollMaxHeight = screenHeight * 0.5;
+
+  const [neverShowIds, setNeverShowIds] = useState<Record<string, boolean>>({});
+  const [visibleItems, setVisibleItems] = useState<AppAnnouncement[]>([]);
+  const [rendered, setRendered] = useState(visible);
+  const closingEmpty = useRef(false);
+
   const listHeight = Math.min(
-    scrollMaxHeight,
-    Math.max(s(128), announcements.length * s(136) + s(12))
+    screenHeight * 0.5,
+    Math.max(s(128), visibleItems.length * s(148) + s(12))
   );
-  const panelHeight = Math.min(screenHeight * 0.68, listHeight + s(118));
+  const panelHeight = Math.min(screenHeight * 0.68, listHeight + s(132));
   const styles = useMemo(
     () => createStyles(s, t, listHeight, panelHeight),
     [listHeight, panelHeight, s, t]
   );
 
-  const [neverShowIds, setNeverShowIds] = useState<Record<string, boolean>>({});
-  const [rendered, setRendered] = useState(visible);
   const backdropOpacity = useRef(new Animated.Value(0)).current;
   const panelY = useRef(new Animated.Value(-panelHeight)).current;
   const contentOpacity = useRef(new Animated.Value(0)).current;
@@ -66,11 +70,38 @@ export function AnnouncementDetailModal({
   useEffect(() => {
     if (!visible) return;
     setNeverShowIds({});
-  }, [visible]);
+    setVisibleItems(announcements);
+    closingEmpty.current = false;
+  }, [announcements, visible]);
 
   useEffect(() => {
     panelY.setValue(-panelHeight);
   }, [panelHeight, panelY]);
+
+  const animateClose = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(backdropOpacity, {
+        toValue: 0,
+        duration: CLOSE_MS,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true
+      }),
+      Animated.timing(contentOpacity, {
+        toValue: 0,
+        duration: CLOSE_MS * 0.5,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true
+      }),
+      Animated.timing(panelY, {
+        toValue: -panelHeight,
+        duration: CLOSE_MS,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true
+      })
+    ]).start(({ finished }) => {
+      if (finished) setRendered(false);
+    });
+  }, [backdropOpacity, contentOpacity, panelHeight, panelY]);
 
   useEffect(() => {
     if (visible) {
@@ -105,40 +136,45 @@ export function AnnouncementDetailModal({
     }
 
     if (!rendered) return;
+    animateClose();
+  }, [animateClose, backdropOpacity, contentOpacity, panelHeight, panelY, rendered, visible]);
 
-    Animated.parallel([
-      Animated.timing(backdropOpacity, {
-        toValue: 0,
-        duration: CLOSE_MS,
-        easing: Easing.in(Easing.quad),
-        useNativeDriver: true
-      }),
-      Animated.timing(contentOpacity, {
-        toValue: 0,
-        duration: CLOSE_MS * 0.5,
-        easing: Easing.in(Easing.quad),
-        useNativeDriver: true
-      }),
-      Animated.timing(panelY, {
-        toValue: -panelHeight,
-        duration: CLOSE_MS,
-        easing: Easing.in(Easing.cubic),
-        useNativeDriver: true
-      })
-    ]).start(({ finished }) => {
-      if (finished) setRendered(false);
-    });
-  }, [backdropOpacity, contentOpacity, panelHeight, panelY, rendered, visible]);
+  useEffect(() => {
+    if (!visible || visibleItems.length > 0 || closingEmpty.current) return;
+    closingEmpty.current = true;
+    onClose();
+  }, [onClose, visible, visibleItems.length]);
+
+  const persistNeverShow = useCallback(
+    async (ids: string[]) => {
+      if (ids.length === 0) return;
+      await Promise.all(ids.map((id) => dismissAnnouncement(id)));
+      ids.forEach((id) => onDismissed(id));
+    },
+    [onDismissed]
+  );
 
   const finish = async () => {
     const ids = Object.entries(neverShowIds)
       .filter(([, checked]) => checked)
-      .map(([id]) => id);
+      .map(([id]) => id)
+      .filter((id) => visibleItems.some((row) => row.id === id));
 
-    await Promise.all(ids.map((id) => dismissAnnouncement(id)));
-    ids.forEach((id) => onDismissed(id));
+    await persistNeverShow(ids);
     onClose();
   };
+
+  const handleSwipeDismiss = useCallback(
+    async (row: AppAnnouncement) => {
+      const permanent = !!neverShowIds[row.id];
+      if (permanent) {
+        await dismissAnnouncement(row.id);
+        onDismissed(row.id);
+      }
+      setVisibleItems((prev) => prev.filter((item) => item.id !== row.id));
+    },
+    [neverShowIds, onDismissed]
+  );
 
   const openLink = async (row: AppAnnouncement) => {
     if (neverShowIds[row.id]) {
@@ -177,72 +213,83 @@ export function AnnouncementDetailModal({
                   <Image source={figmaIcons.megaphone} style={styles.headerIcon} resizeMode="contain" />
                   <Text style={styles.sheetTitle}>ANNOUNCEMENTS</Text>
                   <View style={styles.headerBadge}>
-                    <Text style={styles.headerBadgeText}>{announcements.length}</Text>
+                    <Text style={styles.headerBadgeText}>{visibleItems.length}</Text>
                   </View>
                 </View>
+
+                <Text style={styles.swipeHint}>Swipe right on an item to dismiss</Text>
 
                 <ScrollView
                   style={styles.scroll}
                   contentContainerStyle={styles.scrollContent}
                   showsVerticalScrollIndicator={false}
-                  bounces={announcements.length > 2}
+                  bounces={visibleItems.length > 2}
+                  keyboardShouldPersistTaps="handled"
                 >
-                  {announcements.map((row) => {
+                  {visibleItems.map((row) => {
                     const { title, content } = getAnnouncementDisplay(row);
                     const neverShow = !!neverShowIds[row.id];
 
                     return (
-                      <View key={row.id} style={styles.card}>
-                        <Text style={styles.cardTitle} numberOfLines={2}>
-                          {title}
-                        </Text>
-
-                        {content ? (
-                          <Text style={styles.cardBody} numberOfLines={4}>
-                            {content}
+                      <SwipeDismissAnnouncementRow
+                        key={row.id}
+                        neverShow={neverShow}
+                        s={s}
+                        t={t}
+                        onDismiss={() => void handleSwipeDismiss(row)}
+                      >
+                        <View style={styles.card}>
+                          <Text style={styles.cardTitle} numberOfLines={2}>
+                            {title}
                           </Text>
-                        ) : null}
 
-                        <View style={styles.cardActions}>
-                          <Pressable
-                            style={styles.checkboxRow}
-                            onPress={() =>
-                              setNeverShowIds((prev) => ({ ...prev, [row.id]: !prev[row.id] }))
-                            }
-                            accessibilityRole="checkbox"
-                            accessibilityState={{ checked: neverShow }}
-                          >
-                            <View
-                              style={[
-                                styles.checkboxBox,
-                                { width: boxSize, height: boxSize },
-                                neverShow && styles.checkboxBoxChecked
-                              ]}
-                            >
-                              {neverShow ? (
-                                <Ionicons
-                                  name="checkmark"
-                                  size={s(12)}
-                                  color={figmaColors.textOnDark}
-                                />
-                              ) : null}
-                            </View>
-                            <Text style={styles.checkboxLabel}>Never show this again</Text>
-                          </Pressable>
-
-                          {row.link_path ? (
-                            <Pressable
-                              style={styles.linkBtn}
-                              onPress={() => void openLink(row)}
-                              accessibilityRole="button"
-                            >
-                              <Text style={styles.linkBtnText} numberOfLines={1}>
-                                View {title}
-                              </Text>
-                            </Pressable>
+                          {content ? (
+                            <Text style={styles.cardBody} numberOfLines={4}>
+                              {content}
+                            </Text>
                           ) : null}
+
+                          <View style={styles.cardActions}>
+                            <Pressable
+                              style={styles.checkboxRow}
+                              onPress={() =>
+                                setNeverShowIds((prev) => ({ ...prev, [row.id]: !prev[row.id] }))
+                              }
+                              accessibilityRole="checkbox"
+                              accessibilityState={{ checked: neverShow }}
+                            >
+                              <View
+                                style={[
+                                  styles.checkboxBox,
+                                  { width: boxSize, height: boxSize },
+                                  neverShow && styles.checkboxBoxChecked
+                                ]}
+                              >
+                                {neverShow ? (
+                                  <Ionicons
+                                    name="checkmark"
+                                    size={s(12)}
+                                    color={figmaColors.textOnDark}
+                                  />
+                                ) : null}
+                              </View>
+                              <Text style={styles.checkboxLabel}>Never show this again</Text>
+                            </Pressable>
+
+                            {row.link_path ? (
+                              <Pressable
+                                style={styles.linkBtn}
+                                onPress={() => void openLink(row)}
+                                accessibilityRole="button"
+                              >
+                                <Text style={styles.linkBtnText} numberOfLines={1}>
+                                  View {title}
+                                </Text>
+                              </Pressable>
+                            ) : null}
+                          </View>
                         </View>
-                      </View>
+                      </SwipeDismissAnnouncementRow>
                     );
                   })}
                 </ScrollView>
@@ -310,7 +357,7 @@ function createStyles(
       flexDirection: 'row',
       alignItems: 'center',
       gap: s(8),
-      marginBottom: s(12),
+      marginBottom: s(6),
       paddingTop: s(4)
     },
     headerIcon: {
@@ -326,7 +373,7 @@ function createStyles(
       color: figmaColors.charcoal,
       letterSpacing: 1,
       marginTop: s(18),
-      marginBottom: s(18),
+      marginBottom: s(18)
     },
     headerBadge: {
       minWidth: s(24),
@@ -344,6 +391,13 @@ function createStyles(
       color: figmaColors.textOnDark,
       fontWeight: '600'
     },
+    swipeHint: {
+      fontFamily: appFonts.body,
+      fontSize: tb(12),
+      lineHeight: tb(16),
+      color: figmaColors.textSecondary,
+      marginBottom: s(10)
+    },
     scroll: {
       maxHeight: listHeight
     },
@@ -355,7 +409,7 @@ function createStyles(
       borderRadius: s(12),
       borderWidth: 1,
       borderColor: 'rgba(74, 64, 53, 0.22)',
-      backgroundColor: 'rgba(247, 241, 228, 0.78)',
+      backgroundColor: 'rgba(247, 241, 228, 0.96)',
       paddingHorizontal: s(14),
       paddingVertical: s(12),
       gap: s(6)
