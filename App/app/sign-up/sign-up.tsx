@@ -1,7 +1,7 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { appFonts } from '@/constants/appFonts';
 import React, { useCallback, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, Platform } from 'react-native';
 import { AuthCheckbox } from '@/components/auth/AuthCheckbox';
 import { AuthErrorBanner } from '@/components/auth/AuthErrorBanner';
 import { AuthOrDivider } from '@/components/auth/AuthOrDivider';
@@ -96,7 +96,7 @@ export default function SignUpScreen() {
       return;
     }
     setError(null);
-    setGoogleLoading(true);
+    if (Platform.OS !== 'web') setGoogleLoading(true);
     const result = await signInWithGoogle();
     if (result.oauthRedirecting) return;
     setGoogleLoading(false);

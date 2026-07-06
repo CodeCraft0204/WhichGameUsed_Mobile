@@ -49,7 +49,9 @@ export async function signInWithGoogleOAuth(): Promise<GoogleOAuthResult> {
   const redirectTo = googleOAuthRedirectUri();
   logRedirectUri(redirectTo);
 
-  // Mobile web (Vercel): full-page redirect — never continue to in-app navigation afterward.
+  // Mobile web: hard full-page navigation. skipBrowserRedirect returns the URL
+  // without Supabase calling assign — we replace immediately so Expo Router cannot
+  // cancel the outbound request (shows as "(canceled)" in DevTools).
   if (Platform.OS === 'web') {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -63,7 +65,7 @@ export async function signInWithGoogleOAuth(): Promise<GoogleOAuthResult> {
     if (error) return { error: error.message };
     if (!data.url) return { error: 'Could not start Google sign-in.' };
 
-    window.location.assign(data.url);
+    window.location.replace(data.url);
     return { error: null, redirecting: true };
   }
 

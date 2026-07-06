@@ -1,7 +1,7 @@
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { appFonts } from '@/constants/appFonts';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View, Platform } from 'react-native';
 import { AuthErrorBanner } from '@/components/auth/AuthErrorBanner';
 import { AuthInfoBanner } from '@/components/auth/AuthInfoBanner';
 import { AuthOrDivider } from '@/components/auth/AuthOrDivider';
@@ -96,7 +96,9 @@ export default function SignInScreen() {
 
   const handleGoogleSignIn = async () => {
     setError(null);
-    setGoogleLoading(true);
+    // Avoid a React re-render before OAuth navigation on web — it can cancel the
+    // outbound /authorize document request (DevTools shows "(canceled)").
+    if (Platform.OS !== 'web') setGoogleLoading(true);
     const result = await signInWithGoogle();
     if (result.oauthRedirecting) return;
     setGoogleLoading(false);
