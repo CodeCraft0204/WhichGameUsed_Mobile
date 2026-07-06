@@ -22,6 +22,8 @@ export const figmaIcons = {
   utilityProfile: require('@/assets/figma/Icon/utility_profile.png'),
   utilitySettings: require('@/assets/figma/Icon/utility_settings.png'),
   utilityNotifications: require('@/assets/figma/Icon/utility_notifications.png'),
+  msgIcon: require('@/assets/figma/Icon/MsgIcon.png'),
+  msgIconBadge: require('@/assets/figma/Icon/MsgIconBadge.png'),
 
   // Record card meta row
   metaPerson: require('@/assets/figma/Icon/meta_person.png'),

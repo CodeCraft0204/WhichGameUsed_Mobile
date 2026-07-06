@@ -1,30 +1,39 @@
-import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { appFonts } from '@/constants/appFonts';
-import { figmaColors } from '@/constants/figmaColors';
 import { bodyText } from '@/constants/appTypography';
+import { figmaColors } from '@/constants/figmaColors';
 import { formatInboxWhen } from '@/lib/messaging-format';
-import type { InboxConversation } from '@/lib/social';
+import type { Conversation } from '@/lib/messages';
 
-type ConversationListItemProps = {
-  conversation: InboxConversation;
+type Props = {
+  conversation: Conversation;
   onPress: () => void;
+  onPressAvatar?: () => void;
   active?: boolean;
   s: (n: number) => number;
   t: (n: number) => number;
 };
 
-export function ConversationListItem({
+function peerSubtitle(conversation: Conversation): string | null {
+  if (conversation.peerRank != null) {
+    return `Top Researcher • Rank #${conversation.peerRank}`;
+  }
+  return null;
+}
+
+export function MessageConversationRow({
   conversation,
   onPress,
+  onPressAvatar,
   active = false,
   s,
   t
-}: ConversationListItemProps) {
+}: Props) {
   const styles = useMemo(() => createStyles(s, t), [s, t]);
   const unread = conversation.unreadCount > 0;
+  const subtitle = peerSubtitle(conversation);
 
   return (
     <Pressable
@@ -39,11 +48,21 @@ export function ConversationListItem({
     >
       {active ? <View style={styles.activeBar} /> : null}
 
-      <ProfileAvatar
-        url={conversation.peerAvatarUrl}
-        name={conversation.peerDisplayName}
-        size={s(52)}
-      />
+      <Pressable
+        onPress={(event) => {
+          event.stopPropagation();
+          onPressAvatar?.();
+        }}
+        disabled={!onPressAvatar}
+        accessibilityRole="button"
+        accessibilityLabel={`Open ${conversation.peerDisplayName} profile`}
+      >
+        <ProfileAvatar
+          url={conversation.peerAvatarUrl}
+          name={conversation.peerDisplayName}
+          size={s(52)}
+        />
+      </Pressable>
 
       <View style={styles.content}>
         <View style={styles.topRow}>
@@ -54,6 +73,12 @@ export function ConversationListItem({
             {formatInboxWhen(conversation.lastMessageAt)}
           </Text>
         </View>
+
+        {subtitle ? (
+          <Text style={styles.subtitle} numberOfLines={1}>
+            {subtitle}
+          </Text>
+        ) : null}
 
         <Text style={[styles.preview, unread && styles.previewUnread]} numberOfLines={2}>
           {conversation.lastMessagePreview ?? 'No messages yet'}
@@ -69,28 +94,33 @@ export function ConversationListItem({
   );
 }
 
-type ArchivedRowProps = {
-  onPress?: () => void;
+type EmptyProps = {
+  title: string;
+  body: string;
   s: (n: number) => number;
   t: (n: number) => number;
+  action?: React.ReactNode;
 };
 
-export function ArchivedConversationsRow({ onPress, s, t }: ArchivedRowProps) {
-  const styles = useMemo(() => createArchivedStyles(s, t), [s, t]);
-
+export function EmptyMessagesState({ title, body, s, t, action }: EmptyProps) {
+  const styles = useMemo(() => createEmptyStyles(s, t), [s, t]);
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
-      accessibilityRole="button"
-      accessibilityLabel="Archived conversations"
-    >
-      <View style={styles.iconWrap}>
-        <Ionicons name="archive-outline" size={s(20)} color={figmaColors.gray} />
-      </View>
-      <Text style={styles.label}>Archived</Text>
-      <Ionicons name="chevron-forward" size={s(18)} color={figmaColors.gray} />
-    </Pressable>
+    <View style={styles.card}>
+      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.body}>{body}</Text>
+      {action}
+    </View>
+  );
+}
+
+export function MessageRequestCard({ s, t }: { s: (n: number) => number; t: (n: number) => number }) {
+  return (
+    <EmptyMessagesState
+      s={s}
+      t={t}
+      title="No pending requests"
+      body="Messages from collectors you do not follow will appear here when that feature is enabled."
+    />
   );
 }
 
@@ -124,7 +154,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       borderRadius: s(2),
       backgroundColor: figmaColors.navActive
     },
-    content: { flex: 1, minWidth: 0, gap: s(4) },
+    content: { flex: 1, minWidth: 0, gap: s(3) },
     topRow: { flexDirection: 'row', alignItems: 'center', gap: s(8) },
     name: {
       flex: 1,
@@ -132,8 +162,11 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: tb(17),
       color: figmaColors.charcoal
     },
-    nameStrong: {
-      fontFamily: appFonts.bodyBold
+    nameStrong: { fontFamily: appFonts.bodyBold },
+    subtitle: {
+      fontFamily: appFonts.body,
+      fontSize: tb(12),
+      color: figmaColors.navActive
     },
     when: {
       fontFamily: appFonts.body,
@@ -171,34 +204,27 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
   });
 }
 
-function createArchivedStyles(s: (n: number) => number, t: (n: number) => number) {
+function createEmptyStyles(s: (n: number) => number, t: (n: number) => number) {
   const tb = (n: number) => bodyText(t, n);
-
   return StyleSheet.create({
-    row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: s(12),
-      paddingVertical: s(16),
-      paddingHorizontal: s(4),
-      borderTopWidth: 1,
-      borderTopColor: figmaColors.divider,
-      marginTop: s(4)
+    card: {
+      backgroundColor: figmaColors.cream,
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      borderRadius: s(14),
+      padding: s(20),
+      gap: s(10)
     },
-    pressed: { opacity: 0.88 },
-    iconWrap: {
-      width: s(40),
-      height: s(40),
-      borderRadius: s(20),
-      backgroundColor: figmaColors.surfaceMuted,
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
-    label: {
-      flex: 1,
-      fontFamily: appFonts.bodyBold,
-      fontSize: tb(16),
+    title: {
+      fontFamily: appFonts.display,
+      fontSize: t(22),
       color: figmaColors.charcoal
+    },
+    body: {
+      fontFamily: appFonts.body,
+      fontSize: tb(17),
+      lineHeight: tb(24),
+      color: figmaColors.gray
     }
   });
 }

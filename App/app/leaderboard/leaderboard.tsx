@@ -7,8 +7,7 @@ import {
   StyleSheet,
   Text,
   View
-} from 'react-native';
-import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
+} from 'react-native';import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaHubBottomNav } from '@/components/figma/FigmaHubBottomNav';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
@@ -24,12 +23,12 @@ import {
 } from '@/context/ContextHeaderScrollContext';
 import { leaderboardIcons, leaderboardPeriodTabs } from '@/constants/leaderboardContent';
 import { leaderboardCopy } from '@/constants/leaderboardCopy';
-import { publicProfileHref, pointsWorkHref, monthlyPrizeHref } from '@/constants/navigation';
+import { publicProfileHref, pointsWorkHref, monthlyPrizeHref, messagesInboxHref } from '@/constants/navigation';
 import { figmaColors } from '@/constants/figmaColors';
 import { bodyText } from '@/constants/appTypography';
 import { useAuth } from '@/context/AuthContext';
-import { useFigmaLayout } from '@/hooks/useFigmaLayout';
-import { useLeaderboardRealtime } from '@/hooks/useLeaderboardRealtime';
+import { useSocialNotifications } from '@/context/SocialNotificationsContext';
+import { useFigmaLayout } from '@/hooks/useFigmaLayout';import { useLeaderboardRealtime } from '@/hooks/useLeaderboardRealtime';
 import {
   fetchActiveMonthlyPrize,
   listLeaderboard,
@@ -53,8 +52,8 @@ export default function LeaderboardScreen() {
 function LeaderboardScreenBody() {
   const router = useRouter();
   const { user } = useAuth();
-  const { s, t } = useFigmaLayout(0.92);
-  const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
+  const { unreadInboxCount, refreshCounts } = useSocialNotifications();
+  const { s, t } = useFigmaLayout(0.92);  const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
   const scrollProps = useContextHeaderScrollProps({ contentContainerStyle: page.scrollContent });
 
@@ -96,9 +95,11 @@ function LeaderboardScreenBody() {
   }, []);
 
   useFocusEffect(
-    useCallback(() => { void load(activeTab); }, [load, activeTab])
+    useCallback(() => {
+      void load(activeTab);
+      void refreshCounts();
+    }, [activeTab, load, refreshCounts])
   );
-
   const silentRefresh = useCallback(() => {
     void load(activeTab, { silent: true });
   }, [load, activeTab]);
@@ -120,6 +121,10 @@ function LeaderboardScreenBody() {
 
   const handleViewPointsWork = useCallback(() => {
     router.push(pointsWorkHref());
+  }, [router]);
+
+  const handleOpenMessages = useCallback(() => {
+    router.push(messagesInboxHref());
   }, [router]);
 
   const handleViewMonthlyPrize = useCallback(() => {
@@ -147,8 +152,10 @@ function LeaderboardScreenBody() {
         guidanceKey="leaderboard"
         s={s}
         page={page}
-      >
-        <LeaderboardPeriodTabs
+        showUtilityMessages={Boolean(user)}
+        utilityMessagesUnreadCount={unreadInboxCount}
+        onPressUtilityMessages={handleOpenMessages}
+      >        <LeaderboardPeriodTabs
           tabs={leaderboardPeriodTabs}
           value={activeTab}
           onChange={handleTabChange}
@@ -161,8 +168,7 @@ function LeaderboardScreenBody() {
         <LeaderboardResetBanner s={s} t={t} prize={monthlyPrize} />
       ) : null}
 
-      {refreshing ? (
-        <Text style={styles.refreshingText}>{leaderboardCopy.refreshing}</Text>
+      {refreshing ? (        <Text style={styles.refreshingText}>{leaderboardCopy.refreshing}</Text>
       ) : null}
 
       {loading ? (
@@ -287,8 +293,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       paddingHorizontal: s(12),
       marginBottom: s(12)
     },
-    bottomCards: {
-      flexDirection: 'row',
+    bottomCards: {      flexDirection: 'row',
       gap: s(8),
       marginTop: s(16),
       marginBottom: s(8),

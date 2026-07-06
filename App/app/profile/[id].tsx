@@ -28,7 +28,7 @@ import { bodyText } from '@/constants/appTypography';
 import { pointsWorkCopy } from '@/constants/pointsWorkCopy';
 import {
   discussionThreadHref,
-  messageComposeHref,
+  messageConversationHref,
   pointsWorkHref,
   profileFollowersHref,
   profileFollowingHref
@@ -54,6 +54,7 @@ import {
 import { useLeaderboardRealtime } from '@/hooks/useLeaderboardRealtime';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import { useAuth } from '@/context/AuthContext';
+import { getOrCreateDirectConversation } from '@/lib/messages';
 import {
   canMessageUser,
   checkIsFollowing,
@@ -101,6 +102,7 @@ export default function PublicProfileScreen() {
   const [followBusy, setFollowBusy] = useState(false);
   const [followCounts, setFollowCounts] = useState<FollowCounts>({ followers: 0, following: 0 });
   const [messageAllowed, setMessageAllowed] = useState(false);
+  const [messageBusy, setMessageBusy] = useState(false);
   const [forumThreads, setForumThreads] = useState<
     Awaited<ReturnType<typeof listUserForumThreads>>['items']
   >([]);
@@ -180,9 +182,17 @@ export default function PublicProfileScreen() {
     setFollowCounts(counts);
   };
 
-  const handleMessage = () => {
-    if (!id || !messageAllowed) return;
-    router.push(messageComposeHref(id, profile?.displayName));
+  const handleMessage = async () => {
+    if (!id || !messageAllowed || !user || messageBusy) return;
+    setMessageBusy(true);
+    setError(null);
+    const { conversationId, error: messageError } = await getOrCreateDirectConversation(id);
+    setMessageBusy(false);
+    if (messageError || !conversationId) {
+      setError(messageError ?? socialCopy.compose.notAllowed);
+      return;
+    }
+    router.push(messageConversationHref(conversationId));
   };
 
   if (loading && !profile) {
@@ -439,10 +449,10 @@ export default function PublicProfileScreen() {
       {!isSelf ? (
         <View style={styles.actionsRow}>
           <Pressable
-            style={[styles.messageBtn, !messageAllowed && styles.actionDisabled]}
+            style={[styles.messageBtn, (!messageAllowed || messageBusy) && styles.actionDisabled]}
             accessibilityRole="button"
-            disabled={!messageAllowed}
-            onPress={handleMessage}
+            disabled={!messageAllowed || messageBusy}
+            onPress={() => void handleMessage()}
           >
             <Image source={BREAKDOWN_ICONS.forum} style={styles.actionIcon} resizeMode="contain" />
             <Text style={styles.messageBtnText}>{leaderboardCopy.profile.message}</Text>

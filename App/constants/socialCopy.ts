@@ -11,7 +11,11 @@ export const socialCopy = {
     subtitle: 'PRIVATE COLLECTOR CONVERSATIONS.',
     description: 'Ask about authentication, research, or collecting.',
     emptyTitle: 'No messages yet',
-    emptyBody: 'Start a conversation from a collector profile.',
+    emptyBody: 'Start a conversation from a collector profile or someone you follow.',
+    noSearchResults: 'No matching conversations',
+    noSearchBody: 'Try another name or message preview.',
+    requestsEmptyTitle: 'No pending requests',
+    requestsEmptyBody: 'Message requests from collectors you do not follow will appear here.',
     signInTitle: 'Sign in to view messages',
     signInBody: 'Message other collectors about auth, research, and cards.'
   },
@@ -28,8 +32,11 @@ export const socialCopy = {
     notAllowed: 'This collector is not accepting messages right now.'
   },
   conversation: {
-    placeholder: 'Write a reply…',
+    placeholder: 'Type a message…',
     send: 'Send',
+    emptyTitle: 'Start the conversation',
+    emptyBody: 'Your message history with this collector will appear here.',
+    viewProfile: 'View profile',
     block: 'Block collector',
     report: 'Report conversation',
     blockConfirm: 'Block this collector? You will unfollow each other and stop receiving messages.',

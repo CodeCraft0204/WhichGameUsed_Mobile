@@ -40,6 +40,8 @@ export const leaderboardCopy = {
   prizeLearnMore: 'LEARN MORE',
   pointsColumn: 'Points',
   viewFullTop20: 'View Full Top 20',
+  messagesLink: 'MESSAGES',
+  messagesHint: 'Private chats with collectors you follow.',
 
   profile: {
     collectorProfile: 'COLLECTOR PROFILE',

@@ -140,13 +140,13 @@ export function monthlyPrizeHref(): Href {
 }
 
 export function messagesInboxHref(): Href {
-  return '/messages/inbox' as unknown as Href;
+  return '/messages' as unknown as Href;
 }
 
 export function messageConversationHref(conversationId: string): Href {
   return {
-    pathname: '/messages/[id]',
-    params: { id: conversationId }
+    pathname: '/messages/[conversationId]',
+    params: { conversationId }
   } as unknown as Href;
 }
 

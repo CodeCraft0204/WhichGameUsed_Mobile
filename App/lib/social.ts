@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { displayName, resolveProfileAvatarUrl } from '@/lib/profile';
 
 export type MessagePermission = 'everyone' | 'followers_only' | 'nobody';
-export type MessageTopic = 'authentication' | 'research' | 'general';
+export type { CollectorMessage, InboxConversation, MessageTopic } from '@/lib/messages';
 
 export type SocialProfileSummary = {
   userId: string;
@@ -15,28 +15,6 @@ export type SocialProfileSummary = {
 export type FollowCounts = {
   followers: number;
   following: number;
-};
-
-export type InboxConversation = {
-  conversationId: string;
-  topic: MessageTopic;
-  lastMessageAt: string | null;
-  lastMessagePreview: string | null;
-  unreadCount: number;
-  peerId: string;
-  peerDisplayName: string;
-  peerUsername: string | null;
-  peerAvatarUrl: string | null;
-};
-
-export type CollectorMessage = {
-  id: string;
-  senderId: string;
-  body: string;
-  createdAt: string;
-  senderDisplayName: string;
-  senderAvatarUrl: string | null;
-  isOwn: boolean;
 };
 
 export type SocialNotification = {
@@ -141,16 +119,7 @@ export async function listFollowing(userId: string): Promise<{
   };
 }
 
-export async function canMessageUser(recipientId: string): Promise<{
-  allowed: boolean;
-  error: string | null;
-}> {
-  const { data, error } = await supabase.rpc('collector_can_message', {
-    p_recipient_id: recipientId
-  });
-  if (error) return { allowed: false, error: error.message };
-  return { allowed: Boolean(data), error: null };
-}
+export { canMessageUser } from '@/lib/messages';
 
 export async function blockUser(blockedId: string): Promise<{ error: string | null }> {
   const { error } = await supabase.rpc('collector_block_user', { p_blocked_id: blockedId });
@@ -178,136 +147,14 @@ export async function reportCollectorUser(
   return { error: error?.message ?? null };
 }
 
-export async function reportCollectorMessage(
-  messageId: string,
-  reason: string
-): Promise<{ error: string | null }> {
-  const { data: authData } = await supabase.auth.getUser();
-  if (!authData.user) return { error: 'Sign in required.' };
-
-  const { error } = await supabase.from('moderation_reports').insert({
-    reporter_id: authData.user.id,
-    target_type: 'collector_message',
-    target_id: messageId,
-    reason: reason.trim()
-  });
-  return { error: error?.message ?? null };
-}
-
-export async function startConversation(opts: {
-  recipientId: string;
-  topic: MessageTopic;
-  body: string;
-}): Promise<{ conversationId: string | null; error: string | null }> {
-  const { data, error } = await supabase.rpc('collector_start_conversation', {
-    p_recipient_id: opts.recipientId,
-    p_topic: opts.topic,
-    p_body: opts.body.trim()
-  });
-  if (error) return { conversationId: null, error: error.message };
-  return { conversationId: data as string, error: null };
-}
-
-export async function sendMessage(
-  conversationId: string,
-  body: string
-): Promise<{ messageId: string | null; error: string | null }> {
-  const { data, error } = await supabase.rpc('collector_send_message', {
-    p_conversation_id: conversationId,
-    p_body: body.trim()
-  });
-  if (error) return { messageId: null, error: error.message };
-  return { messageId: data as string, error: null };
-}
-
-export async function listInboxConversations(): Promise<{
-  items: InboxConversation[];
-  error: string | null;
-}> {
-  const { data: userData } = await supabase.auth.getUser();
-  const userId = userData.user?.id;
-  if (!userId) return { items: [], error: 'Sign in required.' };
-
-  const { data, error } = await supabase
-    .from('collector_inbox_enriched')
-    .select('*')
-    .eq('viewer_id', userId)
-    .order('last_message_at', { ascending: false, nullsFirst: false });
-
-  if (error) return { items: [], error: error.message };
-
-  return {
-    items: (data ?? []).map((row) => ({
-      conversationId: row.conversation_id,
-      topic: row.topic as MessageTopic,
-      lastMessageAt: row.last_message_at,
-      lastMessagePreview: row.last_message_preview,
-      unreadCount: Number(row.unread_count ?? 0),
-      peerId: row.peer_id,
-      peerDisplayName: displayName({
-        display_name: row.peer_display_name,
-        username: row.peer_username
-      }),
-      peerUsername: row.peer_username,
-      peerAvatarUrl: resolveProfileAvatarUrl(row.peer_avatar_url)
-    })),
-    error: null
-  };
-}
-
-export async function listConversationMessages(conversationId: string): Promise<{
-  items: CollectorMessage[];
-  error: string | null;
-}> {
-  const { data: userData } = await supabase.auth.getUser();
-  const userId = userData.user?.id;
-  if (!userId) return { items: [], error: 'Sign in required.' };
-
-  const { data, error } = await supabase
-    .from('collector_messages')
-    .select('id, sender_id, body, created_at')
-    .eq('conversation_id', conversationId)
-    .order('created_at', { ascending: true });
-
-  if (error) return { items: [], error: error.message };
-
-  const senderIds = [
-    ...new Set((data ?? []).map((row) => row.sender_id).filter(Boolean))
-  ] as string[];
-
-  const profileById = new Map<string, { display_name: string | null; username: string | null; avatar_url: string | null }>();
-  if (senderIds.length > 0) {
-    const { data: profiles } = await supabase.rpc('forum_author_profiles', {
-      author_ids: senderIds
-    });
-    for (const profile of profiles ?? []) {
-      profileById.set(profile.id, profile);
-    }
-  }
-
-  return {
-    items: (data ?? []).map((row) => {
-      const profile = profileById.get(row.sender_id);
-      return {
-        id: row.id,
-        senderId: row.sender_id,
-        body: row.body,
-        createdAt: row.created_at,
-        senderDisplayName: displayName(profile ?? null),
-        senderAvatarUrl: resolveProfileAvatarUrl(profile?.avatar_url),
-        isOwn: row.sender_id === userId
-      };
-    }),
-    error: null
-  };
-}
-
-export async function markConversationRead(conversationId: string): Promise<{ error: string | null }> {
-  const { error } = await supabase.rpc('collector_mark_conversation_read', {
-    p_conversation_id: conversationId
-  });
-  return { error: error?.message ?? null };
-}
+export {
+  listInboxConversations,
+  listConversationMessages,
+  markConversationRead,
+  sendMessage,
+  startConversation,
+  reportCollectorMessage
+} from '@/lib/messages';
 
 export async function fetchUnreadSocialCount(): Promise<{ count: number; error: string | null }> {
   const { data, error } = await supabase.rpc('collector_unread_social_count');
