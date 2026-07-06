@@ -58,56 +58,39 @@ export function formatPoints(n: number): string {
 
 function currentMonthStart(): string {
   const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  return `${year}-${month}-01`;
 }
 
-function mapMonthlyRow(row: {
+type LeaderboardRankingRow = {
   user_id: string;
   username: string | null;
   display_name: string | null;
   avatar_url: string | null;
-  monthly_points: number;
+  points: number;
   event_count: number;
-}, rank: number): LeaderboardEntry {
+  rank: number;
+};
+
+function mapRankingRow(row: LeaderboardRankingRow): LeaderboardEntry {
   return {
     userId: row.user_id,
-    rank,
+    rank: Number(row.rank),
     displayName: displayName({ display_name: row.display_name, username: row.username }),
     username: row.username,
     avatarUrl: row.avatar_url,
-    points: row.monthly_points,
+    points: row.points,
     eventCount: row.event_count
   };
 }
 
-function mapAllTimeRow(row: {
-  user_id: string;
-  username: string | null;
-  display_name: string | null;
-  avatar_url: string | null;
-  total_points: number;
-  event_count: number;
-}, rank: number): LeaderboardEntry {
-  return {
-    userId: row.user_id,
-    rank,
-    displayName: displayName({ display_name: row.display_name, username: row.username }),
-    username: row.username,
-    avatarUrl: row.avatar_url,
-    points: row.total_points,
-    eventCount: row.event_count
-  };
-}
-
-// ─── Rankings ────────────────────────────────────────────────────────────────
-
-export async function listLeaderboard(
+async function listLeaderboardFromViews(
   period: LeaderboardPeriod,
-  limit = 20
+  limit: number
 ): Promise<{ items: LeaderboardEntry[]; error: string | null }> {
   if (period === 'month') {
     const monthStart = currentMonthStart();
-
     const { data, error } = await supabase
       .from('leaderboard_monthly')
       .select('user_id, username, display_name, avatar_url, monthly_points, event_count, month')
@@ -116,9 +99,19 @@ export async function listLeaderboard(
       .limit(limit);
 
     if (error) return { items: [], error: error.message };
-    const rows = data ?? [];
     return {
-      items: rows.map((row, i) => mapMonthlyRow(row, i + 1)),
+      items: (data ?? []).map((row, i) => ({
+        userId: row.user_id as string,
+        rank: i + 1,
+        displayName: displayName({
+          display_name: row.display_name as string | null,
+          username: row.username as string | null
+        }),
+        username: row.username as string | null,
+        avatarUrl: row.avatar_url as string | null,
+        points: row.monthly_points as number,
+        eventCount: row.event_count as number
+      })),
       error: null
     };
   }
@@ -130,14 +123,84 @@ export async function listLeaderboard(
     .limit(limit);
 
   if (error) return { items: [], error: error.message };
-  const rows = data ?? [];
   return {
-    items: rows.map((row, i) => mapAllTimeRow(row, i + 1)),
+    items: (data ?? []).map((row, i) => ({
+      userId: row.user_id as string,
+      rank: i + 1,
+      displayName: displayName({
+        display_name: row.display_name as string | null,
+        username: row.username as string | null
+      }),
+      username: row.username as string | null,
+      avatarUrl: row.avatar_url as string | null,
+      points: row.total_points as number,
+      eventCount: row.event_count as number
+    })),
     error: null
   };
 }
 
-async function computeRank(
+// ─── Rankings ────────────────────────────────────────────────────────────────
+
+export async function listLeaderboard(
+  period: LeaderboardPeriod,
+  limit = 20
+): Promise<{ items: LeaderboardEntry[]; error: string | null }> {
+  const monthStart = currentMonthStart();
+  const { data, error } = await supabase.rpc('list_leaderboard_rankings', {
+    p_period: period,
+    p_limit: limit,
+    p_month: period === 'month' ? monthStart : null
+  });
+
+  if (!error) {
+    return {
+      items: ((data ?? []) as LeaderboardRankingRow[]).map(mapRankingRow),
+      error: null
+    };
+  }
+
+  const missingRpc =
+    error.message.includes('list_leaderboard_rankings') ||
+    error.message.includes('schema cache') ||
+    error.code === '42883';
+
+  if (missingRpc) {
+    return listLeaderboardFromViews(period, limit);
+  }
+
+  return { items: [], error: error.message };
+}
+
+export async function getUserStanding(
+  userId: string,
+  period: LeaderboardPeriod
+): Promise<{ entry: LeaderboardEntry | null; error: string | null }> {
+  const monthStart = currentMonthStart();
+  const { data, error } = await supabase.rpc('get_leaderboard_user_standing', {
+    p_user_id: userId,
+    p_period: period,
+    p_month: period === 'month' ? monthStart : null
+  });
+
+  if (!error) {
+    const row = (Array.isArray(data) ? data[0] : data) as LeaderboardRankingRow | undefined;
+    return { entry: row ? mapRankingRow(row) : null, error: null };
+  }
+
+  const missingRpc =
+    error.message.includes('get_leaderboard_user_standing') ||
+    error.message.includes('schema cache') ||
+    error.code === '42883';
+
+  if (missingRpc) {
+    return getUserStandingFromViews(userId, period);
+  }
+
+  return { entry: null, error: error.message };
+}
+
+async function computeRankFromViews(
   userId: string,
   period: LeaderboardPeriod,
   userPoints: number
@@ -163,7 +226,7 @@ async function computeRank(
   return (count ?? 0) + 1;
 }
 
-export async function getUserStanding(
+async function getUserStandingFromViews(
   userId: string,
   period: LeaderboardPeriod
 ): Promise<{ entry: LeaderboardEntry | null; error: string | null }> {
@@ -179,8 +242,22 @@ export async function getUserStanding(
     if (error) return { entry: null, error: error.message };
     if (!data) return { entry: null, error: null };
 
-    const rank = await computeRank(userId, period, data.monthly_points);
-    return { entry: mapMonthlyRow(data, rank), error: null };
+    const rank = await computeRankFromViews(userId, period, data.monthly_points as number);
+    return {
+      entry: {
+        userId: data.user_id as string,
+        rank,
+        displayName: displayName({
+          display_name: data.display_name as string | null,
+          username: data.username as string | null
+        }),
+        username: data.username as string | null,
+        avatarUrl: data.avatar_url as string | null,
+        points: data.monthly_points as number,
+        eventCount: data.event_count as number
+      },
+      error: null
+    };
   }
 
   const { data, error } = await supabase
@@ -192,8 +269,22 @@ export async function getUserStanding(
   if (error) return { entry: null, error: error.message };
   if (!data) return { entry: null, error: null };
 
-  const rank = await computeRank(userId, period, data.total_points);
-  return { entry: mapAllTimeRow(data, rank), error: null };
+  const rank = await computeRankFromViews(userId, period, data.total_points as number);
+  return {
+    entry: {
+      userId: data.user_id as string,
+      rank,
+      displayName: displayName({
+        display_name: data.display_name as string | null,
+        username: data.username as string | null
+      }),
+      username: data.username as string | null,
+      avatarUrl: data.avatar_url as string | null,
+      points: data.total_points as number,
+      eventCount: data.event_count as number
+    },
+    error: null
+  };
 }
 
 export async function getMyStanding(

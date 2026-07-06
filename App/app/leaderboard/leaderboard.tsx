@@ -17,6 +17,7 @@ import { LeaderboardPointsExplainer } from '@/components/figma/LeaderboardPoints
 import { LeaderboardPrizeCard } from '@/components/figma/LeaderboardPrizeCard';
 import { LeaderboardRankCard } from '@/components/figma/LeaderboardRankCard';
 import { LeaderboardResetBanner } from '@/components/figma/LeaderboardResetBanner';
+import { LeaderboardSelfCard } from '@/components/figma/LeaderboardSelfCard';
 import {
   ContextHeaderScrollProvider,
   useContextHeaderScrollProps
@@ -31,6 +32,7 @@ import { useSocialNotifications } from '@/context/SocialNotificationsContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';import { useLeaderboardRealtime } from '@/hooks/useLeaderboardRealtime';
 import {
   fetchActiveMonthlyPrize,
+  getMyStanding,
   listLeaderboard,
   type LeaderboardEntry,
   type LeaderboardPeriod,
@@ -51,7 +53,7 @@ export default function LeaderboardScreen() {
 
 function LeaderboardScreenBody() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { unreadInboxCount, refreshCounts } = useSocialNotifications();
   const { s, t } = useFigmaLayout(0.92);  const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
@@ -61,11 +63,12 @@ function LeaderboardScreenBody() {
     leaderboardPeriodTabs[0]
   );
   const [items, setItems] = useState<LeaderboardEntry[]>([]);
+  const [selfEntry, setSelfEntry] = useState<LeaderboardEntry | null>(null);
   const [monthlyPrize, setMonthlyPrize] = useState<MonthlyPrize | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [listExpanded, setListExpanded] = useState(false);
+  const [listExpanded, setListExpanded] = useState(true);
   const initialLoadDone = useRef(false);
 
   const period = tabToPeriod(activeTab);
@@ -77,9 +80,13 @@ function LeaderboardScreenBody() {
 
     setError(null);
     const p = tabToPeriod(tab);
-    const [rankResult, prizeResult] = await Promise.all([
+    const standingPromise = user
+      ? getMyStanding(user.id, p)
+      : Promise.resolve({ entry: null, rank: null, error: null });
+    const [rankResult, prizeResult, standingResult] = await Promise.all([
       listLeaderboard(p, 20),
-      fetchActiveMonthlyPrize()
+      fetchActiveMonthlyPrize(),
+      standingPromise
     ]);
 
     if (rankResult.error) {
@@ -88,11 +95,12 @@ function LeaderboardScreenBody() {
     } else {
       setItems(rankResult.items);
     }
+    setSelfEntry(standingResult.entry);
     setMonthlyPrize(prizeResult.prize);
     setLoading(false);
     setRefreshing(false);
     initialLoadDone.current = true;
-  }, []);
+  }, [user]);
 
   useFocusEffect(
     useCallback(() => {
@@ -129,6 +137,19 @@ function LeaderboardScreenBody() {
 
   const handleViewMonthlyPrize = useCallback(() => {
     router.push(monthlyPrizeHref());
+  }, [router]);
+
+  const handleViewSelfProfile = useCallback(() => {
+    if (!user) return;
+    router.push(publicProfileHref(user.id, {
+      rank: selfEntry?.rank,
+      points: selfEntry?.points,
+      period
+    }));
+  }, [router, selfEntry?.points, selfEntry?.rank, period, user]);
+
+  const handleOpenSettings = useCallback(() => {
+    router.push('/settings/settings');
   }, [router]);
 
   const top3 = items.slice(0, 3);
@@ -168,7 +189,19 @@ function LeaderboardScreenBody() {
         <LeaderboardResetBanner s={s} t={t} prize={monthlyPrize} />
       ) : null}
 
-      {refreshing ? (        <Text style={styles.refreshingText}>{leaderboardCopy.refreshing}</Text>
+      {user ? (
+        <LeaderboardSelfCard
+          entry={selfEntry}
+          isEligible={profile?.leaderboard_eligible ?? true}
+          onGoToSettings={handleOpenSettings}
+          onViewProfile={handleViewSelfProfile}
+          s={s}
+          t={t}
+        />
+      ) : null}
+
+      {refreshing ? (
+        <Text style={styles.refreshingText}>{leaderboardCopy.refreshing}</Text>
       ) : null}
 
       {loading ? (
