@@ -27,6 +27,8 @@ type AuthResult = { error: string | null };
 type AuthSessionResult = AuthResult & {
   profile: MyProfile | null;
   isAdmin: boolean;
+  /** Web Google OAuth — browser is leaving the app; skip post-login navigation. */
+  oauthRedirecting?: boolean;
 };
 
 type PasswordResetCompleteResult = AuthResult & {
@@ -296,9 +298,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signInWithGoogle = useCallback(async (): Promise<AuthSessionResult> => {
-    const { error } = await signInWithGoogleOAuth();
-    if (error) {
-      return { error: formatAuthError(error), profile: null, isAdmin: false };
+    const result = await signInWithGoogleOAuth();
+    if (result.redirecting) {
+      return { error: null, profile: null, isAdmin: false, oauthRedirecting: true };
+    }
+    if (result.error) {
+      return { error: formatAuthError(result.error), profile: null, isAdmin: false };
     }
     return profileAfterSession();
   }, []);

@@ -39,20 +39,32 @@ function logRedirectUri(redirectTo: string) {
   }
 }
 
-export async function signInWithGoogleOAuth(): Promise<{ error: string | null }> {
+export type GoogleOAuthResult = {
+  error: string | null;
+  /** Web: full-page redirect to Google is in progress — do not navigate in-app. */
+  redirecting?: boolean;
+};
+
+export async function signInWithGoogleOAuth(): Promise<GoogleOAuthResult> {
   const redirectTo = googleOAuthRedirectUri();
   logRedirectUri(redirectTo);
 
-  // Mobile web (Vercel): same-tab redirect as portal — popup + Site URL fallback breaks here.
+  // Mobile web (Vercel): full-page redirect — never continue to in-app navigation afterward.
   if (Platform.OS === 'web') {
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo,
+        skipBrowserRedirect: true,
         ...googleOAuthOptions
       }
     });
-    return { error: error?.message ?? null };
+
+    if (error) return { error: error.message };
+    if (!data.url) return { error: 'Could not start Google sign-in.' };
+
+    window.location.assign(data.url);
+    return { error: null, redirecting: true };
   }
 
   const { data, error } = await supabase.auth.signInWithOAuth({

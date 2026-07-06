@@ -98,12 +98,15 @@ export default function SignUpScreen() {
     setError(null);
     setGoogleLoading(true);
     const result = await signInWithGoogle();
+    if (result.oauthRedirecting) return;
     setGoogleLoading(false);
     if (result.error) {
       setError(result.error);
       return;
     }
-    router.replace('/database/database');
+    if (result.profile) {
+      router.replace('/database/database');
+    }
   };
 
   const openCommunityStandards = () => {
