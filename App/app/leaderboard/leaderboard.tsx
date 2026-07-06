@@ -68,7 +68,6 @@ function LeaderboardScreenBody() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [listExpanded, setListExpanded] = useState(true);
   const initialLoadDone = useRef(false);
 
   const period = tabToPeriod(activeTab);
@@ -153,10 +152,7 @@ function LeaderboardScreenBody() {
   }, [router]);
 
   const top3 = items.slice(0, 3);
-  const rest = items.slice(3);
-  const listEntries = rest.length > 0 ? rest : items;
   const showMonthBanner = period === 'month';
-  const visibleList = listExpanded ? listEntries : listEntries.slice(0, 7);
   const rankingHint = leaderboardCopy.rankingListShort(items.length);
 
   return (
@@ -245,7 +241,7 @@ function LeaderboardScreenBody() {
             <Text style={styles.rankingHint}>{rankingHint}</Text>
           ) : null}
 
-          {visibleList.map((entry) => (
+          {items.map((entry) => (
             <LeaderboardRankCard
               key={entry.userId}
               userId={entry.userId}
@@ -260,18 +256,6 @@ function LeaderboardScreenBody() {
               t={t}
             />
           ))}
-
-          {listEntries.length > 7 ? (
-            <Pressable
-              style={styles.viewAllBtn}
-              onPress={() => setListExpanded((v) => !v)}
-              accessibilityRole="button"
-            >
-              <Text style={styles.viewAllText}>
-                {listExpanded ? 'Show less' : leaderboardCopy.viewFullTop20}
-              </Text>
-            </Pressable>
-          ) : null}
 
           <View style={styles.bottomCards}>
             <LeaderboardPointsExplainer s={s} t={t} onSeeAll={handleViewPointsWork} />
@@ -331,18 +315,6 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       marginTop: s(16),
       marginBottom: s(8),
       alignItems: 'stretch'
-    },
-    viewAllBtn: {
-      alignItems: 'center',
-      paddingVertical: s(10),
-      marginBottom: s(8)
-    },
-    viewAllText: {
-      fontFamily: appFonts.accent,
-      fontSize: tb(14),
-      color: figmaColors.gray,
-      letterSpacing: 0.6,
-      textTransform: 'uppercase'
     },
     centred: {
       alignItems: 'center',
