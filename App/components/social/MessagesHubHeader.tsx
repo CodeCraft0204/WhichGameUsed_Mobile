@@ -54,7 +54,7 @@ export function MessagesHubHeader({ title, s, t, onBack, onCompose, rightAction 
         )}
       </View>
 
-      <Image source={figmaSharedIcons.titleBrush} style={styles.brush} resizeMode="stretch" />
+      {/* <Image source={figmaSharedIcons.titleBrush} style={styles.brush} resizeMode="stretch" /> */}
     </View>
   );
 }
