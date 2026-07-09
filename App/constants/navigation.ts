@@ -177,3 +177,19 @@ export function profileFollowingHref(userId: string): Href {
 export function socialNotificationsHref(): Href {
   return '/messages/notifications' as unknown as Href;
 }
+
+export function mostWantedDetailHref(id: string): Href {
+  return { pathname: '/mostwanted/[id]', params: { id } } as unknown as Href;
+}
+
+export function mostWantedSubmitHref(huntId: string): Href {
+  return { pathname: '/mostwanted/submit', params: { huntId } } as unknown as Href;
+}
+
+export function mostWantedContributionsHref(): Href {
+  return '/mostwanted/contributions' as unknown as Href;
+}
+
+export function mostWantedSolvedHref(): Href {
+  return '/mostwanted/solved' as unknown as Href;
+}

@@ -97,11 +97,11 @@ export const contextHeaderByPage: Record<ContextHeaderPageKey, ContextHeaderConf
     key: 'mostwanted',
     icon: figmaIcons.wantedPoster,
     messages: [
-      { text: 'Vote on the hobby\'s biggest authentication mysteries to rank the top 20.' },
-      { text: 'Sport filters help you focus on baseball, basketball, or other categories.' },
-      { text: 'Discuss leads on threads linked from each most-wanted card.' },
-      { text: 'Submit evidence when you have proof that helps authenticate a listed card.' },
-      { text: 'Bounties reward collectors who contribute credible research breakthroughs.' }
+      { text: 'Browse active hunts and contribute missing game-used evidence.', route: '/mostwanted/mostwanted' },
+      { text: 'Filter by sport, reward level, or hunts that are near solved.' },
+      { text: 'Submit photos, source links, and research notes for admin review.', route: '/mostwanted/contributions' },
+      { text: 'Track your submissions under My Contributions.', route: '/mostwanted/contributions' },
+      { text: 'Solved hunts show community research wins and claimed rewards.', route: '/mostwanted/solved' }
     ]
   },
   leaderboard: {
