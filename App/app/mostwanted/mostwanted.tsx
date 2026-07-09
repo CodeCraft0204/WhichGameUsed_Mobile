@@ -3,6 +3,7 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
+  RefreshControl,
   StyleSheet,
   Text,
   View
@@ -12,6 +13,7 @@ import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaHubBottomNav } from '@/components/figma/FigmaHubBottomNav';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
+import { BountyRankingCard } from '@/components/most-wanted/BountyRankingCard';
 import { FeaturedWantedCard } from '@/components/most-wanted/FeaturedWantedCard';
 import { MostWantedSearchSort } from '@/components/most-wanted/MostWantedSearchSort';
 import { WantedCard } from '@/components/most-wanted/WantedCard';
@@ -32,15 +34,20 @@ import {
   mostWantedContributionsHref,
   mostWantedDetailHref,
   mostWantedSolvedHref,
-  mostWantedSubmitHref
+  mostWantedSubmitHref,
+  mostWantedWatchedHref
 } from '@/constants/navigation';
 import { figmaColors } from '@/constants/figmaColors';
 import { useSocialNotifications } from '@/context/SocialNotificationsContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
+import { useMostWantedRealtime } from '@/hooks/useMostWantedRealtime';
 import {
   fetchFeaturedMostWanted,
   fetchMostWantedStats,
+  listBountyRankings,
   listMostWantedHunts,
+  toggleCardRequestVote,
+  type BountyRankingRow,
   type MostWantedHuntRow,
   type MostWantedStats
 } from '@/lib/most-wanted';
@@ -67,7 +74,9 @@ function MostWantedScreenBody() {
   const [stats, setStats] = useState<MostWantedStats>({ activeHunts: 0, solvedThisMonth: 0, rewardPoolCents: 0 });
   const [featured, setFeatured] = useState<MostWantedHuntRow | null>(null);
   const [items, setItems] = useState<MostWantedHuntRow[]>([]);
+  const [rankings, setRankings] = useState<BountyRankingRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialLoadDone = useRef(false);
@@ -77,10 +86,11 @@ function MostWantedScreenBody() {
     if (!silent) setLoading(true);
     setError(null);
 
-    const [statsRes, featuredRes, listRes] = await Promise.all([
+    const [statsRes, featuredRes, listRes, rankingsRes] = await Promise.all([
       fetchMostWantedStats(),
       fetchFeaturedMostWanted(),
-      listMostWantedHunts({ filter: activeTab, sort, search })
+      listMostWantedHunts({ filter: activeTab, sort, search }),
+      listBountyRankings(8)
     ]);
 
     if (statsRes.stats) setStats(statsRes.stats);
@@ -92,8 +102,10 @@ function MostWantedScreenBody() {
       const list = listRes.items.filter((row) => row.id !== featuredRes.item?.id);
       setItems(list);
     }
+    setRankings(rankingsRes.items);
 
     setLoading(false);
+    setRefreshing(false);
     initialLoadDone.current = true;
   }, [activeTab, search, sort]);
 
@@ -103,6 +115,13 @@ function MostWantedScreenBody() {
       void refreshCounts();
     }, [load, refreshCounts])
   );
+
+  useMostWantedRealtime(() => void load({ silent: true }), initialLoadDone.current);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    void load({ silent: true });
+  }, [load]);
 
   const handleSearchChange = useCallback((value: string) => {
     setSearch(value);
@@ -132,11 +151,31 @@ function MostWantedScreenBody() {
     router.push(mostWantedSubmitHref(id));
   }, [router]);
 
+  const handleVote = useCallback(async (cardRequestId: string, action: 'upvote' | 'downvote') => {
+    const { voteScore, userVote, error: voteError } = await toggleCardRequestVote(cardRequestId, action);
+    if (voteError) {
+      setError(voteError);
+      return;
+    }
+    setRankings((prev) =>
+      prev.map((row) =>
+        row.card_request_id === cardRequestId
+          ? { ...row, vote_score: voteScore, user_vote: userVote }
+          : row
+      )
+    );
+  }, []);
+
   return (
     <FigmaScreen
       backgroundColor={figmaColors.background}
       bottomNav={<FigmaHubBottomNav active="mostwanted" />}
-      scrollProps={scrollProps}
+      scrollProps={{
+        ...scrollProps,
+        refreshControl: (
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={figmaColors.charcoal} />
+        )
+      }}
     >
       <FigmaPageHeader
         title={mostWantedCopy.pageTitle}
@@ -177,11 +216,31 @@ function MostWantedScreenBody() {
         t={t}
       />
 
+      {rankings.length > 0 ? (
+        <View style={styles.rankingsSection}>
+          <Text style={page.sectionTitle}>{mostWantedCopy.bountyRankingsTitle}</Text>
+          <Text style={styles.rankingsSubtitle}>{mostWantedCopy.bountyRankingsSubtitle}</Text>
+          {rankings.map((row) => (
+            <BountyRankingCard
+              key={row.card_request_id}
+              row={row}
+              s={s}
+              t={t}
+              onVote={(action) => void handleVote(row.card_request_id, action)}
+            />
+          ))}
+        </View>
+      ) : null}
+
       <View style={page.sectionHeaderRow}>
         <Text style={page.sectionTitle}>ACTIVE HUNTS</Text>
         <View style={styles.linkRow}>
           <Pressable onPress={() => router.push(mostWantedSolvedHref())}>
             <Text style={styles.linkText}>Solved</Text>
+          </Pressable>
+          <Text style={styles.linkDivider}>·</Text>
+          <Pressable onPress={() => router.push(mostWantedWatchedHref())}>
+            <Text style={styles.linkText}>Watching</Text>
           </Pressable>
           <Text style={styles.linkDivider}>·</Text>
           <Pressable onPress={() => router.push(mostWantedContributionsHref())}>
@@ -286,6 +345,15 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       fontFamily: 'EBGaramond_400Regular',
       fontSize: t(14),
       color: figmaColors.charcoal
+    },
+    rankingsSection: {
+      marginBottom: s(16)
+    },
+    rankingsSubtitle: {
+      fontFamily: 'EBGaramond_400Regular',
+      fontSize: t(13),
+      color: figmaColors.gray,
+      marginBottom: s(10)
     }
   });
 }

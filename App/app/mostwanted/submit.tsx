@@ -11,7 +11,11 @@ import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 
 export default function MostWantedSubmitScreen() {
   const router = useRouter();
-  const { huntId } = useLocalSearchParams<{ huntId: string }>();
+  const { huntId, evidenceType, notes } = useLocalSearchParams<{
+    huntId: string;
+    evidenceType?: string;
+    notes?: string;
+  }>();
   const { s, t } = useFigmaLayout();
   const styles = useMemo(() => createStyles(s, t), [s, t]);
 
@@ -35,6 +39,8 @@ export default function MostWantedSubmitScreen() {
         />
         <SubmitEvidenceForm
           huntId={huntId}
+          initialEvidenceType={evidenceType as import('@/constants/mostWantedCopy').MostWantedEvidenceTypeKey | undefined}
+          initialNotes={notes}
           s={s}
           t={t}
           onSubmitted={() => router.replace(mostWantedContributionsHref())}

@@ -16,32 +16,47 @@ import {
   type MostWantedEvidenceTypeKey
 } from '@/constants/mostWantedCopy';
 import { figmaColors } from '@/constants/figmaColors';
+import { useAuth } from '@/context/AuthContext';
 import { pickEvidencePhoto, submitMostWantedEvidence } from '@/lib/most-wanted';
 
 type SubmitEvidenceFormProps = {
   huntId: string;
+  initialEvidenceType?: MostWantedEvidenceTypeKey;
+  initialNotes?: string;
   s: (n: number) => number;
   t: (n: number) => number;
   onSubmitted: () => void;
 };
 
-export function SubmitEvidenceForm({ huntId, s, t, onSubmitted }: SubmitEvidenceFormProps) {
+export function SubmitEvidenceForm({
+  huntId,
+  initialEvidenceType,
+  initialNotes,
+  s,
+  t,
+  onSubmitted
+}: SubmitEvidenceFormProps) {
+  const { user } = useAuth();
   const styles = useMemo(() => createStyles(s, t), [s, t]);
-  const [evidenceType, setEvidenceType] = useState<MostWantedEvidenceTypeKey>('source_link');
+  const [evidenceType, setEvidenceType] = useState<MostWantedEvidenceTypeKey>(initialEvidenceType ?? 'source_link');
   const [sourceUrl, setSourceUrl] = useState('');
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState(initialNotes ?? '');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const needsImage = evidenceType === 'card_front' || evidenceType === 'card_back' || evidenceType === 'jersey_reference' || evidenceType === 'screenshot';
 
-  async function handlePickImage() {
-    const uri = await pickEvidencePhoto();
+  async function handlePickImage(source: 'library' | 'camera') {
+    const uri = await pickEvidencePhoto(source);
     if (uri) setImageUri(uri);
   }
 
   async function handleSubmit() {
+    if (!user) {
+      setError(mostWantedCopy.signInToContribute);
+      return;
+    }
     setError(null);
     if (needsImage && !imageUri) {
       setError('Please upload an image for this evidence type.');
@@ -71,6 +86,8 @@ export function SubmitEvidenceForm({ huntId, s, t, onSubmitted }: SubmitEvidence
 
   return (
     <View style={styles.wrap}>
+      {!user ? <Text style={styles.authHint}>{mostWantedCopy.signInToContribute}</Text> : null}
+
       <Text style={styles.sectionLabel}>Evidence Type</Text>
       <View style={styles.typeGrid}>
         {mostWantedEvidenceTypes.map((opt) => {
@@ -98,9 +115,14 @@ export function SubmitEvidenceForm({ huntId, s, t, onSubmitted }: SubmitEvidence
               </Pressable>
             </View>
           ) : (
-            <Pressable onPress={() => void handlePickImage()} style={styles.uploadBtn}>
-              <Text style={styles.uploadText}>Choose photo</Text>
-            </Pressable>
+            <View style={styles.uploadRow}>
+              <Pressable onPress={() => void handlePickImage('library')} style={styles.uploadBtn}>
+                <Text style={styles.uploadText}>Choose photo</Text>
+              </Pressable>
+              <Pressable onPress={() => void handlePickImage('camera')} style={styles.uploadBtn}>
+                <Text style={styles.uploadText}>Take photo</Text>
+              </Pressable>
+            </View>
           )}
         </View>
       ) : null}
@@ -135,7 +157,7 @@ export function SubmitEvidenceForm({ huntId, s, t, onSubmitted }: SubmitEvidence
       <AuthPrimaryButton
         label={busy ? 'Submitting…' : 'Submit for Review'}
         onPress={() => void handleSubmit()}
-        disabled={busy}
+        disabled={busy || !user}
       />
       {busy ? <ActivityIndicator color={figmaColors.charcoal} style={{ marginTop: s(8) }} /> : null}
       <Text style={styles.hint}>{mostWantedCopy.submitSubtitle}</Text>
@@ -198,6 +220,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       textAlignVertical: 'top'
     },
     uploadBtn: {
+      flex: 1,
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
       borderRadius: s(8),
@@ -205,6 +228,16 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       paddingVertical: s(24),
       alignItems: 'center',
       backgroundColor: figmaColors.cream
+    },
+    uploadRow: {
+      flexDirection: 'row',
+      gap: s(8)
+    },
+    authHint: {
+      fontFamily: appFonts.body,
+      fontSize: t(13),
+      color: figmaColors.accent,
+      marginBottom: s(4)
     },
     uploadText: {
       fontFamily: appFonts.body,

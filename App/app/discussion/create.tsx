@@ -22,14 +22,18 @@ import { createForumThread, listForumTopics } from '@/lib/forum';
 
 export default function DiscussionCreateScreen() {
   const router = useRouter();
-  const { topicSlug } = useLocalSearchParams<{ topicSlug?: string }>();
+  const { topicSlug, initialTitle, initialBody } = useLocalSearchParams<{
+    topicSlug?: string;
+    initialTitle?: string;
+    initialBody?: string;
+  }>();
   const { s, t } = useFigmaLayout();
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
   const [topics, setTopics] = useState<Awaited<ReturnType<typeof listForumTopics>>['items']>([]);
   const [topicId, setTopicId] = useState('');
-  const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
+  const [title, setTitle] = useState(initialTitle ?? '');
+  const [body, setBody] = useState(initialBody ?? '');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
 

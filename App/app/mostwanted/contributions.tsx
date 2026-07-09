@@ -1,13 +1,22 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader';
 import { mostWantedCopy } from '@/constants/mostWantedCopy';
-import { mostWantedDetailHref } from '@/constants/navigation';
+import { mostWantedDetailHref, mostWantedSubmitHref } from '@/constants/navigation';
 import { figmaColors } from '@/constants/figmaColors';
 import { appFonts } from '@/constants/appFonts';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
+import { useMostWantedRealtime } from '@/hooks/useMostWantedRealtime';
 import {
   evidenceTypeLabel,
   listMyMostWantedContributions,
@@ -23,14 +32,15 @@ export default function MostWantedContributionsScreen() {
   const styles = useMemo(() => createStyles(s, t), [s, t]);
   const [items, setItems] = useState<MostWantedContribution[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
     const { items: rows, error: err } = await listMyMostWantedContributions();
     setItems(rows);
     setError(err);
     setLoading(false);
+    setRefreshing(false);
   }, []);
 
   useFocusEffect(
@@ -38,6 +48,8 @@ export default function MostWantedContributionsScreen() {
       void load();
     }, [load])
   );
+
+  useMostWantedRealtime(() => void load(), true);
 
   const grouped = useMemo(() => {
     const map = new Map<string, MostWantedContribution[]>();
@@ -52,7 +64,19 @@ export default function MostWantedContributionsScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              void load();
+            }}
+            tintColor={figmaColors.charcoal}
+          />
+        }
+      >
         <ProfileSubpageHeader
           title={mostWantedCopy.contributionsTitle}
           subtitle={mostWantedCopy.contributionsSubtitle}
@@ -91,6 +115,20 @@ export default function MostWantedContributionsScreen() {
                   <Text style={styles.rowMeta}>Submitted: {relativeTime(row.created_at)}</Text>
                   {row.review_notes ? (
                     <Text style={styles.reviewNotes}>Reviewer: {row.review_notes}</Text>
+                  ) : null}
+                  {row.status === 'needs_more_info' ? (
+                    <Pressable
+                      onPress={() =>
+                        router.push(
+                          mostWantedSubmitHref(row.hunt_id, {
+                            evidenceType: row.evidence_type,
+                            notes: row.review_notes ?? undefined
+                          })
+                        )
+                      }
+                    >
+                      <Text style={styles.resubmit}>Update submission</Text>
+                    </Pressable>
                   ) : null}
                 </View>
               ))}
@@ -137,6 +175,12 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: t(12),
       color: figmaColors.charcoal,
       marginTop: s(4)
+    },
+    resubmit: {
+      fontFamily: appFonts.body,
+      fontSize: t(13),
+      color: figmaColors.accent,
+      marginTop: s(6)
     },
     muted: {
       fontFamily: appFonts.body,

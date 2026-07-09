@@ -83,6 +83,9 @@ export type MostWantedHuntDetail = HuntImageFields & {
   card_request_id: string | null;
   solved_at: string | null;
   solved_by: string | null;
+  solver_name?: string | null;
+  reward_claimed_at?: string | null;
+  reward_claimed?: boolean;
 };
 
 export type MostWantedDetailPayload = {
@@ -119,6 +122,54 @@ export type SolvedHuntRow = HuntImageFields & {
   reward_claimed: boolean;
 };
 
+export type BountyRankingRow = {
+  card_request_id: string;
+  card_title: string | null;
+  player_name: string | null;
+  product_name: string | null;
+  product_year: number | null;
+  status: string;
+  wishlist_count: number;
+  vote_score: number;
+  bounty_score: number;
+  user_vote?: 'upvote' | 'downvote' | null;
+};
+
+const mostWantedRealtimeListeners = new Set<() => void>();
+let mostWantedRealtimeChannel: ReturnType<typeof supabase.channel> | null = null;
+
+function notifyMostWantedListeners() {
+  mostWantedRealtimeListeners.forEach((listener) => listener());
+}
+
+export function subscribeMostWantedChanges(onChange: () => void): () => void {
+  mostWantedRealtimeListeners.add(onChange);
+
+  if (!mostWantedRealtimeChannel) {
+    mostWantedRealtimeChannel = supabase
+      .channel('most-wanted-feed')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'most_wanted_hunts' },
+        () => notifyMostWantedListeners()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'most_wanted_evidence_submissions' },
+        () => notifyMostWantedListeners()
+      )
+      .subscribe();
+  }
+
+  return () => {
+    mostWantedRealtimeListeners.delete(onChange);
+    if (mostWantedRealtimeListeners.size === 0 && mostWantedRealtimeChannel) {
+      void supabase.removeChannel(mostWantedRealtimeChannel);
+      mostWantedRealtimeChannel = null;
+    }
+  };
+}
+
 export type WantedStatusTag =
   | 'need_images'
   | 'need_source'
@@ -151,13 +202,21 @@ export function formatRewardPool(cents: number): string {
 }
 
 export function huntStatusTags(hunt: MostWantedHuntRow): WantedStatusTag[] {
-  return huntStatusTagsFromLabels(hunt.needed_labels, hunt.status, hunt.priority_tag);
+  return huntStatusTagsFromLabels(
+    hunt.needed_labels,
+    hunt.status,
+    hunt.priority_tag,
+    hunt.requirements_fulfilled,
+    hunt.requirements_total
+  );
 }
 
 export function huntStatusTagsFromLabels(
   neededLabels: string[],
   status: string,
-  priorityTag: string | null
+  priorityTag: string | null,
+  fulfilledCount = 0,
+  totalCount = 0
 ): WantedStatusTag[] {
   const tags: WantedStatusTag[] = [];
   const needed = neededLabels.map((l) => l.toLowerCase());
@@ -167,6 +226,7 @@ export function huntStatusTagsFromLabels(
   if (needed.some((l) => l.includes('game') || l.includes('research'))) tags.push('need_research');
   if (status === 'near_solved') tags.push('near_solved');
   if (priorityTag === 'high_value') tags.push('high_value');
+  if (fulfilledCount > 0 && fulfilledCount < totalCount) tags.push('verified_lead');
 
   return tags;
 }
@@ -326,6 +386,71 @@ export async function listSolvedHunts(): Promise<{ items: SolvedHuntRow[]; error
   return { items, error: null };
 }
 
+export async function listWatchedHunts(): Promise<{ items: MostWantedHuntRow[]; error: string | null }> {
+  const { data, error } = await supabase.rpc('list_my_watched_most_wanted_hunts', {
+    p_limit: 50,
+    p_offset: 0
+  });
+  if (error) return { items: [], error: error.message };
+
+  const watched = (data ?? []) as Array<{ id: string }>;
+  if (watched.length === 0) return { items: [], error: null };
+
+  const idSet = new Set(watched.map((row) => row.id));
+  const { items, error: listError } = await listMostWantedHunts({ filter: 'ALL', sort: 'most_wanted' });
+  if (listError) return { items: [], error: listError };
+
+  return {
+    items: items.filter((row) => idSet.has(row.id)).map((row) => ({ ...row, is_watching: true })),
+    error: null
+  };
+}
+
+export async function listBountyRankings(limit = 10): Promise<{ items: BountyRankingRow[]; error: string | null }> {
+  const { data, error } = await supabase.rpc('list_bounty_rankings', { p_limit: limit });
+  if (error) return { items: [], error: error.message };
+
+  const items: BountyRankingRow[] = [];
+  for (const row of data ?? []) {
+    const r = row as BountyRankingRow;
+    const { data: voteState } = await supabase.rpc('get_card_request_vote_state', {
+      p_card_request_id: r.card_request_id
+    });
+    const state = voteState as { user_vote?: string | null; vote_score?: number } | null;
+    items.push({
+      ...r,
+      vote_score: state?.vote_score ?? r.vote_score,
+      user_vote: (state?.user_vote as BountyRankingRow['user_vote']) ?? null
+    });
+  }
+  return { items, error: null };
+}
+
+export async function toggleCardRequestVote(
+  cardRequestId: string,
+  action: 'upvote' | 'downvote'
+): Promise<{ voteScore: number; userVote: 'upvote' | 'downvote' | null; error: string | null }> {
+  const { data, error } = await supabase.rpc('toggle_card_request_vote', {
+    p_card_request_id: cardRequestId,
+    p_action: action
+  });
+  if (error) return { voteScore: 0, userVote: null, error: error.message };
+  const payload = data as { user_vote?: string | null; vote_score?: number };
+  return {
+    voteScore: payload.vote_score ?? 0,
+    userVote: (payload.user_vote as 'upvote' | 'downvote' | null) ?? null,
+    error: null
+  };
+}
+
+export async function claimMostWantedReward(
+  huntId: string
+): Promise<{ claimed: boolean; error: string | null }> {
+  const { data, error } = await supabase.rpc('claim_most_wanted_reward', { p_hunt_id: huntId });
+  if (error) return { claimed: false, error: error.message };
+  return { claimed: !!data, error: null };
+}
+
 export async function toggleMostWantedWatch(huntId: string): Promise<{ watching: boolean; error: string | null }> {
   const { data, error } = await supabase.rpc('toggle_most_wanted_watch', { p_hunt_id: huntId });
   if (error) return { watching: false, error: error.message };
@@ -338,12 +463,21 @@ async function uriToBlob(uri: string): Promise<Blob> {
   return response.blob();
 }
 
-export async function pickEvidencePhoto(): Promise<string | null> {
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ['images'],
-    quality: 0.9,
-    allowsEditing: false
-  });
+export async function pickEvidencePhoto(source: 'library' | 'camera' = 'library'): Promise<string | null> {
+  const launcher =
+    source === 'camera'
+      ? ImagePicker.launchCameraAsync({
+          mediaTypes: ['images'],
+          quality: 0.9,
+          allowsEditing: false
+        })
+      : ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          quality: 0.9,
+          allowsEditing: false
+        });
+
+  const result = await launcher;
   if (result.canceled || !result.assets[0]?.uri) return null;
   return result.assets[0].uri;
 }

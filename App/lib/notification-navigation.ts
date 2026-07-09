@@ -24,6 +24,19 @@ export function hrefFromNotificationLink(linkPath: string | null): Href | null {
     return { pathname: '/database/card/[id]', params: { id: cardMatch[1] } } as unknown as Href;
   }
 
+  const huntMatch = linkPath.match(/^\/mostwanted\/([^/]+)$/);
+  if (huntMatch?.[1] && huntMatch[1] !== 'contributions' && huntMatch[1] !== 'solved' && huntMatch[1] !== 'watched') {
+    return { pathname: '/mostwanted/[id]', params: { id: huntMatch[1] } } as unknown as Href;
+  }
+
+  if (linkPath === '/mostwanted/contributions') {
+    return '/mostwanted/contributions' as unknown as Href;
+  }
+
+  if (linkPath === '/mostwanted/solved') {
+    return '/mostwanted/solved' as unknown as Href;
+  }
+
   return null;
 }
 

@@ -4,6 +4,9 @@ import type { UserNotification } from '@/lib/notifications';
 import {
   databaseCardHref,
   messageConversationHref,
+  mostWantedContributionsHref,
+  mostWantedDetailHref,
+  mostWantedSolvedHref,
   publicProfileHref
 } from '@/constants/navigation';
 
@@ -51,6 +54,24 @@ export function openNotificationTarget(router: Router, item: UserNotification): 
   if (path.startsWith('/database/card/')) {
     const cardId = path.replace('/database/card/', '').split('/')[0];
     if (cardId) router.push(databaseCardHref(cardId));
+    return;
+  }
+
+  if (path === '/mostwanted/contributions') {
+    router.push(mostWantedContributionsHref());
+    return;
+  }
+
+  if (path === '/mostwanted/solved') {
+    router.push(mostWantedSolvedHref());
+    return;
+  }
+
+  if (path.startsWith('/mostwanted/')) {
+    const huntId = path.replace('/mostwanted/', '').split('/')[0];
+    if (huntId && huntId !== 'contributions' && huntId !== 'solved' && huntId !== 'watched') {
+      router.push(mostWantedDetailHref(huntId));
+    }
   }
 }
 

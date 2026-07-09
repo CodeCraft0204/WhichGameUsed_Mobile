@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Image,
   Pressable,
+  RefreshControl,
   ScrollView,
   Share,
   StyleSheet,
@@ -28,7 +29,9 @@ import { figmaColors } from '@/constants/figmaColors';
 import { figmaIcons } from '@/constants/figmaIcons';
 import { useAuth } from '@/context/AuthContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
+import { useMostWantedRealtime } from '@/hooks/useMostWantedRealtime';
 import {
+  claimMostWantedReward,
   formatRewardLabel,
   getMostWantedDetail,
   huntDisplayTitle,
@@ -51,21 +54,26 @@ export default function MostWantedDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [wishlistBusy, setWishlistBusy] = useState(false);
   const [watchBusy, setWatchBusy] = useState(false);
+  const [claimBusy, setClaimBusy] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
-  const reload = useCallback(async () => {
+  const reload = useCallback(async (opts?: { silent?: boolean }) => {
     if (!id || typeof id !== 'string') return;
-    setLoading(true);
+    if (!opts?.silent) setLoading(true);
     setError(null);
     const { detail: payload, error: err } = await getMostWantedDetail(id);
     setDetail(payload);
     setError(err);
     setLoading(false);
+    setRefreshing(false);
   }, [id]);
 
   useEffect(() => {
     void reload();
   }, [reload]);
+
+  useMostWantedRealtime(() => void reload({ silent: true }), !!id);
 
   const hunt = detail?.hunt;
   const fulfilled = detail?.requirements.filter((r) => r.is_fulfilled).length ?? 0;
@@ -78,18 +86,28 @@ export default function MostWantedDetailScreen() {
     });
   }, [hunt]);
 
+  const handleWatch = useCallback(async () => {
+    if (!hunt || !user) {
+      setActionMessage('Sign in to watch hunts.');
+      return;
+    }
+    setWatchBusy(true);
+    const { watching, error: watchError } = await toggleMostWantedWatch(hunt.id);
+    setWatchBusy(false);
+    if (watchError) setActionMessage(watchError);
+    else {
+      setActionMessage(watching ? 'Added to your watch list.' : 'Removed from watch list.');
+      void reload({ silent: true });
+    }
+  }, [hunt, reload, user]);
+
   const handleWishlist = useCallback(async () => {
-    if (!user || !hunt?.card_id) {
-      setActionMessage('Watching this hunt instead.');
-      if (!hunt) return;
-      setWatchBusy(true);
-      const { watching, error: watchError } = await toggleMostWantedWatch(hunt.id);
-      setWatchBusy(false);
-      if (watchError) setActionMessage(watchError);
-      else {
-        setActionMessage(watching ? 'Added to your watch list.' : 'Removed from watch list.');
-        void reload();
-      }
+    if (!user) {
+      setActionMessage('Sign in to save cards to your wishlist.');
+      return;
+    }
+    if (!hunt?.card_id) {
+      setActionMessage('This hunt is not linked to a catalog card yet.');
       return;
     }
 
@@ -97,6 +115,18 @@ export default function MostWantedDetailScreen() {
     const { error: wishError } = await addCardToWishlist(user.id, hunt.card_id);
     setWishlistBusy(false);
     setActionMessage(wishError ? wishError : 'Added to wishlist.');
+  }, [hunt, user]);
+
+  const handleClaimReward = useCallback(async () => {
+    if (!hunt || !user) return;
+    setClaimBusy(true);
+    const { claimed, error: claimError } = await claimMostWantedReward(hunt.id);
+    setClaimBusy(false);
+    if (claimError) setActionMessage(claimError);
+    else if (claimed) {
+      setActionMessage('Reward claimed. Thanks for helping solve this hunt!');
+      void reload({ silent: true });
+    }
   }, [hunt, reload, user]);
 
   const handleDiscuss = useCallback(() => {
@@ -104,8 +134,13 @@ export default function MostWantedDetailScreen() {
       router.push(discussionThreadHref(hunt.forum_thread_id));
       return;
     }
-    router.push(discussionCreateHref());
-  }, [hunt?.forum_thread_id, router]);
+    router.push(
+      discussionCreateHref(undefined, {
+        initialTitle: hunt ? `Most Wanted: ${huntDisplayTitle(hunt)}` : undefined,
+        initialBody: hunt?.summary ?? undefined
+      })
+    );
+  }, [hunt, router]);
 
   if (!id) {
     return (
@@ -117,7 +152,19 @@ export default function MostWantedDetailScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              void reload({ silent: true });
+            }}
+            tintColor={figmaColors.charcoal}
+          />
+        }
+      >
         <ProfileSubpageHeader
           title="Wanted Hunt Detail"
           subtitle={hunt ? huntDisplayTitle(hunt) : undefined}
@@ -156,11 +203,19 @@ export default function MostWantedDetailScreen() {
                   tags={huntStatusTagsFromLabels(
                     detail.requirements.filter((r) => !r.is_fulfilled).map((r) => r.label),
                     hunt.status,
-                    hunt.priority_tag
+                    hunt.priority_tag,
+                    fulfilled,
+                    total
                   )}
                   s={s}
                   t={t}
                 />
+                {hunt.status === 'solved' ? (
+                  <Text style={styles.solvedBanner}>
+                    Solved by {hunt.solver_name ?? 'Community'}
+                    {hunt.solved_at ? ` · ${new Date(hunt.solved_at).toLocaleDateString()}` : ''}
+                  </Text>
+                ) : null}
               </View>
             </View>
 
@@ -197,16 +252,35 @@ export default function MostWantedDetailScreen() {
             )}
 
             <View style={styles.actions}>
-              <ActionButton label={mostWantedCopy.detailSubmit} onPress={() => router.push(mostWantedSubmitHref(hunt.id))} />
+              {hunt.status !== 'solved' ? (
+                <ActionButton label={mostWantedCopy.detailSubmit} onPress={() => router.push(mostWantedSubmitHref(hunt.id))} />
+              ) : null}
               <ActionButton
-                label={detail.is_watching ? 'Watching' : mostWantedCopy.detailWishlist}
-                onPress={() => void handleWishlist()}
-                disabled={wishlistBusy || watchBusy}
+                label={detail.is_watching ? mostWantedCopy.detailWatching : mostWantedCopy.detailWatch}
+                onPress={() => void handleWatch()}
+                disabled={watchBusy}
               />
+              {hunt.card_id ? (
+                <ActionButton
+                  label={mostWantedCopy.detailWishlist}
+                  onPress={() => void handleWishlist()}
+                  disabled={wishlistBusy}
+                />
+              ) : null}
               <ActionButton label={mostWantedCopy.detailDiscuss} onPress={handleDiscuss} />
               <ActionButton label={mostWantedCopy.detailShare} onPress={() => void handleShare()} />
               {hunt.card_id ? (
                 <ActionButton label="View Catalog Card" onPress={() => router.push(databaseCardHref(hunt.card_id!))} />
+              ) : null}
+              {hunt.status === 'solved' && user?.id === hunt.solved_by && !hunt.reward_claimed ? (
+                <ActionButton
+                  label={mostWantedCopy.detailClaimReward}
+                  onPress={() => void handleClaimReward()}
+                  disabled={claimBusy}
+                />
+              ) : null}
+              {hunt.reward_claimed ? (
+                <Text style={styles.rewardClaimed}>{mostWantedCopy.detailRewardClaimed}</Text>
               ) : null}
             </View>
 
@@ -291,6 +365,12 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: t(11),
       color: figmaColors.charcoal
     },
+    solvedBanner: {
+      fontFamily: appFonts.body,
+      fontSize: t(12),
+      color: figmaColors.accent,
+      marginTop: s(4)
+    },
     summary: {
       fontFamily: appFonts.body,
       fontSize: t(14),
@@ -356,6 +436,13 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontFamily: appFonts.body,
       fontSize: t(13),
       color: figmaColors.accent,
+      marginTop: s(8)
+    },
+    rewardClaimed: {
+      fontFamily: appFonts.body,
+      fontSize: t(13),
+      color: figmaColors.charcoal,
+      textAlign: 'center',
       marginTop: s(8)
     },
     error: {

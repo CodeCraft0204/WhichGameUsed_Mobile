@@ -101,10 +101,17 @@ export function discussionThreadHref(id: string): Href {
   return { pathname: '/discussion/thread/[id]', params: { id } } as unknown as Href;
 }
 
-export function discussionCreateHref(topicSlug?: string): Href {
+export function discussionCreateHref(
+  topicSlug?: string,
+  extras?: { initialTitle?: string; initialBody?: string }
+): Href {
   return {
     pathname: '/discussion/create',
-    params: topicSlug ? { topicSlug } : {}
+    params: {
+      ...(topicSlug ? { topicSlug } : {}),
+      ...(extras?.initialTitle ? { initialTitle: extras.initialTitle } : {}),
+      ...(extras?.initialBody ? { initialBody: extras.initialBody } : {})
+    }
   } as unknown as Href;
 }
 
@@ -182,8 +189,22 @@ export function mostWantedDetailHref(id: string): Href {
   return { pathname: '/mostwanted/[id]', params: { id } } as unknown as Href;
 }
 
-export function mostWantedSubmitHref(huntId: string): Href {
-  return { pathname: '/mostwanted/submit', params: { huntId } } as unknown as Href;
+export function mostWantedSubmitHref(
+  huntId: string,
+  extras?: { evidenceType?: string; notes?: string }
+): Href {
+  return {
+    pathname: '/mostwanted/submit',
+    params: {
+      huntId,
+      ...(extras?.evidenceType ? { evidenceType: extras.evidenceType } : {}),
+      ...(extras?.notes ? { notes: extras.notes } : {})
+    }
+  } as unknown as Href;
+}
+
+export function mostWantedWatchedHref(): Href {
+  return '/mostwanted/watched' as unknown as Href;
 }
 
 export function mostWantedContributionsHref(): Href {
