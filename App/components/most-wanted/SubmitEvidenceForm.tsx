@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -45,7 +46,11 @@ export function SubmitEvidenceForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const needsImage = evidenceType === 'card_front' || evidenceType === 'card_back' || evidenceType === 'jersey_reference' || evidenceType === 'screenshot';
+  const needsImage =
+    evidenceType === 'card_front' ||
+    evidenceType === 'card_back' ||
+    evidenceType === 'jersey_reference' ||
+    evidenceType === 'screenshot';
 
   async function handlePickImage(source: 'library' | 'camera') {
     const uri = await pickEvidencePhoto(source);
@@ -86,53 +91,66 @@ export function SubmitEvidenceForm({
 
   return (
     <View style={styles.wrap}>
-      {!user ? <Text style={styles.authHint}>{mostWantedCopy.signInToContribute}</Text> : null}
-
-      <Text style={styles.sectionLabel}>Evidence Type</Text>
-      <View style={styles.typeGrid}>
-        {mostWantedEvidenceTypes.map((opt) => {
-          const active = opt.key === evidenceType;
-          return (
-            <Pressable
-              key={opt.key}
-              onPress={() => setEvidenceType(opt.key)}
-              style={[styles.typeChip, active && styles.typeChipActive]}
-            >
-              <Text style={[styles.typeChipText, active && styles.typeChipTextActive]}>{opt.label}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      {needsImage ? (
-        <View style={styles.block}>
-          <Text style={styles.sectionLabel}>Upload Image</Text>
-          {imageUri ? (
-            <View style={styles.previewWrap}>
-              <Image source={{ uri: imageUri }} style={styles.preview} resizeMode="cover" />
-              <Pressable onPress={() => setImageUri(null)} style={styles.removeBtn}>
-                <Text style={styles.removeText}>Remove</Text>
-              </Pressable>
-            </View>
-          ) : (
-            <View style={styles.uploadRow}>
-              <Pressable onPress={() => void handlePickImage('library')} style={styles.uploadBtn}>
-                <Text style={styles.uploadText}>Choose photo</Text>
-              </Pressable>
-              <Pressable onPress={() => void handlePickImage('camera')} style={styles.uploadBtn}>
-                <Text style={styles.uploadText}>Take photo</Text>
-              </Pressable>
-            </View>
-          )}
+      {!user ? (
+        <View style={styles.authBanner}>
+          <Ionicons name="lock-closed-outline" size={s(18)} color={figmaColors.accent} />
+          <Text style={styles.authHint}>{mostWantedCopy.signInToContribute}</Text>
         </View>
       ) : null}
 
-      <View style={styles.block}>
-        <Text style={styles.sectionLabel}>Source URL</Text>
+      <View style={styles.step}>
+        <Text style={styles.stepLabel}>{mostWantedCopy.submitStepType}</Text>
+        <Text style={styles.stepHint}>{mostWantedCopy.submitStepTypeHint}</Text>
+        <View style={styles.typeGrid}>
+          {mostWantedEvidenceTypes.map((opt) => {
+            const active = opt.key === evidenceType;
+            return (
+              <Pressable
+                key={opt.key}
+                onPress={() => setEvidenceType(opt.key)}
+                style={[styles.typeChip, active && styles.typeChipActive]}
+              >
+                <Text style={[styles.typeChipText, active && styles.typeChipTextActive]}>{opt.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+
+      <View style={styles.step}>
+        <Text style={styles.stepLabel}>{mostWantedCopy.submitStepMedia}</Text>
+        <Text style={styles.stepHint}>{mostWantedCopy.submitStepMediaHint}</Text>
+
+        {needsImage ? (
+          imageUri ? (
+            <View style={styles.previewWrap}>
+              <Image source={{ uri: imageUri }} style={styles.preview} resizeMode="cover" />
+              <Pressable onPress={() => setImageUri(null)} style={styles.removeBtn}>
+                <Text style={styles.removeText}>Remove photo</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <View style={styles.uploadEmpty}>
+              <Ionicons name="image-outline" size={s(28)} color={figmaColors.gray} />
+              <Text style={styles.uploadEmptyText}>{mostWantedCopy.submitUploadEmpty}</Text>
+              <View style={styles.uploadRow}>
+                <Pressable onPress={() => void handlePickImage('library')} style={styles.uploadBtn}>
+                  <Ionicons name="images-outline" size={s(16)} color={figmaColors.charcoal} />
+                  <Text style={styles.uploadText}>Library</Text>
+                </Pressable>
+                <Pressable onPress={() => void handlePickImage('camera')} style={styles.uploadBtn}>
+                  <Ionicons name="camera-outline" size={s(16)} color={figmaColors.charcoal} />
+                  <Text style={styles.uploadText}>Camera</Text>
+                </Pressable>
+              </View>
+            </View>
+          )
+        ) : null}
+
         <TextInput
           value={sourceUrl}
           onChangeText={setSourceUrl}
-          placeholder="https://..."
+          placeholder="Source URL (optional for images)"
           placeholderTextColor={figmaColors.gray}
           autoCapitalize="none"
           keyboardType="url"
@@ -140,8 +158,9 @@ export function SubmitEvidenceForm({
         />
       </View>
 
-      <View style={styles.block}>
-        <Text style={styles.sectionLabel}>Notes</Text>
+      <View style={styles.step}>
+        <Text style={styles.stepLabel}>{mostWantedCopy.submitStepNotes}</Text>
+        <Text style={styles.stepHint}>{mostWantedCopy.submitStepNotesHint}</Text>
         <TextInput
           value={notes}
           onChangeText={setNotes}
@@ -152,29 +171,58 @@ export function SubmitEvidenceForm({
         />
       </View>
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      <View style={styles.step}>
+        <Text style={styles.stepLabel}>{mostWantedCopy.submitStepReview}</Text>
+        {error ? (
+          <View style={styles.errorBox}>
+            <Ionicons name="alert-circle-outline" size={s(16)} color={figmaColors.error} />
+            <Text style={styles.error}>{error}</Text>
+          </View>
+        ) : null}
 
-      <AuthPrimaryButton
-        label={busy ? 'Submitting…' : 'Submit for Review'}
-        onPress={() => void handleSubmit()}
-        disabled={busy || !user}
-      />
-      {busy ? <ActivityIndicator color={figmaColors.charcoal} style={{ marginTop: s(8) }} /> : null}
-      <Text style={styles.hint}>{mostWantedCopy.submitSubtitle}</Text>
+        <AuthPrimaryButton
+          label={busy ? 'Submitting…' : 'Submit for Review'}
+          onPress={() => void handleSubmit()}
+          disabled={busy || !user}
+        />
+        {busy ? <ActivityIndicator color={figmaColors.charcoal} style={{ marginTop: s(8) }} /> : null}
+        <Text style={styles.hint}>{mostWantedCopy.submitSubtitle}</Text>
+      </View>
     </View>
   );
 }
 
 function createStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
-    wrap: {
-      gap: s(14)
+    wrap: { gap: s(20) },
+    authBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(8),
+      backgroundColor: figmaColors.surfaceHighlight,
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      borderRadius: s(10),
+      padding: s(12)
     },
-    sectionLabel: {
+    authHint: {
+      flex: 1,
       fontFamily: appFonts.body,
-      fontSize: t(14),
-      color: figmaColors.charcoal,
-      marginBottom: s(6)
+      fontSize: t(13),
+      color: figmaColors.accent
+    },
+    step: { gap: s(8) },
+    stepLabel: {
+      fontFamily: appFonts.bodyBold,
+      fontSize: t(15),
+      color: figmaColors.charcoal
+    },
+    stepHint: {
+      fontFamily: appFonts.body,
+      fontSize: t(13),
+      lineHeight: t(18),
+      color: figmaColors.gray,
+      marginBottom: s(2)
     },
     typeGrid: {
       flexDirection: 'row',
@@ -184,9 +232,9 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     typeChip: {
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
-      borderRadius: s(8),
-      paddingHorizontal: s(10),
-      paddingVertical: s(6),
+      borderRadius: s(10),
+      paddingHorizontal: s(12),
+      paddingVertical: s(8),
       backgroundColor: figmaColors.cream
     },
     typeChipActive: {
@@ -199,78 +247,98 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       color: figmaColors.gray
     },
     typeChipTextActive: {
+      fontFamily: appFonts.bodyBold,
       color: figmaColors.charcoal
-    },
-    block: {
-      gap: s(4)
     },
     input: {
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
-      borderRadius: s(8),
+      borderRadius: s(10),
       paddingHorizontal: s(12),
-      paddingVertical: s(10),
+      paddingVertical: s(12),
       fontFamily: appFonts.body,
       fontSize: t(14),
       color: figmaColors.charcoal,
       backgroundColor: figmaColors.cream
     },
     notesInput: {
-      minHeight: s(96),
+      minHeight: s(100),
       textAlignVertical: 'top'
+    },
+    uploadEmpty: {
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      borderRadius: s(12),
+      borderStyle: 'dashed',
+      paddingVertical: s(24),
+      paddingHorizontal: s(16),
+      alignItems: 'center',
+      gap: s(10),
+      backgroundColor: figmaColors.cream
+    },
+    uploadEmptyText: {
+      fontFamily: appFonts.body,
+      fontSize: t(13),
+      color: figmaColors.gray,
+      textAlign: 'center'
     },
     uploadBtn: {
       flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: s(6),
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
-      borderRadius: s(8),
-      borderStyle: 'dashed',
-      paddingVertical: s(24),
-      alignItems: 'center',
-      backgroundColor: figmaColors.cream
+      borderRadius: s(10),
+      paddingVertical: s(12),
+      backgroundColor: figmaColors.surface
     },
     uploadRow: {
       flexDirection: 'row',
-      gap: s(8)
-    },
-    authHint: {
-      fontFamily: appFonts.body,
-      fontSize: t(13),
-      color: figmaColors.accent,
-      marginBottom: s(4)
+      gap: s(8),
+      width: '100%'
     },
     uploadText: {
-      fontFamily: appFonts.body,
-      fontSize: t(14),
-      color: figmaColors.gray
+      fontFamily: appFonts.bodyBold,
+      fontSize: t(13),
+      color: figmaColors.charcoal
     },
-    previewWrap: {
-      gap: s(8)
-    },
+    previewWrap: { gap: s(8) },
     preview: {
       width: '100%',
-      height: s(180),
-      borderRadius: s(8),
-      backgroundColor: figmaColors.tagBg
+      height: s(200),
+      borderRadius: s(12),
+      backgroundColor: figmaColors.assetPreviewBg
     },
-    removeBtn: {
-      alignSelf: 'flex-start'
-    },
+    removeBtn: { alignSelf: 'flex-start' },
     removeText: {
-      fontFamily: appFonts.body,
+      fontFamily: appFonts.bodyBold,
       fontSize: t(13),
       color: figmaColors.accent
+    },
+    errorBox: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: s(8),
+      backgroundColor: figmaColors.errorBg,
+      borderWidth: 1,
+      borderColor: figmaColors.errorBorder,
+      borderRadius: s(10),
+      padding: s(10)
     },
     error: {
+      flex: 1,
       fontFamily: appFonts.body,
       fontSize: t(13),
-      color: figmaColors.accent
+      color: figmaColors.error
     },
     hint: {
       fontFamily: appFonts.body,
       fontSize: t(12),
       color: figmaColors.gray,
-      textAlign: 'center'
+      textAlign: 'center',
+      marginTop: s(4)
     }
   });
 }

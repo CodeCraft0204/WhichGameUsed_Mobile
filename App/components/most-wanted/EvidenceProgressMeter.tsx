@@ -9,18 +9,27 @@ type EvidenceProgressMeterProps = {
   s: (n: number) => number;
   t: (n: number) => number;
   compact?: boolean;
+  nearComplete?: boolean;
 };
 
-export function EvidenceProgressMeter({ fulfilled, total, s, t, compact }: EvidenceProgressMeterProps) {
+export function EvidenceProgressMeter({
+  fulfilled,
+  total,
+  s,
+  t,
+  compact,
+  nearComplete
+}: EvidenceProgressMeterProps) {
   const styles = useMemo(() => createStyles(s, t, compact), [s, t, compact]);
   const safeTotal = Math.max(total, 1);
   const pct = Math.min(100, Math.round((fulfilled / safeTotal) * 100));
+  const fillColor = nearComplete || pct >= 75 ? figmaColors.success : figmaColors.progressFill;
 
   return (
     <View style={styles.wrap}>
-      {!compact ? <Text style={styles.label}>Progress: {fulfilled}/{total || 0}</Text> : null}
+      {!compact ? <Text style={styles.label}>Progress · {fulfilled}/{total || 0}</Text> : null}
       <View style={styles.track}>
-        <View style={[styles.fill, { width: `${pct}%` }]} />
+        <View style={[styles.fill, { width: `${pct}%`, backgroundColor: fillColor }]} />
       </View>
       {compact ? <Text style={styles.compactText}>{fulfilled}/{total || 0}</Text> : null}
     </View>
@@ -41,22 +50,21 @@ function createStyles(s: (n: number) => number, t: (n: number) => number, compac
     },
     track: {
       flex: compact ? 1 : undefined,
-      height: s(8),
-      backgroundColor: figmaColors.tagBg,
+      height: s(compact ? 6 : 8),
+      backgroundColor: figmaColors.progressTrack,
       borderRadius: s(4),
       overflow: 'hidden',
       minWidth: compact ? s(80) : undefined
     },
     fill: {
       height: '100%',
-      backgroundColor: figmaColors.accent,
       borderRadius: s(4)
     },
     compactText: {
-      fontFamily: appFonts.body,
-      fontSize: t(12),
+      fontFamily: appFonts.bodyBold,
+      fontSize: t(11),
       color: figmaColors.gray,
-      minWidth: s(28)
+      minWidth: s(30)
     }
   });
 }

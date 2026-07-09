@@ -1,24 +1,48 @@
-import React from 'react';
-import { Image, StyleSheet, type ImageStyle, type StyleProp } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useMemo } from 'react';
+import { Image, StyleSheet, View } from 'react-native';
 import { databaseIcons } from '@/constants/databaseContent';
+import { figmaColors } from '@/constants/figmaColors';
 
 type HuntCardImageProps = {
   coverImageUrl?: string | null;
   imageUrl?: string | null;
-  style?: StyleProp<ImageStyle>;
+  style?: object;
+  framed?: boolean;
+  s?: (n: number) => number;
 };
 
-/** Renders hunt card art from DB URL, resolved catalog image, or neutral placeholder. */
-export function HuntCardImage({ coverImageUrl, imageUrl, style }: HuntCardImageProps) {
+export function HuntCardImage({ coverImageUrl, imageUrl, style, framed, s }: HuntCardImageProps) {
   const uri = imageUrl ?? coverImageUrl;
-  if (uri) {
-    return <Image source={{ uri }} style={style} resizeMode="contain" />;
+  const frameStyles = useMemo(
+    () => (framed && s ? createFrameStyles(s) : null),
+    [framed, s]
+  );
+
+  const image = uri ? (
+    <Image source={{ uri }} style={style} resizeMode="contain" />
+  ) : (
+    <Image source={databaseIcons.cardPlaceholder} style={style} resizeMode="contain" />
+  );
+
+  if (frameStyles) {
+    return <View style={frameStyles.frame}>{image}</View>;
   }
-  return <Image source={databaseIcons.cardPlaceholder} style={style} resizeMode="contain" />;
+
+  return image;
 }
 
-export function huntImageStyles(width: number, height: number) {
+function createFrameStyles(s: (n: number) => number) {
   return StyleSheet.create({
-    image: { width, height }
+    frame: {
+      width: '100%',
+      backgroundColor: figmaColors.assetPreviewBg,
+      borderRadius: s(10),
+      borderWidth: 1,
+      borderColor: figmaColors.assetPreviewBorder,
+      overflow: 'hidden',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
   });
 }

@@ -1,13 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  View
-} from 'react-native';
+import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { chipOptionsFromLabels, FigmaChipRow } from '@/components/figma/FigmaChipRow';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaHubBottomNav } from '@/components/figma/FigmaHubBottomNav';
@@ -16,6 +9,13 @@ import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import { BountyRankingCard } from '@/components/most-wanted/BountyRankingCard';
 import { FeaturedWantedCard } from '@/components/most-wanted/FeaturedWantedCard';
 import { MostWantedSearchSort } from '@/components/most-wanted/MostWantedSearchSort';
+import {
+  MostWantedCardSkeleton,
+  MostWantedEmptyState,
+  MostWantedLinkPill,
+  MostWantedLoadingState,
+  MostWantedSectionLabel
+} from '@/components/most-wanted/MostWantedShared';
 import { WantedCard } from '@/components/most-wanted/WantedCard';
 import { WantedStatsRow } from '@/components/most-wanted/WantedStatsRow';
 import {
@@ -33,6 +33,7 @@ import {
   messagesInboxHref,
   mostWantedContributionsHref,
   mostWantedDetailHref,
+  mostWantedRankingsHref,
   mostWantedSolvedHref,
   mostWantedSubmitHref,
   mostWantedWatchedHref
@@ -131,14 +132,6 @@ function MostWantedScreenBody() {
     }, 350);
   }, [load]);
 
-  const handleTabChange = useCallback((tab: string) => {
-    setActiveTab(tab as MostWantedFilterTab);
-  }, []);
-
-  const handleSortChange = useCallback((next: MostWantedSortKey) => {
-    setSort(next);
-  }, []);
-
   React.useEffect(() => {
     void load({ silent: initialLoadDone.current });
   }, [activeTab, sort, load]);
@@ -166,6 +159,8 @@ function MostWantedScreenBody() {
     );
   }, []);
 
+  const previewRankings = rankings.slice(0, 3);
+
   return (
     <FigmaScreen
       backgroundColor={figmaColors.background}
@@ -192,7 +187,7 @@ function MostWantedScreenBody() {
         <FigmaChipRow
           options={chipOptionsFromLabels(mostWantedFilterTabs)}
           value={activeTab}
-          onChange={handleTabChange}
+          onChange={(tab) => setActiveTab(tab as MostWantedFilterTab)}
           s={s}
           t={t}
           style={styles.chipRow}
@@ -211,19 +206,54 @@ function MostWantedScreenBody() {
         search={search}
         sort={sort}
         onSearchChange={handleSearchChange}
-        onSortChange={handleSortChange}
+        onSortChange={setSort}
         s={s}
         t={t}
       />
 
-      {rankings.length > 0 ? (
+      {loading ? (
+        <>
+          <MostWantedCardSkeleton s={s} />
+          <MostWantedCardSkeleton s={s} />
+          <MostWantedLoadingState message={mostWantedCopy.loading} s={s} t={t} />
+        </>
+      ) : null}
+
+      {error ? (
+        <MostWantedEmptyState
+          title={mostWantedCopy.errorTitle}
+          body={error}
+          icon="alert-circle-outline"
+          s={s}
+          t={t}
+        />
+      ) : null}
+
+      {!loading && !error && featured ? (
+        <FeaturedWantedCard hunt={featured} s={s} t={t} onPress={() => openDetail(featured.id)} />
+      ) : null}
+
+      {previewRankings.length > 0 ? (
         <View style={styles.rankingsSection}>
-          <Text style={page.sectionTitle}>{mostWantedCopy.bountyRankingsTitle}</Text>
-          <Text style={styles.rankingsSubtitle}>{mostWantedCopy.bountyRankingsSubtitle}</Text>
-          {rankings.map((row) => (
+          <View style={styles.rankingsHeader}>
+            <MostWantedSectionLabel
+              title={mostWantedCopy.bountyRankingsTitle}
+              subtitle={mostWantedCopy.bountyRankingsSubtitle}
+              s={s}
+              t={t}
+            />
+            <MostWantedLinkPill
+              label="View all"
+              onPress={() => router.push(mostWantedRankingsHref())}
+              s={s}
+              t={t}
+            />
+          </View>
+          {previewRankings.map((row, index) => (
             <BountyRankingCard
               key={row.card_request_id}
               row={row}
+              rank={index + 1}
               s={s}
               t={t}
               onVote={(action) => void handleVote(row.card_request_id, action)}
@@ -249,37 +279,13 @@ function MostWantedScreenBody() {
         </View>
       </View>
 
-      {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={figmaColors.charcoal} />
-          <Text style={styles.muted}>{mostWantedCopy.loading}</Text>
-        </View>
-      ) : null}
-
-      {error ? (
-        <View style={styles.center}>
-          <Text style={styles.errorTitle}>{mostWantedCopy.errorTitle}</Text>
-          <Text style={styles.muted}>{error}</Text>
-          <Pressable onPress={() => void load()} style={styles.retryBtn}>
-            <Text style={styles.retryText}>Retry</Text>
-          </Pressable>
-        </View>
-      ) : null}
-
-      {!loading && !error && featured ? (
-        <FeaturedWantedCard
-          hunt={featured}
+      {!loading && !error && items.length === 0 && !featured ? (
+        <MostWantedEmptyState
+          title={mostWantedCopy.emptyTitle}
+          body={mostWantedCopy.emptyBody}
           s={s}
           t={t}
-          onPress={() => openDetail(featured.id)}
         />
-      ) : null}
-
-      {!loading && !error && items.length === 0 && !featured ? (
-        <View style={styles.center}>
-          <Text style={styles.errorTitle}>{mostWantedCopy.emptyTitle}</Text>
-          <Text style={styles.muted}>{mostWantedCopy.emptyBody}</Text>
-        </View>
       ) : null}
 
       {!error
@@ -300,60 +306,20 @@ function MostWantedScreenBody() {
 
 function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
-    chipRow: {
-      marginTop: s(20),
-      marginBottom: 0
-    },
-    linkRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: s(6)
-    },
+    chipRow: { marginTop: s(20), marginBottom: 0 },
+    linkRow: { flexDirection: 'row', alignItems: 'center', gap: s(6) },
     linkText: {
       fontFamily: 'EBGaramond_400Regular',
       fontSize: t(13),
       color: figmaColors.accent
     },
-    linkDivider: {
-      color: figmaColors.gray
-    },
-    center: {
-      alignItems: 'center',
-      paddingVertical: s(24),
+    linkDivider: { color: figmaColors.gray },
+    rankingsSection: { marginBottom: s(16) },
+    rankingsHeader: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
       gap: s(8)
-    },
-    muted: {
-      fontFamily: 'EBGaramond_400Regular',
-      fontSize: t(14),
-      color: figmaColors.gray,
-      textAlign: 'center'
-    },
-    errorTitle: {
-      fontFamily: 'EBGaramond_600SemiBold',
-      fontSize: t(16),
-      color: figmaColors.charcoal
-    },
-    retryBtn: {
-      marginTop: s(8),
-      paddingHorizontal: s(16),
-      paddingVertical: s(8),
-      borderWidth: 1,
-      borderColor: figmaColors.borderLight,
-      borderRadius: s(8)
-    },
-    retryText: {
-      fontFamily: 'EBGaramond_400Regular',
-      fontSize: t(14),
-      color: figmaColors.charcoal
-    },
-    rankingsSection: {
-      marginBottom: s(16)
-    },
-    rankingsSubtitle: {
-      fontFamily: 'EBGaramond_400Regular',
-      fontSize: t(13),
-      color: figmaColors.gray,
-      marginBottom: s(10)
     }
   });
 }

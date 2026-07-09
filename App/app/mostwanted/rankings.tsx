@@ -3,30 +3,28 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader';
+import { BountyRankingCard } from '@/components/most-wanted/BountyRankingCard';
 import {
   MostWantedEmptyState,
   MostWantedLoadingState
 } from '@/components/most-wanted/MostWantedShared';
-import { SolvedHuntCard } from '@/components/most-wanted/SolvedHuntCard';
 import { mostWantedCopy } from '@/constants/mostWantedCopy';
-import { mostWantedDetailHref } from '@/constants/navigation';
 import { figmaColors } from '@/constants/figmaColors';
 import { appFonts } from '@/constants/appFonts';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
-import { useMostWantedRealtime } from '@/hooks/useMostWantedRealtime';
-import { listSolvedHunts, type SolvedHuntRow } from '@/lib/most-wanted';
+import { listBountyRankings, toggleCardRequestVote, type BountyRankingRow } from '@/lib/most-wanted';
 
-export default function MostWantedSolvedScreen() {
+export default function MostWantedRankingsScreen() {
   const router = useRouter();
   const { s, t } = useFigmaLayout();
   const styles = useMemo(() => createStyles(s, t), [s, t]);
-  const [items, setItems] = useState<SolvedHuntRow[]>([]);
+  const [items, setItems] = useState<BountyRankingRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const { items: rows, error: err } = await listSolvedHunts();
+    const { items: rows, error: err } = await listBountyRankings(25);
     setItems(rows);
     setError(err);
     setLoading(false);
@@ -39,7 +37,20 @@ export default function MostWantedSolvedScreen() {
     }, [load])
   );
 
-  useMostWantedRealtime(() => void load(), true);
+  const handleVote = useCallback(async (cardRequestId: string, action: 'upvote' | 'downvote') => {
+    const { voteScore, userVote, error: voteError } = await toggleCardRequestVote(cardRequestId, action);
+    if (voteError) {
+      setError(voteError);
+      return;
+    }
+    setItems((prev) =>
+      prev.map((row) =>
+        row.card_request_id === cardRequestId
+          ? { ...row, vote_score: voteScore, user_vote: userVote }
+          : row
+      )
+    );
+  }, []);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -57,34 +68,35 @@ export default function MostWantedSolvedScreen() {
         }
       >
         <ProfileSubpageHeader
-          title={mostWantedCopy.solvedTitle}
-          subtitle={mostWantedCopy.solvedSubtitle}
-          description="Completed hunts archived by the community — solver, date, and reward status."
+          title={mostWantedCopy.rankingsPageTitle}
+          subtitle={mostWantedCopy.rankingsPageSubtitle}
+          description="Help decide which mystery cards the community should research next."
           s={s}
           t={t}
           onBack={() => router.back()}
         />
 
-        {loading ? <MostWantedLoadingState message="Loading solved hunts…" s={s} t={t} /> : null}
+        {loading ? <MostWantedLoadingState message="Loading rankings…" s={s} t={t} /> : null}
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         {!loading && !error && items.length === 0 ? (
           <MostWantedEmptyState
-            title={mostWantedCopy.emptySolvedTitle}
-            body={mostWantedCopy.emptySolvedBody}
-            icon="trophy-outline"
+            title={mostWantedCopy.emptyRankingsTitle}
+            body={mostWantedCopy.emptyRankingsBody}
+            icon="podium-outline"
             s={s}
             t={t}
           />
         ) : null}
 
-        {items.map((hunt) => (
-          <SolvedHuntCard
-            key={hunt.id}
-            hunt={hunt}
+        {items.map((row, index) => (
+          <BountyRankingCard
+            key={row.card_request_id}
+            row={row}
+            rank={index + 1}
             s={s}
             t={t}
-            onPress={() => router.push(mostWantedDetailHref(hunt.id))}
+            onVote={(action) => void handleVote(row.card_request_id, action)}
           />
         ))}
       </ScrollView>
@@ -99,7 +111,8 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     error: {
       fontFamily: appFonts.body,
       fontSize: t(14),
-      color: figmaColors.error
+      color: figmaColors.error,
+      marginBottom: s(12)
     }
   });
 }

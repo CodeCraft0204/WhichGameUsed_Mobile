@@ -1,7 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -11,7 +11,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader';
+import {
+  MostWantedEmptyState,
+  MostWantedLoadingState,
+  MostWantedStatusBadge
+} from '@/components/most-wanted/MostWantedShared';
 import { mostWantedCopy } from '@/constants/mostWantedCopy';
+import type { MwContributionStatus } from '@/constants/mostWantedStyles';
 import { mostWantedDetailHref, mostWantedSubmitHref } from '@/constants/navigation';
 import { figmaColors } from '@/constants/figmaColors';
 import { appFonts } from '@/constants/appFonts';
@@ -24,7 +30,7 @@ import {
   type MostWantedContribution
 } from '@/lib/most-wanted';
 
-const STATUS_ORDER = ['pending_review', 'approved', 'needs_more_info', 'rejected'] as const;
+const STATUS_ORDER: MwContributionStatus[] = ['pending_review', 'approved', 'needs_more_info', 'rejected'];
 
 export default function MostWantedContributionsScreen() {
   const router = useRouter();
@@ -52,12 +58,13 @@ export default function MostWantedContributionsScreen() {
   useMostWantedRealtime(() => void load(), true);
 
   const grouped = useMemo(() => {
-    const map = new Map<string, MostWantedContribution[]>();
+    const map = new Map<MwContributionStatus, MostWantedContribution[]>();
     for (const status of STATUS_ORDER) map.set(status, []);
     for (const item of items) {
-      const bucket = map.get(item.status) ?? [];
+      const status = item.status as MwContributionStatus;
+      const bucket = map.get(status) ?? [];
       bucket.push(item);
-      map.set(item.status, bucket);
+      map.set(status, bucket);
     }
     return map;
   }, [items]);
@@ -80,42 +87,65 @@ export default function MostWantedContributionsScreen() {
         <ProfileSubpageHeader
           title={mostWantedCopy.contributionsTitle}
           subtitle={mostWantedCopy.contributionsSubtitle}
+          description="Evidence you submit is reviewed by admins before it counts toward hunt progress."
           s={s}
           t={t}
           onBack={() => router.back()}
         />
 
-        {loading ? <ActivityIndicator color={figmaColors.charcoal} /> : null}
+        {loading ? <MostWantedLoadingState message="Loading contributions…" s={s} t={t} /> : null}
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         {!loading && !error && items.length === 0 ? (
-          <Text style={styles.muted}>You have not submitted evidence yet.</Text>
+          <MostWantedEmptyState
+            title={mostWantedCopy.emptyContributionsTitle}
+            body={mostWantedCopy.emptyContributionsBody}
+            icon="document-text-outline"
+            s={s}
+            t={t}
+          />
         ) : null}
 
         {STATUS_ORDER.map((status) => {
           const rows = grouped.get(status) ?? [];
           if (rows.length === 0) return null;
+          const sectionLabel = mostWantedCopy.contributionSections[status];
           return (
             <View key={status} style={styles.section}>
-              <Text style={styles.sectionTitle}>
-                {mostWantedCopy.contributionSections[status]}
-              </Text>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>{sectionLabel}</Text>
+                <Text style={styles.sectionCount}>{rows.length}</Text>
+              </View>
               {rows.map((row) => (
-                <View key={row.id} style={styles.row}>
-                  <Text
-                    style={styles.rowTitle}
-                    onPress={() => router.push(mostWantedDetailHref(row.hunt_id))}
-                  >
-                    {row.hunt_title}
-                  </Text>
-                  <Text style={styles.rowMeta}>Evidence Type: {evidenceTypeLabel(row.evidence_type)}</Text>
-                  <Text style={styles.rowMeta}>
-                    Status: {mostWantedCopy.contributionSections[row.status as keyof typeof mostWantedCopy.contributionSections] ?? row.status}
-                  </Text>
-                  <Text style={styles.rowMeta}>Submitted: {relativeTime(row.created_at)}</Text>
+                <View key={row.id} style={styles.card}>
+                  <View style={styles.cardTop}>
+                    <Pressable
+                      onPress={() => router.push(mostWantedDetailHref(row.hunt_id))}
+                      style={styles.titlePress}
+                    >
+                      <Text style={styles.rowTitle} numberOfLines={2}>
+                        {row.hunt_title}
+                      </Text>
+                    </Pressable>
+                    <MostWantedStatusBadge status={status} label={sectionLabel} s={s} t={t} />
+                  </View>
+
+                  <View style={styles.metaRow}>
+                    <Ionicons name="layers-outline" size={s(14)} color={figmaColors.gray} />
+                    <Text style={styles.rowMeta}>{evidenceTypeLabel(row.evidence_type)}</Text>
+                  </View>
+                  <View style={styles.metaRow}>
+                    <Ionicons name="time-outline" size={s(14)} color={figmaColors.gray} />
+                    <Text style={styles.rowMeta}>Submitted {relativeTime(row.created_at)}</Text>
+                  </View>
+
                   {row.review_notes ? (
-                    <Text style={styles.reviewNotes}>Reviewer: {row.review_notes}</Text>
+                    <View style={styles.reviewBox}>
+                      <Text style={styles.reviewLabel}>Reviewer notes</Text>
+                      <Text style={styles.reviewNotes}>{row.review_notes}</Text>
+                    </View>
                   ) : null}
+
                   {row.status === 'needs_more_info' ? (
                     <Pressable
                       onPress={() =>
@@ -126,8 +156,10 @@ export default function MostWantedContributionsScreen() {
                           })
                         )
                       }
+                      style={styles.resubmitBtn}
                     >
                       <Text style={styles.resubmit}>Update submission</Text>
+                      <Ionicons name="arrow-forward" size={s(14)} color={figmaColors.accent} />
                     </Pressable>
                   ) : null}
                 </View>
@@ -144,53 +176,89 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: figmaColors.background },
     content: { paddingHorizontal: s(20), paddingBottom: s(32) },
-    section: { marginBottom: s(18) },
-    sectionTitle: {
-      fontFamily: appFonts.accent,
-      fontSize: t(16),
-      color: figmaColors.charcoal,
-      marginBottom: s(8)
+    section: { marginBottom: s(20) },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: s(10)
     },
-    row: {
+    sectionTitle: {
+      fontFamily: appFonts.display,
+      fontSize: t(18),
+      color: figmaColors.charcoal
+    },
+    sectionCount: {
+      fontFamily: appFonts.bodyBold,
+      fontSize: t(13),
+      color: figmaColors.gray
+    },
+    card: {
       backgroundColor: figmaColors.cream,
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
-      borderRadius: s(10),
-      padding: s(12),
-      marginBottom: s(8),
-      gap: s(4)
+      borderRadius: s(12),
+      padding: s(14),
+      marginBottom: s(10),
+      gap: s(8)
     },
+    cardTop: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      gap: s(10)
+    },
+    titlePress: { flex: 1 },
     rowTitle: {
-      fontFamily: appFonts.body,
+      fontFamily: appFonts.bodyBold,
       fontSize: t(15),
-      color: figmaColors.accent
+      lineHeight: t(20),
+      color: figmaColors.charcoal
+    },
+    metaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(6)
     },
     rowMeta: {
       fontFamily: appFonts.body,
       fontSize: t(13),
       color: figmaColors.gray
     },
+    reviewBox: {
+      backgroundColor: figmaColors.surfaceHighlight,
+      borderRadius: s(8),
+      padding: s(10),
+      gap: s(4)
+    },
+    reviewLabel: {
+      fontFamily: appFonts.accent,
+      fontSize: t(9),
+      letterSpacing: 0.5,
+      color: figmaColors.gray,
+      textTransform: 'uppercase'
+    },
     reviewNotes: {
       fontFamily: appFonts.body,
-      fontSize: t(12),
-      color: figmaColors.charcoal,
-      marginTop: s(4)
+      fontSize: t(13),
+      lineHeight: t(18),
+      color: figmaColors.charcoal
+    },
+    resubmitBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(4),
+      marginTop: s(2)
     },
     resubmit: {
-      fontFamily: appFonts.body,
+      fontFamily: appFonts.bodyBold,
       fontSize: t(13),
-      color: figmaColors.accent,
-      marginTop: s(6)
-    },
-    muted: {
-      fontFamily: appFonts.body,
-      fontSize: t(14),
-      color: figmaColors.gray
+      color: figmaColors.accent
     },
     error: {
       fontFamily: appFonts.body,
       fontSize: t(14),
-      color: figmaColors.accent
+      color: figmaColors.error
     }
   });
 }

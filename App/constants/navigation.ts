@@ -214,3 +214,7 @@ export function mostWantedContributionsHref(): Href {
 export function mostWantedSolvedHref(): Href {
   return '/mostwanted/solved' as unknown as Href;
 }
+
+export function mostWantedRankingsHref(): Href {
+  return '/mostwanted/rankings' as unknown as Href;
+}

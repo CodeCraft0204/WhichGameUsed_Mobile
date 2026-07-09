@@ -1,8 +1,8 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -13,12 +13,18 @@ import {
 } from 'react-native';
 import { HuntCardImage } from '@/components/most-wanted/HuntCardImage';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AuthPrimaryButton } from '@/components/auth/AuthPrimaryButton';
 import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader';
 import { EvidenceChecklist } from '@/components/most-wanted/EvidenceChecklist';
 import { EvidenceProgressMeter } from '@/components/most-wanted/EvidenceProgressMeter';
-import { WantedStatusTagRow } from '@/components/most-wanted/WantedStatusTag';
+import {
+  MostWantedEmptyState,
+  MostWantedRewardBadge
+} from '@/components/most-wanted/MostWantedShared';
+import { SolvedStatusBanner, WantedStatusTagRow } from '@/components/most-wanted/WantedStatusTag';
 import { appFonts } from '@/constants/appFonts';
 import { mostWantedCopy } from '@/constants/mostWantedCopy';
+import { huntCardBorder } from '@/constants/mostWantedStyles';
 import {
   databaseCardHref,
   discussionCreateHref,
@@ -26,7 +32,6 @@ import {
   mostWantedSubmitHref
 } from '@/constants/navigation';
 import { figmaColors } from '@/constants/figmaColors';
-import { figmaIcons } from '@/constants/figmaIcons';
 import { useAuth } from '@/context/AuthContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import { useMostWantedRealtime } from '@/hooks/useMostWantedRealtime';
@@ -78,6 +83,15 @@ export default function MostWantedDetailScreen() {
   const hunt = detail?.hunt;
   const fulfilled = detail?.requirements.filter((r) => r.is_fulfilled).length ?? 0;
   const total = detail?.requirements.length ?? 0;
+  const statusTags = hunt
+    ? huntStatusTagsFromLabels(
+        detail!.requirements.filter((r) => !r.is_fulfilled).map((r) => r.label),
+        hunt.status,
+        hunt.priority_tag,
+        fulfilled,
+        total
+      )
+    : [];
 
   const handleShare = useCallback(async () => {
     if (!hunt) return;
@@ -166,25 +180,56 @@ export default function MostWantedDetailScreen() {
         }
       >
         <ProfileSubpageHeader
-          title="Wanted Hunt Detail"
+          title="Hunt Detail"
           subtitle={hunt ? huntDisplayTitle(hunt) : undefined}
           s={s}
           t={t}
           onBack={() => router.back()}
         />
 
-        {loading ? <ActivityIndicator color={figmaColors.charcoal} /> : null}
+        {loading ? <ActivityIndicator color={figmaColors.charcoal} style={{ marginVertical: s(24) }} /> : null}
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         {hunt && detail ? (
           <>
-            <View style={styles.heroCard}>
-              <HuntCardImage
-                coverImageUrl={hunt.cover_image_url}
-                imageUrl={hunt.imageUrl}
-                style={styles.heroImage}
+            {hunt.status === 'solved' ? (
+              <SolvedStatusBanner
+                solverName={hunt.solver_name}
+                solvedAt={hunt.solved_at}
+                rewardClaimed={hunt.reward_claimed}
+                s={s}
+                t={t}
               />
+            ) : null}
+
+            <View
+              style={[
+                styles.heroCard,
+                { borderColor: huntCardBorder(hunt.status, statusTags) }
+              ]}
+            >
+              <View style={styles.heroImageWrap}>
+                <HuntCardImage
+                  coverImageUrl={hunt.cover_image_url}
+                  imageUrl={hunt.imageUrl}
+                  style={styles.heroImage}
+                  framed
+                  s={s}
+                />
+                {hunt.reward_amount_cents > 0 ? (
+                  <View style={styles.rewardOverlay}>
+                    <MostWantedRewardBadge
+                      label={formatRewardLabel(hunt.reward_amount_cents, hunt.reward_label)}
+                      s={s}
+                      t={t}
+                      large
+                    />
+                  </View>
+                ) : null}
+              </View>
+
               <View style={styles.heroBody}>
+                <WantedStatusTagRow tags={statusTags} s={s} t={t} />
                 <Text style={styles.heroTitle}>{huntDisplayTitle(hunt)}</Text>
                 <Text style={styles.meta}>
                   {[hunt.product_year, hunt.manufacturer_name ?? hunt.product_name, hunt.card_number ? `#${hunt.card_number}` : null]
@@ -194,28 +239,13 @@ export default function MostWantedDetailScreen() {
                 <Text style={styles.meta}>
                   {[hunt.player_name, hunt.team_name, hunt.sport_slug].filter(Boolean).join(' · ')}
                 </Text>
-                {hunt.priority_tag === 'high_value' ? (
-                  <View style={styles.priorityBadge}>
-                    <Text style={styles.priorityText}>High Priority</Text>
-                  </View>
-                ) : null}
-                <WantedStatusTagRow
-                  tags={huntStatusTagsFromLabels(
-                    detail.requirements.filter((r) => !r.is_fulfilled).map((r) => r.label),
-                    hunt.status,
-                    hunt.priority_tag,
-                    fulfilled,
-                    total
-                  )}
-                  s={s}
-                  t={t}
-                />
-                {hunt.status === 'solved' ? (
-                  <Text style={styles.solvedBanner}>
-                    Solved by {hunt.solver_name ?? 'Community'}
-                    {hunt.solved_at ? ` · ${new Date(hunt.solved_at).toLocaleDateString()}` : ''}
+
+                <View style={styles.watcherRow}>
+                  <Ionicons name="eye-outline" size={s(14)} color={figmaColors.gray} />
+                  <Text style={styles.watchers}>
+                    {detail.watcher_count} {mostWantedCopy.watchersSuffix}
                   </Text>
-                ) : null}
+                </View>
               </View>
             </View>
 
@@ -225,63 +255,101 @@ export default function MostWantedDetailScreen() {
             <EvidenceChecklist items={detail.requirements} s={s} t={t} />
 
             <Text style={styles.sectionTitle}>{mostWantedCopy.detailProgress}</Text>
-            <Text style={styles.progressCopy}>{fulfilled} of {total} complete</Text>
-            <EvidenceProgressMeter fulfilled={fulfilled} total={total} s={s} t={t} />
+            <Text style={styles.progressCopy}>
+              {fulfilled} of {total} complete
+            </Text>
+            <EvidenceProgressMeter
+              fulfilled={fulfilled}
+              total={total}
+              s={s}
+              t={t}
+              nearComplete={hunt.status === 'near_solved'}
+            />
 
             <Text style={styles.sectionTitle}>{mostWantedCopy.detailReward}</Text>
             <View style={styles.rewardCard}>
-              <Image source={figmaIcons.treasureChest} style={styles.rewardIcon} resizeMode="contain" />
-              <Text style={styles.rewardText}>
-                Reward: {formatRewardLabel(hunt.reward_amount_cents, hunt.reward_label)}
-              </Text>
-              <Text style={styles.rewardSub}>Contributor badge available</Text>
+              <MostWantedRewardBadge
+                label={formatRewardLabel(hunt.reward_amount_cents, hunt.reward_label)}
+                s={s}
+                t={t}
+                large
+              />
+              <Text style={styles.rewardSub}>Contributor badge available when your evidence is approved.</Text>
             </View>
 
             <Text style={styles.sectionTitle}>{mostWantedCopy.detailLeads}</Text>
             {detail.leads.length === 0 ? (
-              <Text style={styles.muted}>No community leads yet. Be the first to contribute.</Text>
+              <MostWantedEmptyState
+                title="No community leads yet"
+                body="Be the first to contribute evidence for this hunt."
+                icon="people-outline"
+                s={s}
+                t={t}
+              />
             ) : (
               detail.leads.map((lead) => (
                 <View key={lead.id} style={styles.leadRow}>
-                  <Text style={styles.leadText}>{leadSummary(lead)}</Text>
-                  {lead.status === 'pending_review' ? (
-                    <Text style={styles.leadPending}>Pending review</Text>
-                  ) : null}
+                  <View style={styles.leadIcon}>
+                    <Ionicons name="document-text-outline" size={s(16)} color={figmaColors.accent} />
+                  </View>
+                  <View style={styles.leadBody}>
+                    <Text style={styles.leadText}>{leadSummary(lead)}</Text>
+                    {lead.status === 'pending_review' ? (
+                      <Text style={styles.leadPending}>Pending review</Text>
+                    ) : null}
+                  </View>
                 </View>
               ))
             )}
 
             <View style={styles.actions}>
               {hunt.status !== 'solved' ? (
-                <ActionButton label={mostWantedCopy.detailSubmit} onPress={() => router.push(mostWantedSubmitHref(hunt.id))} />
-              ) : null}
-              <ActionButton
-                label={detail.is_watching ? mostWantedCopy.detailWatching : mostWantedCopy.detailWatch}
-                onPress={() => void handleWatch()}
-                disabled={watchBusy}
-              />
-              {hunt.card_id ? (
-                <ActionButton
-                  label={mostWantedCopy.detailWishlist}
-                  onPress={() => void handleWishlist()}
-                  disabled={wishlistBusy}
+                <AuthPrimaryButton
+                  label={mostWantedCopy.detailSubmit}
+                  onPress={() => router.push(mostWantedSubmitHref(hunt.id))}
                 />
               ) : null}
-              <ActionButton label={mostWantedCopy.detailDiscuss} onPress={handleDiscuss} />
-              <ActionButton label={mostWantedCopy.detailShare} onPress={() => void handleShare()} />
-              {hunt.card_id ? (
-                <ActionButton label="View Catalog Card" onPress={() => router.push(databaseCardHref(hunt.card_id!))} />
-              ) : null}
+
               {hunt.status === 'solved' && user?.id === hunt.solved_by && !hunt.reward_claimed ? (
-                <ActionButton
+                <AuthPrimaryButton
                   label={mostWantedCopy.detailClaimReward}
                   onPress={() => void handleClaimReward()}
                   disabled={claimBusy}
                 />
               ) : null}
+
               {hunt.reward_claimed ? (
-                <Text style={styles.rewardClaimed}>{mostWantedCopy.detailRewardClaimed}</Text>
+                <View style={styles.claimedBanner}>
+                  <Ionicons name="checkmark-circle" size={s(18)} color={figmaColors.success} />
+                  <Text style={styles.rewardClaimed}>{mostWantedCopy.detailRewardClaimed}</Text>
+                </View>
               ) : null}
+
+              <View style={styles.secondaryActions}>
+                <ActionButton
+                  label={detail.is_watching ? mostWantedCopy.detailWatching : mostWantedCopy.detailWatch}
+                  icon="eye-outline"
+                  onPress={() => void handleWatch()}
+                  disabled={watchBusy}
+                />
+                {hunt.card_id ? (
+                  <ActionButton
+                    label={mostWantedCopy.detailWishlist}
+                    icon="heart-outline"
+                    onPress={() => void handleWishlist()}
+                    disabled={wishlistBusy}
+                  />
+                ) : null}
+                <ActionButton label={mostWantedCopy.detailDiscuss} icon="chatbubble-outline" onPress={handleDiscuss} />
+                <ActionButton label={mostWantedCopy.detailShare} icon="share-outline" onPress={() => void handleShare()} />
+                {hunt.card_id ? (
+                  <ActionButton
+                    label="View Catalog Card"
+                    icon="albums-outline"
+                    onPress={() => router.push(databaseCardHref(hunt.card_id!))}
+                  />
+                ) : null}
+              </View>
             </View>
 
             {actionMessage ? <Text style={styles.actionMessage}>{actionMessage}</Text> : null}
@@ -294,10 +362,12 @@ export default function MostWantedDetailScreen() {
 
 function ActionButton({
   label,
+  icon,
   onPress,
   disabled
 }: {
   label: string;
+  icon: keyof typeof Ionicons.glyphMap;
   onPress: () => void;
   disabled?: boolean;
 }) {
@@ -305,45 +375,74 @@ function ActionButton({
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      style={({ pressed }) => [{ opacity: pressed || disabled ? 0.7 : 1 }]}
+      style={({ pressed }) => [{ opacity: pressed || disabled ? 0.7 : 1, flex: 1, minWidth: '45%' }]}
     >
-      <View style={{
-        borderWidth: 1,
-        borderColor: figmaColors.borderLight,
-        borderRadius: 8,
-        paddingVertical: 10,
-        paddingHorizontal: 14,
-        backgroundColor: figmaColors.cream,
-        marginBottom: 8
-      }}>
-        <Text style={{ fontFamily: appFonts.body, fontSize: 15, color: figmaColors.charcoal, textAlign: 'center' }}>
-          {label}
-        </Text>
+      <View style={actionStyles.btn}>
+        <Ionicons name={icon} size={16} color={figmaColors.charcoal} />
+        <Text style={actionStyles.label}>{label}</Text>
       </View>
     </Pressable>
   );
 }
+
+const actionStyles = StyleSheet.create({
+  btn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderColor: figmaColors.borderLight,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    backgroundColor: figmaColors.cream,
+    marginBottom: 8
+  },
+  label: {
+    fontFamily: appFonts.body,
+    fontSize: 13,
+    color: figmaColors.charcoal,
+    textAlign: 'center',
+    flexShrink: 1
+  }
+});
 
 function createStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: figmaColors.background },
     content: { paddingHorizontal: s(20), paddingBottom: s(32) },
     heroCard: {
-      flexDirection: 'row',
-      gap: s(12),
       backgroundColor: figmaColors.cream,
       borderWidth: 1,
-      borderColor: figmaColors.borderLight,
-      borderRadius: s(12),
-      padding: s(12),
+      borderRadius: s(14),
+      overflow: 'hidden',
       marginBottom: s(16)
     },
-    heroImage: { width: s(110), height: s(130) },
-    heroBody: { flex: 1, gap: s(6) },
+    heroImageWrap: {
+      backgroundColor: figmaColors.assetPreviewBg,
+      padding: s(16),
+      alignItems: 'center',
+      borderBottomWidth: 1,
+      borderBottomColor: figmaColors.borderLight
+    },
+    heroImage: {
+      width: '100%',
+      height: s(200)
+    },
+    rewardOverlay: {
+      position: 'absolute',
+      top: s(12),
+      right: s(12)
+    },
+    heroBody: {
+      padding: s(14),
+      gap: s(8)
+    },
     heroTitle: {
-      fontFamily: appFonts.body,
-      fontSize: t(18),
-      lineHeight: t(22),
+      fontFamily: appFonts.bodyBold,
+      fontSize: t(20),
+      lineHeight: t(24),
       color: figmaColors.charcoal
     },
     meta: {
@@ -351,25 +450,16 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: t(13),
       color: figmaColors.gray
     },
-    priorityBadge: {
-      alignSelf: 'flex-start',
-      backgroundColor: figmaColors.surfaceHighlight,
-      borderRadius: s(6),
-      paddingHorizontal: s(8),
-      paddingVertical: s(4),
-      borderWidth: 1,
-      borderColor: figmaColors.accent
+    watcherRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(6),
+      marginTop: s(2)
     },
-    priorityText: {
+    watchers: {
       fontFamily: appFonts.body,
-      fontSize: t(11),
-      color: figmaColors.charcoal
-    },
-    solvedBanner: {
-      fontFamily: appFonts.body,
-      fontSize: t(12),
-      color: figmaColors.accent,
-      marginTop: s(4)
+      fontSize: t(13),
+      color: figmaColors.gray
     },
     summary: {
       fontFamily: appFonts.body,
@@ -379,76 +469,100 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       marginBottom: s(16)
     },
     sectionTitle: {
-      fontFamily: appFonts.accent,
-      fontSize: t(16),
+      fontFamily: appFonts.display,
+      fontSize: t(18),
       color: figmaColors.charcoal,
-      marginTop: s(12),
-      marginBottom: s(8)
+      marginTop: s(16),
+      marginBottom: s(10)
     },
     progressCopy: {
       fontFamily: appFonts.body,
       fontSize: t(14),
       color: figmaColors.gray,
-      marginBottom: s(6)
+      marginBottom: s(8)
     },
     rewardCard: {
       backgroundColor: figmaColors.tagBg,
-      borderRadius: s(10),
-      padding: s(12),
-      gap: s(4),
+      borderRadius: s(12),
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      padding: s(14),
+      gap: s(8),
       marginBottom: s(8)
-    },
-    rewardIcon: { width: s(20), height: s(20) },
-    rewardText: {
-      fontFamily: appFonts.body,
-      fontSize: t(15),
-      color: figmaColors.charcoal
     },
     rewardSub: {
       fontFamily: appFonts.body,
       fontSize: t(12),
+      lineHeight: t(17),
       color: figmaColors.gray
     },
     leadRow: {
-      borderBottomWidth: 1,
-      borderBottomColor: figmaColors.borderLight,
-      paddingVertical: s(8)
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: s(10),
+      backgroundColor: figmaColors.cream,
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      borderRadius: s(10),
+      padding: s(12),
+      marginBottom: s(8)
     },
+    leadIcon: {
+      width: s(32),
+      height: s(32),
+      borderRadius: s(16),
+      backgroundColor: figmaColors.surfaceHighlight,
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    leadBody: { flex: 1, gap: s(4) },
     leadText: {
       fontFamily: appFonts.body,
       fontSize: t(14),
+      lineHeight: t(19),
       color: figmaColors.charcoal
     },
     leadPending: {
-      fontFamily: appFonts.body,
-      fontSize: t(11),
+      fontFamily: appFonts.accent,
+      fontSize: t(9),
+      letterSpacing: 0.5,
       color: figmaColors.gray,
-      marginTop: s(2)
+      textTransform: 'uppercase'
     },
-    muted: {
-      fontFamily: appFonts.body,
-      fontSize: t(13),
-      color: figmaColors.gray,
-      marginBottom: s(8)
+    actions: { marginTop: s(20), gap: s(8) },
+    secondaryActions: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: s(8),
+      marginTop: s(4)
     },
-    actions: { marginTop: s(16) },
     actionMessage: {
       fontFamily: appFonts.body,
       fontSize: t(13),
       color: figmaColors.accent,
-      marginTop: s(8)
+      marginTop: s(8),
+      textAlign: 'center'
+    },
+    claimedBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: s(8),
+      backgroundColor: figmaColors.successBg,
+      borderWidth: 1,
+      borderColor: figmaColors.success,
+      borderRadius: s(10),
+      padding: s(12)
     },
     rewardClaimed: {
-      fontFamily: appFonts.body,
-      fontSize: t(13),
-      color: figmaColors.charcoal,
-      textAlign: 'center',
-      marginTop: s(8)
+      fontFamily: appFonts.bodyBold,
+      fontSize: t(14),
+      color: figmaColors.success
     },
     error: {
       fontFamily: appFonts.body,
       fontSize: t(14),
-      color: figmaColors.accent
+      color: figmaColors.error
     }
   });
 }

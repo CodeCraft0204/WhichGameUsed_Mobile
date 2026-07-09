@@ -1,15 +1,12 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View
-} from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader';
+import {
+  MostWantedEmptyState,
+  MostWantedLoadingState
+} from '@/components/most-wanted/MostWantedShared';
 import { WantedCard } from '@/components/most-wanted/WantedCard';
 import { mostWantedCopy } from '@/constants/mostWantedCopy';
 import { mostWantedDetailHref, mostWantedSubmitHref } from '@/constants/navigation';
@@ -62,22 +59,30 @@ export default function MostWantedWatchedScreen() {
         <ProfileSubpageHeader
           title={mostWantedCopy.watchedTitle}
           subtitle={mostWantedCopy.watchedSubtitle}
+          description="Track progress on hunts you care about and jump back in when new evidence appears."
           s={s}
           t={t}
           onBack={() => router.back()}
         />
 
-        {loading ? <ActivityIndicator color={figmaColors.charcoal} /> : null}
+        {loading ? <MostWantedLoadingState message="Loading watch list…" s={s} t={t} /> : null}
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         {!loading && !error && items.length === 0 ? (
-          <Text style={styles.muted}>You are not watching any active hunts yet.</Text>
+          <MostWantedEmptyState
+            title={mostWantedCopy.emptyWatchedTitle}
+            body={mostWantedCopy.emptyWatchedBody}
+            icon="eye-outline"
+            s={s}
+            t={t}
+          />
         ) : null}
 
         {items.map((hunt) => (
           <WantedCard
             key={hunt.id}
             hunt={hunt}
+            compact
             s={s}
             t={t}
             onPress={() => router.push(mostWantedDetailHref(hunt.id))}
@@ -93,15 +98,10 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: figmaColors.background },
     content: { paddingHorizontal: s(20), paddingBottom: s(32) },
-    muted: {
-      fontFamily: appFonts.body,
-      fontSize: t(14),
-      color: figmaColors.gray
-    },
     error: {
       fontFamily: appFonts.body,
       fontSize: t(14),
-      color: figmaColors.accent
+      color: figmaColors.error
     }
   });
 }

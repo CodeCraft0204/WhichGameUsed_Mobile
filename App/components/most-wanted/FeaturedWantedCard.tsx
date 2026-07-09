@@ -1,12 +1,13 @@
 import React, { useMemo } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { appFonts } from '@/constants/appFonts';
 import { mostWantedCopy } from '@/constants/mostWantedCopy';
 import { figmaColors } from '@/constants/figmaColors';
-import { figmaIcons } from '@/constants/figmaIcons';
 import { EvidenceProgressMeter } from '@/components/most-wanted/EvidenceProgressMeter';
-import { WantedStatusTagRow } from '@/components/most-wanted/WantedStatusTag';
 import { HuntCardImage } from '@/components/most-wanted/HuntCardImage';
+import { MostWantedRewardBadge } from '@/components/most-wanted/MostWantedShared';
+import { WantedStatusTagRow } from '@/components/most-wanted/WantedStatusTag';
 import {
   formatRewardLabel,
   huntDisplayTitle,
@@ -27,34 +28,51 @@ export function FeaturedWantedCard({ hunt, s, t, onPress }: FeaturedWantedCardPr
   const primaryNeed = hunt.needed_labels[0] ?? 'Evidence';
 
   return (
-    <Pressable onPress={onPress} style={styles.card}>
-      <Text style={styles.label}>{mostWantedCopy.featuredLabel}</Text>
-      <View style={styles.row}>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
+      <View style={styles.header}>
+        <View style={styles.featuredRow}>
+          <Ionicons name="star" size={s(14)} color={figmaColors.accentStrong} />
+          <Text style={styles.label}>{mostWantedCopy.featuredLabel}</Text>
+        </View>
+        <MostWantedRewardBadge
+          label={formatRewardLabel(hunt.reward_amount_cents, hunt.reward_label)}
+          s={s}
+          t={t}
+          large
+        />
+      </View>
+
+      <View style={styles.imageWrap}>
         <HuntCardImage
           coverImageUrl={hunt.cover_image_url}
           imageUrl={hunt.imageUrl}
           style={styles.image}
+          framed
+          s={s}
         />
-        <View style={styles.body}>
-          <Text style={styles.title} numberOfLines={3}>{huntDisplayTitle(hunt)}</Text>
-          <Text style={styles.meta}>Status: Need {primaryNeed}</Text>
-          <View style={styles.rewardRow}>
-            <Image source={figmaIcons.treasureChest} style={styles.rewardIcon} resizeMode="contain" />
-            <Text style={styles.reward}>Reward: {formatRewardLabel(hunt.reward_amount_cents, hunt.reward_label)}</Text>
-          </View>
-          <Text style={styles.progressLabel}>
-            Evidence Progress: {hunt.requirements_fulfilled} / {hunt.requirements_total}
+      </View>
+
+      <View style={styles.body}>
+        <WantedStatusTagRow tags={tags} s={s} t={t} />
+        <Text style={styles.title} numberOfLines={2}>
+          {huntDisplayTitle(hunt)}
+        </Text>
+        <Text style={styles.meta}>Priority need · {primaryNeed}</Text>
+        <View style={styles.watchRow}>
+          <Ionicons name="eye-outline" size={s(14)} color={figmaColors.gray} />
+          <Text style={styles.watchers}>
+            {hunt.watcher_count} {mostWantedCopy.watchersSuffix}
           </Text>
-          <EvidenceProgressMeter
-            fulfilled={hunt.requirements_fulfilled}
-            total={hunt.requirements_total}
-            s={s}
-            t={t}
-          />
-          <WantedStatusTagRow tags={tags} s={s} t={t} />
-          <View style={styles.cta}>
-            <Text style={styles.ctaText}>{mostWantedCopy.viewHunt}</Text>
-          </View>
+        </View>
+        <EvidenceProgressMeter
+          fulfilled={hunt.requirements_fulfilled}
+          total={hunt.requirements_total}
+          s={s}
+          t={t}
+          nearComplete={hunt.status === 'near_solved'}
+        />
+        <View style={styles.cta}>
+          <Text style={styles.ctaText}>{mostWantedCopy.viewHunt}</Text>
         </View>
       </View>
     </Pressable>
@@ -64,75 +82,84 @@ export function FeaturedWantedCard({ hunt, s, t, onPress }: FeaturedWantedCardPr
 function createStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
     card: {
-      backgroundColor: figmaColors.surfaceHighlight,
+      backgroundColor: figmaColors.cardFeaturedBg,
       borderWidth: 1,
       borderColor: figmaColors.accent,
-      borderRadius: s(12),
-      padding: s(12),
-      marginBottom: s(16)
+      borderRadius: s(14),
+      marginBottom: s(18),
+      overflow: 'hidden'
     },
-    label: {
-      fontFamily: appFonts.accent,
-      fontSize: t(14),
-      color: figmaColors.accent,
-      marginBottom: s(10)
-    },
-    row: {
+    pressed: { opacity: 0.95 },
+    header: {
       flexDirection: 'row',
-      gap: s(12)
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: s(14),
+      paddingTop: s(14),
+      paddingBottom: s(8)
     },
-    image: {
-      width: s(100),
-      height: s(120),
-      flexShrink: 0
-    },
-    body: {
-      flex: 1,
-      minWidth: 0,
-      gap: s(6)
-    },
-    title: {
-      fontFamily: appFonts.body,
-      fontSize: t(18),
-      lineHeight: t(22),
-      color: figmaColors.charcoal
-    },
-    meta: {
-      fontFamily: appFonts.body,
-      fontSize: t(12),
-      color: figmaColors.gray
-    },
-    rewardRow: {
+    featuredRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: s(6)
     },
-    rewardIcon: {
-      width: s(16),
-      height: s(16)
+    label: {
+      fontFamily: appFonts.accent,
+      fontSize: t(12),
+      letterSpacing: 0.8,
+      color: figmaColors.accentStrong
     },
-    reward: {
-      fontFamily: appFonts.body,
-      fontSize: t(13),
+    imageWrap: {
+      paddingHorizontal: s(14),
+      paddingBottom: s(8),
+      alignItems: 'center'
+    },
+    image: {
+      width: '100%',
+      height: s(190)
+    },
+    body: {
+      padding: s(14),
+      gap: s(8),
+      borderTopWidth: 1,
+      borderTopColor: figmaColors.borderLight
+    },
+    title: {
+      fontFamily: appFonts.bodyBold,
+      fontSize: t(19),
+      lineHeight: t(24),
       color: figmaColors.charcoal
     },
-    progressLabel: {
+    meta: {
+      fontFamily: appFonts.body,
+      fontSize: t(13),
+      color: figmaColors.gray
+    },
+    watchRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(6)
+    },
+    watchers: {
       fontFamily: appFonts.body,
       fontSize: t(12),
       color: figmaColors.gray
     },
     cta: {
-      alignSelf: 'flex-start',
+      alignSelf: 'stretch',
       marginTop: s(4),
-      backgroundColor: figmaColors.charcoal,
-      borderRadius: s(8),
-      paddingHorizontal: s(14),
-      paddingVertical: s(8)
+      backgroundColor: figmaColors.buttonPrimaryBg,
+      borderRadius: s(10),
+      paddingVertical: s(12),
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: figmaColors.buttonPrimaryBorder
     },
     ctaText: {
-      fontFamily: appFonts.body,
-      fontSize: t(13),
-      color: figmaColors.cream
+      fontFamily: appFonts.accent,
+      fontSize: t(12),
+      letterSpacing: 0.6,
+      color: figmaColors.buttonPrimaryText
     }
   });
 }

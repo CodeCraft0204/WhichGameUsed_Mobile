@@ -33,6 +33,7 @@ export default function MostWantedSubmitScreen() {
         <ProfileSubpageHeader
           title={mostWantedCopy.submitTitle}
           subtitle={mostWantedCopy.submitSubtitle}
+          description="Follow the steps below to share evidence that helps solve this hunt."
           s={s}
           t={t}
           onBack={() => router.back()}
