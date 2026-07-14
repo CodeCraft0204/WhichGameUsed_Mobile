@@ -23,6 +23,7 @@ import {
 } from '@/components/most-wanted/MostWantedShared';
 import { SolvedStatusBanner, WantedStatusTagRow } from '@/components/most-wanted/WantedStatusTag';
 import { appFonts } from '@/constants/appFonts';
+import { databaseCopy } from '@/constants/databaseCopy';
 import { mostWantedCopy } from '@/constants/mostWantedCopy';
 import { huntCardBorder } from '@/constants/mostWantedStyles';
 import {
@@ -128,7 +129,9 @@ export default function MostWantedDetailScreen() {
     setWishlistBusy(true);
     const { error: wishError } = await addCardToWishlist(user.id, hunt.card_id);
     setWishlistBusy(false);
-    setActionMessage(wishError ? wishError : 'Added to wishlist.');
+    setActionMessage(
+      wishError ? wishError : databaseCopy.wishlistAddedFromMostWanted
+    );
   }, [hunt, user]);
 
   const handleClaimReward = useCallback(async () => {

@@ -35,6 +35,7 @@ export type MostWantedHuntRow = HuntImageFields & {
   requirements_fulfilled: number;
   needed_labels: string[];
   is_watching: boolean;
+  comment_count?: number;
 };
 
 export type MostWantedStats = {
@@ -108,6 +109,7 @@ export type MostWantedContribution = {
 
 export type SolvedHuntRow = HuntImageFields & {
   id: string;
+  card_id?: string | null;
   card_title: string;
   player_name: string | null;
   product_year: number | null;
@@ -120,6 +122,8 @@ export type SolvedHuntRow = HuntImageFields & {
   requirements_total: number;
   requirements_fulfilled: number;
   reward_claimed: boolean;
+  contributor_count?: number;
+  top_contributors?: string[];
 };
 
 export type BountyRankingRow = {
@@ -130,6 +134,7 @@ export type BountyRankingRow = {
   product_year: number | null;
   status: string;
   wishlist_count: number;
+  comment_count?: number;
   vote_score: number;
   bounty_score: number;
   user_vote?: 'upvote' | 'downvote' | null;

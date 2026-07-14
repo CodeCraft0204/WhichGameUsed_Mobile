@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import type { UserNotification } from '@/lib/notifications';
 import {
   databaseCardHref,
+  databaseWishlistHref,
   messageConversationHref,
   mostWantedContributionsHref,
   mostWantedDetailHref,
@@ -54,6 +55,11 @@ export function openNotificationTarget(router: Router, item: UserNotification): 
   if (path.startsWith('/database/card/')) {
     const cardId = path.replace('/database/card/', '').split('/')[0];
     if (cardId) router.push(databaseCardHref(cardId));
+    return;
+  }
+
+  if (path === '/database/wishlist' || path.startsWith('/database/wishlist')) {
+    router.push(databaseWishlistHref());
     return;
   }
 

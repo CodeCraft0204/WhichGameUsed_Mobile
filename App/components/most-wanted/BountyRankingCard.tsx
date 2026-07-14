@@ -35,6 +35,9 @@ export function BountyRankingCard({ row, rank, s, t, onVote }: Props) {
           <Text style={styles.statHighlight}>{row.bounty_score} pts</Text>
           <Text style={styles.stat}>· {row.wishlist_count} wishlists</Text>
           <Text style={styles.stat}>· {row.vote_score} votes</Text>
+          {(row.comment_count ?? 0) > 0 ? (
+            <Text style={styles.stat}>· {row.comment_count} comments</Text>
+          ) : null}
         </View>
       </View>
       <View style={styles.votes}>

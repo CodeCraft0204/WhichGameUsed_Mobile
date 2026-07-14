@@ -82,6 +82,13 @@ export function WantedCard({ hunt, s, t, onPress, onContribute, compact }: Wante
           <Text style={styles.watchers}>
             {hunt.watcher_count} {mostWantedCopy.watchersSuffix}
           </Text>
+          {(hunt.comment_count ?? 0) > 0 ? (
+            <>
+              <Text style={styles.watchers}>·</Text>
+              <Ionicons name="chatbubble-outline" size={s(12)} color={figmaColors.gray} />
+              <Text style={styles.watchers}>{hunt.comment_count} discussing</Text>
+            </>
+          ) : null}
         </View>
 
         <View style={styles.ctaRow}>

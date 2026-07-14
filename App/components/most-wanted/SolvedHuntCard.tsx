@@ -13,10 +13,14 @@ type SolvedHuntCardProps = {
   s: (n: number) => number;
   t: (n: number) => number;
   onPress?: () => void;
+  onViewCatalog?: () => void;
 };
 
-export function SolvedHuntCard({ hunt, s, t, onPress }: SolvedHuntCardProps) {
+export function SolvedHuntCard({ hunt, s, t, onPress, onViewCatalog }: SolvedHuntCardProps) {
   const styles = useMemo(() => createStyles(s, t), [s, t]);
+  const contributors = hunt.top_contributors ?? [];
+  const contributorCount = hunt.contributor_count ?? contributors.length;
+
   const content = (
     <>
       <View style={styles.imageCol}>
@@ -40,6 +44,12 @@ export function SolvedHuntCard({ hunt, s, t, onPress }: SolvedHuntCardProps) {
         {hunt.solved_at ? (
           <Text style={styles.date}>{new Date(hunt.solved_at).toLocaleDateString()}</Text>
         ) : null}
+        {contributorCount > 0 ? (
+          <Text style={styles.contributors}>
+            {contributorCount} contributor{contributorCount === 1 ? '' : 's'}
+            {contributors.length > 0 ? ` · ${contributors.join(', ')}` : ''}
+          </Text>
+        ) : null}
         <EvidenceProgressMeter
           fulfilled={hunt.requirements_fulfilled}
           total={hunt.requirements_total}
@@ -52,6 +62,11 @@ export function SolvedHuntCard({ hunt, s, t, onPress }: SolvedHuntCardProps) {
             <Image source={figmaIcons.sealApproved} style={styles.claimedIcon} resizeMode="contain" />
             <Text style={styles.claimedText}>Reward Claimed</Text>
           </View>
+        ) : null}
+        {hunt.card_id && onViewCatalog ? (
+          <Pressable onPress={onViewCatalog} style={styles.catalogBtn}>
+            <Text style={styles.catalogText}>View catalog card</Text>
+          </Pressable>
         ) : null}
       </View>
     </>
@@ -119,6 +134,11 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: t(11),
       color: figmaColors.brownMuted
     },
+    contributors: {
+      fontFamily: appFonts.body,
+      fontSize: t(12),
+      color: figmaColors.brownMuted
+    },
     claimedPill: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -138,6 +158,15 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: t(9),
       letterSpacing: 0.4,
       color: figmaColors.charcoal
+    },
+    catalogBtn: {
+      alignSelf: 'flex-start',
+      marginTop: s(4)
+    },
+    catalogText: {
+      fontFamily: appFonts.bodyBold,
+      fontSize: t(12),
+      color: figmaColors.bronze
     }
   });
 }

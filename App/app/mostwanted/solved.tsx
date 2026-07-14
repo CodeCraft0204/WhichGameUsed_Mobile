@@ -9,7 +9,7 @@ import {
 } from '@/components/most-wanted/MostWantedShared';
 import { SolvedHuntCard } from '@/components/most-wanted/SolvedHuntCard';
 import { mostWantedCopy } from '@/constants/mostWantedCopy';
-import { mostWantedDetailHref } from '@/constants/navigation';
+import { mostWantedDetailHref, databaseCardHref } from '@/constants/navigation';
 import { figmaColors } from '@/constants/figmaColors';
 import { appFonts } from '@/constants/appFonts';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
@@ -85,6 +85,11 @@ export default function MostWantedSolvedScreen() {
             s={s}
             t={t}
             onPress={() => router.push(mostWantedDetailHref(hunt.id))}
+            onViewCatalog={
+              hunt.card_id
+                ? () => router.push(databaseCardHref(hunt.card_id!))
+                : undefined
+            }
           />
         ))}
       </ScrollView>

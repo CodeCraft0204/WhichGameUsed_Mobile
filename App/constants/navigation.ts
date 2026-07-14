@@ -80,6 +80,10 @@ export function databaseWishlistHref(): Href {
   return '/database/wishlist' as unknown as Href;
 }
 
+export function databaseWishlistDetailHref(id: string): Href {
+  return { pathname: '/database/wishlist/[id]', params: { id } } as unknown as Href;
+}
+
 export function databaseWishlistAddHref(params?: {
   query?: string;
   returnTo?: string;
