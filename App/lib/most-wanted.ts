@@ -357,6 +357,27 @@ export async function fetchFeaturedMostWanted(): Promise<{ item: MostWantedHuntR
   return { item: item ?? null, error: null };
 }
 
+/** Related Most Wanted item for a catalog card (active / near solved preferred). */
+export async function findMostWantedByCardId(
+  cardId: string
+): Promise<{ item: Pick<MostWantedHuntRow, 'id' | 'card_title' | 'status' | 'reward_label'> | null; error: string | null }> {
+  const { data, error } = await supabase
+    .from('most_wanted_hunts')
+    .select('id, card_title, status, reward_label')
+    .eq('card_id', cardId)
+    .in('status', ['active', 'near_solved', 'solved'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) return { item: null, error: error.message };
+  if (!data) return { item: null, error: null };
+  return {
+    item: data as Pick<MostWantedHuntRow, 'id' | 'card_title' | 'status' | 'reward_label'>,
+    error: null
+  };
+}
+
 export async function getMostWantedDetail(id: string): Promise<{ detail: MostWantedDetailPayload | null; error: string | null }> {
   const { data, error } = await supabase.rpc('get_most_wanted_hunt_detail', { p_hunt_id: id });
   if (error) return { detail: null, error: error.message };

@@ -87,7 +87,7 @@ export default function MostWantedContributionsScreen() {
         <ProfileSubpageHeader
           title={mostWantedCopy.contributionsTitle}
           subtitle={mostWantedCopy.contributionsSubtitle}
-          description="Evidence you submit is reviewed by admins before it counts toward hunt progress."
+          description="Evidence you submit is reviewed before it counts toward Most Wanted progress."
           s={s}
           t={t}
           onBack={() => router.back()}

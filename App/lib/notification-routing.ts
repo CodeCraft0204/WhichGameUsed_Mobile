@@ -88,6 +88,8 @@ export function openPushNotificationData(
   const conversationId = typeof data.conversationId === 'string' ? data.conversationId : null;
   const actorId = typeof data.actorId === 'string' ? data.actorId : null;
   const kind = typeof data.kind === 'string' ? data.kind : null;
+  const linkPath = typeof data.linkPath === 'string' ? data.linkPath : typeof data.link_path === 'string' ? data.link_path : null;
+  const huntId = typeof data.huntId === 'string' ? data.huntId : typeof data.hunt_id === 'string' ? data.hunt_id : null;
 
   if (kind === 'social_message' && conversationId) {
     router.push(messageConversationHref(conversationId));
@@ -95,5 +97,45 @@ export function openPushNotificationData(
   }
   if (kind === 'social_follower' && actorId) {
     router.push(publicProfileHref(actorId));
+    return;
+  }
+
+  if (linkPath) {
+    openNotificationTarget(router, {
+      id: '',
+      kind: kind ?? 'push',
+      title: '',
+      body: null,
+      link_path: linkPath,
+      read_at: null,
+      created_at: new Date().toISOString()
+    });
+    return;
+  }
+
+  if (huntId) {
+    router.push(mostWantedDetailHref(huntId));
+    return;
+  }
+
+  if (
+    kind === 'most_wanted_evidence_approved' ||
+    kind === 'most_wanted_evidence_rejected' ||
+    kind === 'most_wanted_evidence_needs_more_info' ||
+    kind === 'evidence_approved' ||
+    kind === 'evidence_rejected' ||
+    kind === 'evidence_needs_more_info'
+  ) {
+    router.push(mostWantedContributionsHref());
+    return;
+  }
+
+  if (kind === 'wishlist_promoted_to_most_wanted' || kind === 'most_wanted_solved') {
+    router.push(mostWantedSolvedHref());
+    return;
+  }
+
+  if (kind === 'wishlist_added_to_database' || kind === 'wishlist_catalog_ready') {
+    router.push(databaseWishlistHref());
   }
 }

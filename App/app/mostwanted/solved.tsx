@@ -59,7 +59,7 @@ export default function MostWantedSolvedScreen() {
         <ProfileSubpageHeader
           title={mostWantedCopy.solvedTitle}
           subtitle={mostWantedCopy.solvedSubtitle}
-          description="Completed hunts archived by the community — solver, date, and reward status."
+          description="Solved archive — contributors, completed evidence, reward status, and solve date."
           s={s}
           t={t}
           onBack={() => router.back()}

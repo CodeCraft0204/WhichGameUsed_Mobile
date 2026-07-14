@@ -32,13 +32,11 @@ export function BountyRankingCard({ row, rank, s, t, onVote }: Props) {
           {[row.product_year, row.product_name].filter(Boolean).join(' · ')}
         </Text>
         <View style={styles.statsRow}>
-          <Text style={styles.statHighlight}>{row.bounty_score} pts</Text>
-          <Text style={styles.stat}>· {row.wishlist_count} wishlists</Text>
+          <Text style={styles.statHighlight}>{row.bounty_score} demand</Text>
+          <Text style={styles.stat}>· {row.wishlist_count} saves</Text>
           <Text style={styles.stat}>· {row.vote_score} votes</Text>
-          {(row.comment_count ?? 0) > 0 ? (
-            <Text style={styles.stat}>· {row.comment_count} comments</Text>
-          ) : null}
         </View>
+        <Text style={styles.statusLine}>{row.status.replace(/_/g, ' ')}</Text>
       </View>
       <View style={styles.votes}>
         <Pressable
@@ -125,6 +123,14 @@ function createStyles(
       fontFamily: appFonts.body,
       fontSize: t(11),
       color: figmaColors.gray
+    },
+    statusLine: {
+      fontFamily: appFonts.accent,
+      fontSize: t(10),
+      letterSpacing: 0.4,
+      color: figmaColors.gray,
+      textTransform: 'uppercase',
+      marginTop: s(2)
     },
     votes: { gap: s(6) },
     voteBtn: {

@@ -35,5 +35,12 @@ export const cardDetailCopy = {
   sourcePublished: 'Published to database',
   shareMessage: (title: string) => `Research this card on Which Game Used: ${title}`,
   unauthenticated: 'UNVERIFIED',
-  authenticated: 'AUTHENTICATED'
+  authenticated: 'AUTHENTICATED',
+  bridgeTitle: 'NEXT ACTIONS',
+  bridgeMostWanted: 'Related Most Wanted',
+  bridgeMostWantedBody: 'This card is on the community evidence board.',
+  bridgeViewMostWanted: 'VIEW MOST WANTED',
+  bridgeAuthenticate: 'AUTHENTICATE SIMILAR',
+  bridgeWishlistAdd: 'ADD TO WISHLIST',
+  bridgeWishlistOn: 'ON WISHLIST'
 } as const;

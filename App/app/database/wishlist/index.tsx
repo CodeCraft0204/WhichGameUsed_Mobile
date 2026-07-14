@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthPrimaryButton } from '@/components/auth/AuthPrimaryButton';
+import { chipOptionsFromLabels, FigmaChipRow } from '@/components/figma/FigmaChipRow';
 import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader';
 import { databaseCopy } from '@/constants/databaseCopy';
 import { figmaColors } from '@/constants/figmaColors';
@@ -29,6 +30,16 @@ import {
   type WishlistDisplayStatus,
   type WishlistEnrichedItem
 } from '@/lib/wishlist';
+
+const STATUS_FILTERS = [
+  databaseCopy.wishlistFilterAll,
+  databaseCopy.wishlistStatusSaved,
+  databaseCopy.wishlistStatusRequested,
+  databaseCopy.wishlistStatusUnderReview,
+  databaseCopy.wishlistStatusPromoted,
+  databaseCopy.wishlistStatusEvidenceNeeded,
+  databaseCopy.wishlistStatusAdded
+] as const;
 
 function statusLabel(status: WishlistDisplayStatus): string {
   switch (status) {
@@ -49,6 +60,25 @@ function statusLabel(status: WishlistDisplayStatus): string {
   }
 }
 
+function filterToStatus(filter: string): WishlistDisplayStatus | null {
+  switch (filter) {
+    case databaseCopy.wishlistStatusSaved:
+      return 'saved';
+    case databaseCopy.wishlistStatusRequested:
+      return 'requested';
+    case databaseCopy.wishlistStatusUnderReview:
+      return 'under_review';
+    case databaseCopy.wishlistStatusPromoted:
+      return 'promoted_to_most_wanted';
+    case databaseCopy.wishlistStatusEvidenceNeeded:
+      return 'evidence_needed';
+    case databaseCopy.wishlistStatusAdded:
+      return 'added_to_database';
+    default:
+      return null;
+  }
+}
+
 function isPromoted(status: WishlistDisplayStatus): boolean {
   return status === 'promoted_to_most_wanted' || status === 'evidence_needed';
 }
@@ -61,6 +91,7 @@ export default function WishlistScreen() {
   const [items, setItems] = useState<WishlistEnrichedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<(typeof STATUS_FILTERS)[number]>(STATUS_FILTERS[0]);
 
   const reload = useCallback(() => {
     if (!user) {
@@ -87,11 +118,18 @@ export default function WishlistScreen() {
     if (!err) reload();
   };
 
+  const filtered = useMemo(() => {
+    const status = filterToStatus(filter);
+    if (!status) return items;
+    return items.filter((item) => item.display_status === status);
+  }, [filter, items]);
+
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
         <ProfileSubpageHeader
           title={databaseCopy.wishlistTitle}
+          subtitle={databaseCopy.wishlistSubtitle}
           s={s}
           t={t}
           onBack={() => router.back()}
@@ -122,40 +160,80 @@ export default function WishlistScreen() {
           </View>
         ) : (
           <>
-            {items.map((item) => (
-              <Pressable
-                key={item.id}
-                style={styles.row}
-                onPress={() => router.push(databaseWishlistDetailHref(item.id))}
-              >
-                <View style={styles.thumb}>
-                  {item.imageUrl ? (
-                    <Image source={{ uri: item.imageUrl }} style={styles.thumbImage} resizeMode="cover" />
-                  ) : (
-                    <Ionicons name="image-outline" size={s(22)} color={figmaColors.gray} />
-                  )}
-                </View>
-                <View style={styles.rowBody}>
-                  <Text style={styles.rowTitle} numberOfLines={2}>
-                    {item.card_title}
-                  </Text>
-                  <View style={styles.badgeRow}>
-                    <View style={styles.statusBadge}>
-                      <Text style={styles.statusText}>{statusLabel(item.display_status)}</Text>
-                    </View>
-                    {isPromoted(item.display_status) ? (
-                      <View style={styles.mwBadge}>
-                        <Text style={styles.mwBadgeText}>{databaseCopy.wishlistMostWantedBadge}</Text>
-                      </View>
-                    ) : null}
+            <FigmaChipRow
+              options={chipOptionsFromLabels([...STATUS_FILTERS])}
+              value={filter}
+              onChange={(value) => setFilter(value as (typeof STATUS_FILTERS)[number])}
+              s={s}
+              t={t}
+              style={styles.chipRow}
+            />
+
+            {filtered.length === 0 ? (
+              <Text style={styles.emptyFilter}>No wishlist items in this status.</Text>
+            ) : (
+              filtered.map((item) => (
+                <Pressable
+                  key={item.id}
+                  style={styles.card}
+                  onPress={() => router.push(databaseWishlistDetailHref(item.id))}
+                >
+                  <View style={styles.thumb}>
+                    {item.imageUrl ? (
+                      <Image
+                        source={{ uri: item.imageUrl }}
+                        style={styles.thumbImage}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <Ionicons name="image-outline" size={s(22)} color={figmaColors.gray} />
+                    )}
                   </View>
-                </View>
-                <Pressable onPress={() => void removeItem(item.id)} hitSlop={12}>
-                  <Ionicons name="close-circle-outline" size={s(22)} color={figmaColors.gray} />
+                  <View style={styles.rowBody}>
+                    <Text style={styles.rowTitle} numberOfLines={2}>
+                      {item.card_title}
+                    </Text>
+                    {[item.player_name, item.product_year].filter(Boolean).length > 0 ? (
+                      <Text style={styles.rowMeta} numberOfLines={1}>
+                        {[item.player_name, item.product_year].filter(Boolean).join(' · ')}
+                      </Text>
+                    ) : null}
+                    <View style={styles.badgeRow}>
+                      <View
+                        style={[
+                          styles.statusBadge,
+                          isPromoted(item.display_status) && styles.statusBadgeMw
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.statusText,
+                            isPromoted(item.display_status) && styles.statusTextMw
+                          ]}
+                        >
+                          {statusLabel(item.display_status)}
+                        </Text>
+                      </View>
+                      {isPromoted(item.display_status) ? (
+                        <View style={styles.mwBadge}>
+                          <Text style={styles.mwBadgeText}>
+                            {databaseCopy.wishlistMostWantedBadge}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  </View>
+                  <Pressable onPress={() => void removeItem(item.id)} hitSlop={12}>
+                    <Ionicons name="close-circle-outline" size={s(22)} color={figmaColors.gray} />
+                  </Pressable>
                 </Pressable>
-              </Pressable>
-            ))}
-            <Pressable style={styles.addFooter} onPress={() => router.push(databaseWishlistAddHref())}>
+              ))
+            )}
+
+            <Pressable
+              style={styles.addFooter}
+              onPress={() => router.push(databaseWishlistAddHref())}
+            >
               <Text style={styles.addLink}>{databaseCopy.requestAddLink}</Text>
             </Pressable>
           </>
@@ -194,9 +272,16 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       color: figmaColors.gray,
       textAlign: 'center'
     },
-    addLink: {
+    emptyFilter: {
       fontFamily: appFonts.body,
-      fontSize: t(17),
+      fontSize: t(15),
+      color: figmaColors.gray,
+      marginVertical: s(16),
+      textAlign: 'center'
+    },
+    addLink: {
+      fontFamily: appFonts.bodyBold,
+      fontSize: t(15),
       color: figmaColors.bronze
     },
     addFooter: {
@@ -204,27 +289,30 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       paddingVertical: s(16)
     },
     requestsLink: {
-      marginBottom: s(12)
+      marginBottom: s(8)
     },
     requestsLinkText: {
       fontFamily: appFonts.body,
-      fontSize: t(16),
+      fontSize: t(15),
       color: figmaColors.bronze
     },
-    row: {
+    chipRow: {
+      marginBottom: s(12)
+    },
+    card: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: s(12),
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
-      borderRadius: s(12),
+      borderRadius: s(14),
       padding: s(12),
       marginBottom: s(10),
       backgroundColor: figmaColors.cream
     },
     thumb: {
-      width: s(52),
-      height: s(64),
+      width: s(56),
+      height: s(72),
       borderRadius: s(8),
       backgroundColor: figmaColors.assetPreviewBg,
       alignItems: 'center',
@@ -234,11 +322,16 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       borderColor: figmaColors.borderLight
     },
     thumbImage: { width: '100%', height: '100%' },
-    rowBody: { flex: 1, gap: s(6) },
+    rowBody: { flex: 1, gap: s(5) },
     rowTitle: {
-      fontFamily: appFonts.body,
-      fontSize: t(17),
+      fontFamily: appFonts.bodyBold,
+      fontSize: t(16),
       color: figmaColors.charcoal
+    },
+    rowMeta: {
+      fontFamily: appFonts.body,
+      fontSize: t(13),
+      color: figmaColors.gray
     },
     badgeRow: {
       flexDirection: 'row',
@@ -253,16 +346,21 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       paddingHorizontal: s(8),
       paddingVertical: s(3)
     },
+    statusBadgeMw: {
+      backgroundColor: figmaColors.surfaceHighlight,
+      borderColor: figmaColors.accent
+    },
     statusText: {
       fontFamily: appFonts.accent,
       fontSize: t(10),
       letterSpacing: 0.3,
       color: figmaColors.charcoal
     },
+    statusTextMw: {
+      color: figmaColors.accentStrong
+    },
     mwBadge: {
-      backgroundColor: figmaColors.surfaceHighlight,
-      borderWidth: 1,
-      borderColor: figmaColors.accent,
+      backgroundColor: figmaColors.charcoal,
       borderRadius: s(8),
       paddingHorizontal: s(8),
       paddingVertical: s(3)
@@ -271,7 +369,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontFamily: appFonts.accent,
       fontSize: t(10),
       letterSpacing: 0.3,
-      color: figmaColors.accentStrong
+      color: figmaColors.cream
     }
   });
 }

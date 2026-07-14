@@ -33,7 +33,8 @@ import {
   createWithLinkedCardHref,
   databaseCardHref,
   databaseSearchHref,
-  discussionThreadHref
+  discussionThreadHref,
+  mostWantedDetailHref
 } from '@/constants/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
@@ -55,6 +56,7 @@ import {
   type CardResearchRatings
 } from '@/lib/card-research-ratings';
 import { listForumThreads, type ForumThreadSummary } from '@/lib/forum';
+import { findMostWantedByCardId } from '@/lib/most-wanted';
 import {
   addCardToWishlist,
   getWishlistEntryForCard,
@@ -124,6 +126,12 @@ export default function CardDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [researchRatings, setResearchRatings] = useState<CardResearchRatings | null>(null);
   const [ratingBusy, setRatingBusy] = useState(false);
+  const [relatedMostWanted, setRelatedMostWanted] = useState<{
+    id: string;
+    card_title: string;
+    status: string;
+    reward_label: string | null;
+  } | null>(null);
 
   useEffect(() => {
     if (!id || typeof id !== 'string') return;
@@ -135,8 +143,9 @@ export default function CardDetailScreen() {
       listAuthenticatedAssetsForCard(id),
       getWishlistEntryForCard(id),
       getCardResearchRatings(id),
-      listForumThreads({ limit: 3, sort: 'newest' })
-    ]).then(async ([cardResult, assetsResult, wishEntry, ratingsResult, forumResult]) => {
+      listForumThreads({ limit: 3, sort: 'newest' }),
+      findMostWantedByCardId(id)
+    ]).then(async ([cardResult, assetsResult, wishEntry, ratingsResult, forumResult, mwResult]) => {
       if (!active) return;
 
       const loadedCard = cardResult.card;
@@ -163,12 +172,14 @@ export default function CardDetailScreen() {
       setThreads(forumResult.items);
       setOnWishlist(!!wishEntry.itemId);
       setResearchRatings(ratingsResult.ratings);
+      setRelatedMostWanted(mwResult.item);
       setError(
         cardResult.error ??
           assetsResult.error ??
           wishEntry.error ??
           ratingsResult.error ??
-          forumResult.error
+          forumResult.error ??
+          mwResult.error
       );
       setLoading(false);
     });
@@ -332,6 +343,33 @@ export default function CardDetailScreen() {
               />
             ) : null}
 
+            <View style={styles.bridgeCard}>
+              <Text style={styles.bridgeTitle}>{cardDetailCopy.bridgeTitle}</Text>
+              <AuthPrimaryButton
+                label={cardDetailCopy.bridgeAuthenticate}
+                onPress={() => router.push(createWithLinkedCardHref(card.id, card.title))}
+              />
+              <Pressable
+                style={styles.bridgeSecondary}
+                disabled={wishBusy}
+                onPress={() => void toggleWishlist()}
+              >
+                <Text style={styles.bridgeSecondaryText}>
+                  {onWishlist ? cardDetailCopy.bridgeWishlistOn : cardDetailCopy.bridgeWishlistAdd}
+                </Text>
+              </Pressable>
+              {relatedMostWanted ? (
+                <Pressable
+                  style={styles.bridgeMw}
+                  onPress={() => router.push(mostWantedDetailHref(relatedMostWanted.id))}
+                >
+                  <Text style={styles.bridgeMwLabel}>{cardDetailCopy.bridgeMostWanted}</Text>
+                  <Text style={styles.bridgeMwBody}>{cardDetailCopy.bridgeMostWantedBody}</Text>
+                  <Text style={styles.bridgeMwCta}>{cardDetailCopy.bridgeViewMostWanted}</Text>
+                </Pressable>
+              ) : null}
+            </View>
+
             <View style={styles.actionRow}>
               <CardActionShortcut
                 icon="document-text-outline"
@@ -368,21 +406,6 @@ export default function CardDetailScreen() {
                 s={s}
                 t={t}
               />
-            </View>
-
-            <View style={styles.primaryActions}>
-              <AuthPrimaryButton
-                label={onWishlist ? databaseCopy.removeFromWishlist : databaseCopy.addToWishlist}
-                onPress={() => void toggleWishlist()}
-                disabled={wishBusy}
-              />
-              <Pressable
-                style={styles.secondaryBtn}
-                onPress={() => router.push(createWithLinkedCardHref(card.id, card.title))}
-              >
-                <Ionicons name="scan-outline" size={s(18)} color={figmaColors.charcoal} />
-                <Text style={styles.secondaryBtnText}>{databaseCopy.authenticateSimilar}</Text>
-              </Pressable>
             </View>
 
             <SectionPanel title={cardDetailCopy.cardInformation} s={s} t={t}>
@@ -700,29 +723,64 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: tb(11),
       color: figmaColors.gray
     },
+    bridgeCard: {
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      borderRadius: s(14),
+      backgroundColor: figmaColors.cream,
+      padding: s(14),
+      gap: s(10),
+      marginBottom: s(16)
+    },
+    bridgeTitle: {
+      fontFamily: appFonts.display,
+      fontSize: t(18),
+      color: figmaColors.charcoal
+    },
+    bridgeSecondary: {
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      borderRadius: s(10),
+      paddingVertical: s(12),
+      alignItems: 'center',
+      backgroundColor: figmaColors.surface
+    },
+    bridgeSecondaryText: {
+      fontFamily: appFonts.bodyBold,
+      fontSize: tb(13),
+      letterSpacing: 0.4,
+      color: figmaColors.charcoal
+    },
+    bridgeMw: {
+      borderWidth: 1,
+      borderColor: figmaColors.accent,
+      borderRadius: s(10),
+      padding: s(12),
+      backgroundColor: figmaColors.surfaceHighlight,
+      gap: s(4)
+    },
+    bridgeMwLabel: {
+      fontFamily: appFonts.accent,
+      fontSize: tb(11),
+      color: figmaColors.accentStrong,
+      letterSpacing: 0.4
+    },
+    bridgeMwBody: {
+      fontFamily: appFonts.body,
+      fontSize: tb(14),
+      color: figmaColors.charcoal
+    },
+    bridgeMwCta: {
+      fontFamily: appFonts.bodyBold,
+      fontSize: tb(13),
+      color: figmaColors.accent,
+      marginTop: s(2)
+    },
     actionRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       gap: s(8),
       marginBottom: s(20)
-    },
-    primaryActions: { gap: s(10), marginBottom: s(8) },
-    secondaryBtn: {
-      minHeight: s(48),
-      borderWidth: 1,
-      borderColor: figmaColors.borderLight,
-      borderRadius: s(12),
-      backgroundColor: figmaColors.cream,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: s(8)
-    },
-    secondaryBtnText: {
-      fontFamily: appFonts.accent,
-      fontSize: tb(16),
-      color: figmaColors.charcoal,
-      letterSpacing: 0.8
     },
     detailRow: { paddingVertical: s(8) },
     detailDivider: {

@@ -3,6 +3,7 @@ import { Image, StyleSheet, Text, View } from 'react-native';
 import { appFonts } from '@/constants/appFonts';
 import { figmaIcons } from '@/constants/figmaIcons';
 import { figmaColors } from '@/constants/figmaColors';
+import { mostWantedCopy } from '@/constants/mostWantedCopy';
 import { formatRewardPool } from '@/lib/most-wanted';
 
 type WantedStatsRowProps = {
@@ -40,9 +41,27 @@ export function WantedStatsRow({ activeHunts, solvedThisMonth, rewardPoolCents, 
   const styles = useMemo(() => createStyles(s), [s]);
   return (
     <View style={styles.row}>
-      <StatCard icon={figmaIcons.metaShield} label="Active Hunts" value={String(activeHunts)} s={s} t={t} />
-      <StatCard icon={figmaIcons.sealApproved} label="Solved This Month" value={String(solvedThisMonth)} s={s} t={t} />
-      <StatCard icon={figmaIcons.treasureChest} label="Reward Pool" value={formatRewardPool(rewardPoolCents)} s={s} t={t} />
+      <StatCard
+        icon={figmaIcons.metaShield}
+        label={mostWantedCopy.statsActive}
+        value={String(activeHunts)}
+        s={s}
+        t={t}
+      />
+      <StatCard
+        icon={figmaIcons.sealApproved}
+        label={mostWantedCopy.statsSolved}
+        value={String(solvedThisMonth)}
+        s={s}
+        t={t}
+      />
+      <StatCard
+        icon={figmaIcons.treasureChest}
+        label={mostWantedCopy.statsRewardPool}
+        value={formatRewardPool(rewardPoolCents)}
+        s={s}
+        t={t}
+      />
     </View>
   );
 }

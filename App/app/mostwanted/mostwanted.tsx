@@ -3,6 +3,7 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { chipOptionsFromLabels, FigmaChipRow } from '@/components/figma/FigmaChipRow';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
+import { FigmaContentLoading } from '@/components/figma/FigmaContentLoading';
 import { FigmaHubBottomNav } from '@/components/figma/FigmaHubBottomNav';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
@@ -10,10 +11,8 @@ import { BountyRankingCard } from '@/components/most-wanted/BountyRankingCard';
 import { FeaturedWantedCard } from '@/components/most-wanted/FeaturedWantedCard';
 import { MostWantedSearchSort } from '@/components/most-wanted/MostWantedSearchSort';
 import {
-  MostWantedCardSkeleton,
   MostWantedEmptyState,
   MostWantedLinkPill,
-  MostWantedLoadingState,
   MostWantedSectionLabel
 } from '@/components/most-wanted/MostWantedShared';
 import { WantedCard } from '@/components/most-wanted/WantedCard';
@@ -39,6 +38,7 @@ import {
   mostWantedWatchedHref
 } from '@/constants/navigation';
 import { figmaColors } from '@/constants/figmaColors';
+import { appFonts } from '@/constants/appFonts';
 import { useSocialNotifications } from '@/context/SocialNotificationsContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import { useMostWantedRealtime } from '@/hooks/useMostWantedRealtime';
@@ -67,12 +67,18 @@ function MostWantedScreenBody() {
   const { s, t } = useFigmaLayout();
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
-  const scrollProps = useContextHeaderScrollProps({ contentContainerStyle: page.scrollContent });
+  const scrollProps = useContextHeaderScrollProps({
+    contentContainerStyle: [page.scrollContent, styles.scrollInner]
+  });
 
   const [activeTab, setActiveTab] = useState<MostWantedFilterTab>(mostWantedFilterTabs[0]);
   const [sort, setSort] = useState<MostWantedSortKey>('most_wanted');
   const [search, setSearch] = useState('');
-  const [stats, setStats] = useState<MostWantedStats>({ activeHunts: 0, solvedThisMonth: 0, rewardPoolCents: 0 });
+  const [stats, setStats] = useState<MostWantedStats>({
+    activeHunts: 0,
+    solvedThisMonth: 0,
+    rewardPoolCents: 0
+  });
   const [featured, setFeatured] = useState<MostWantedHuntRow | null>(null);
   const [items, setItems] = useState<MostWantedHuntRow[]>([]);
   const [rankings, setRankings] = useState<BountyRankingRow[]>([]);
@@ -82,33 +88,36 @@ function MostWantedScreenBody() {
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialLoadDone = useRef(false);
 
-  const load = useCallback(async (opts?: { silent?: boolean }) => {
-    const silent = opts?.silent && initialLoadDone.current;
-    if (!silent) setLoading(true);
-    setError(null);
+  const load = useCallback(
+    async (opts?: { silent?: boolean }) => {
+      const silent = opts?.silent && initialLoadDone.current;
+      if (!silent) setLoading(true);
+      setError(null);
 
-    const [statsRes, featuredRes, listRes, rankingsRes] = await Promise.all([
-      fetchMostWantedStats(),
-      fetchFeaturedMostWanted(),
-      listMostWantedHunts({ filter: activeTab, sort, search }),
-      listBountyRankings(8)
-    ]);
+      const [statsRes, featuredRes, listRes, rankingsRes] = await Promise.all([
+        fetchMostWantedStats(),
+        fetchFeaturedMostWanted(),
+        listMostWantedHunts({ filter: activeTab, sort, search }),
+        listBountyRankings(8)
+      ]);
 
-    if (statsRes.stats) setStats(statsRes.stats);
-    setFeatured(featuredRes.item);
-    if (listRes.error) {
-      setError(listRes.error);
-      setItems([]);
-    } else {
-      const list = listRes.items.filter((row) => row.id !== featuredRes.item?.id);
-      setItems(list);
-    }
-    setRankings(rankingsRes.items);
+      if (statsRes.stats) setStats(statsRes.stats);
+      setFeatured(featuredRes.item);
+      if (listRes.error) {
+        setError(listRes.error);
+        setItems([]);
+      } else {
+        const list = listRes.items.filter((row) => row.id !== featuredRes.item?.id);
+        setItems(list);
+      }
+      setRankings(rankingsRes.items);
 
-    setLoading(false);
-    setRefreshing(false);
-    initialLoadDone.current = true;
-  }, [activeTab, search, sort]);
+      setLoading(false);
+      setRefreshing(false);
+      initialLoadDone.current = true;
+    },
+    [activeTab, search, sort]
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -124,28 +133,40 @@ function MostWantedScreenBody() {
     void load({ silent: true });
   }, [load]);
 
-  const handleSearchChange = useCallback((value: string) => {
-    setSearch(value);
-    if (searchTimer.current) clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(() => {
-      void load({ silent: true });
-    }, 350);
-  }, [load]);
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearch(value);
+      if (searchTimer.current) clearTimeout(searchTimer.current);
+      searchTimer.current = setTimeout(() => {
+        void load({ silent: true });
+      }, 350);
+    },
+    [load]
+  );
 
   React.useEffect(() => {
     void load({ silent: initialLoadDone.current });
   }, [activeTab, sort, load]);
 
-  const openDetail = useCallback((id: string) => {
-    router.push(mostWantedDetailHref(id));
-  }, [router]);
+  const openDetail = useCallback(
+    (id: string) => {
+      router.push(mostWantedDetailHref(id));
+    },
+    [router]
+  );
 
-  const openSubmit = useCallback((id: string) => {
-    router.push(mostWantedSubmitHref(id));
-  }, [router]);
+  const openSubmit = useCallback(
+    (id: string) => {
+      router.push(mostWantedSubmitHref(id));
+    },
+    [router]
+  );
 
   const handleVote = useCallback(async (cardRequestId: string, action: 'upvote' | 'downvote') => {
-    const { voteScore, userVote, error: voteError } = await toggleCardRequestVote(cardRequestId, action);
+    const { voteScore, userVote, error: voteError } = await toggleCardRequestVote(
+      cardRequestId,
+      action
+    );
     if (voteError) {
       setError(voteError);
       return;
@@ -161,6 +182,13 @@ function MostWantedScreenBody() {
 
   const previewRankings = rankings.slice(0, 3);
 
+  const shortcuts = [
+    { label: mostWantedCopy.shortcutsWatched, href: mostWantedWatchedHref() },
+    { label: mostWantedCopy.shortcutsContributions, href: mostWantedContributionsHref() },
+    { label: mostWantedCopy.shortcutsSolved, href: mostWantedSolvedHref() },
+    { label: mostWantedCopy.shortcutsRankings, href: mostWantedRankingsHref() }
+  ] as const;
+
   return (
     <FigmaScreen
       backgroundColor={figmaColors.background}
@@ -168,7 +196,11 @@ function MostWantedScreenBody() {
       scrollProps={{
         ...scrollProps,
         refreshControl: (
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={figmaColors.charcoal} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={figmaColors.charcoal}
+          />
         )
       }}
     >
@@ -183,16 +215,7 @@ function MostWantedScreenBody() {
         onPressUtilityMessages={() => router.push(messagesInboxHref())}
         s={s}
         page={page}
-      >
-        <FigmaChipRow
-          options={chipOptionsFromLabels(mostWantedFilterTabs)}
-          value={activeTab}
-          onChange={(tab) => setActiveTab(tab as MostWantedFilterTab)}
-          s={s}
-          t={t}
-          style={styles.chipRow}
-        />
-      </FigmaPageHeader>
+      />
 
       <WantedStatsRow
         activeHunts={stats.activeHunts}
@@ -202,22 +225,7 @@ function MostWantedScreenBody() {
         t={t}
       />
 
-      <MostWantedSearchSort
-        search={search}
-        sort={sort}
-        onSearchChange={handleSearchChange}
-        onSortChange={setSort}
-        s={s}
-        t={t}
-      />
-
-      {loading ? (
-        <>
-          <MostWantedCardSkeleton s={s} />
-          <MostWantedCardSkeleton s={s} />
-          <MostWantedLoadingState message={mostWantedCopy.loading} s={s} t={t} />
-        </>
-      ) : null}
+      {loading ? <FigmaContentLoading message={mostWantedCopy.loading} s={s} t={t} /> : null}
 
       {error ? (
         <MostWantedEmptyState
@@ -229,67 +237,78 @@ function MostWantedScreenBody() {
         />
       ) : null}
 
-      {!loading && !error && featured ? (
-        <FeaturedWantedCard hunt={featured} s={s} t={t} onPress={() => openDetail(featured.id)} />
-      ) : null}
+      {!loading && !error ? (
+        <>
+          {featured ? (
+            <FeaturedWantedCard
+              hunt={featured}
+              s={s}
+              t={t}
+              onPress={() => openDetail(featured.id)}
+            />
+          ) : null}
 
-      {previewRankings.length > 0 ? (
-        <View style={styles.rankingsSection}>
-          <View style={styles.rankingsHeader}>
-            <MostWantedSectionLabel
-              title={mostWantedCopy.bountyRankingsTitle}
-              subtitle={mostWantedCopy.bountyRankingsSubtitle}
-              s={s}
-              t={t}
-            />
-            <MostWantedLinkPill
-              label="View all"
-              onPress={() => router.push(mostWantedRankingsHref())}
-              s={s}
-              t={t}
-            />
+          {previewRankings.length > 0 ? (
+            <View style={styles.rankingsSection}>
+              <View style={styles.rankingsHeader}>
+                <MostWantedSectionLabel
+                  title={mostWantedCopy.bountyRankingsTitle}
+                  subtitle={mostWantedCopy.bountyRankingsSubtitle}
+                  s={s}
+                  t={t}
+                />
+                <MostWantedLinkPill
+                  label="View all"
+                  onPress={() => router.push(mostWantedRankingsHref())}
+                  s={s}
+                  t={t}
+                />
+              </View>
+              {previewRankings.map((row, index) => (
+                <BountyRankingCard
+                  key={row.card_request_id}
+                  row={row}
+                  rank={index + 1}
+                  s={s}
+                  t={t}
+                  onVote={(action) => void handleVote(row.card_request_id, action)}
+                />
+              ))}
+            </View>
+          ) : null}
+
+          <FigmaChipRow
+            options={chipOptionsFromLabels(mostWantedFilterTabs)}
+            value={activeTab}
+            onChange={(tab) => setActiveTab(tab as MostWantedFilterTab)}
+            s={s}
+            t={t}
+            style={styles.chipRow}
+          />
+
+          <MostWantedSearchSort
+            search={search}
+            sort={sort}
+            onSearchChange={handleSearchChange}
+            onSortChange={setSort}
+            s={s}
+            t={t}
+          />
+
+          <View style={page.sectionHeaderRow}>
+            <Text style={page.sectionTitle}>{mostWantedCopy.activeListTitle}</Text>
           </View>
-          {previewRankings.map((row, index) => (
-            <BountyRankingCard
-              key={row.card_request_id}
-              row={row}
-              rank={index + 1}
+
+          {items.length === 0 && !featured ? (
+            <MostWantedEmptyState
+              title={mostWantedCopy.emptyTitle}
+              body={mostWantedCopy.emptyBody}
               s={s}
               t={t}
-              onVote={(action) => void handleVote(row.card_request_id, action)}
             />
-          ))}
-        </View>
-      ) : null}
+          ) : null}
 
-      <View style={page.sectionHeaderRow}>
-        <Text style={page.sectionTitle}>ACTIVE HUNTS</Text>
-        <View style={styles.linkRow}>
-          <Pressable onPress={() => router.push(mostWantedSolvedHref())}>
-            <Text style={styles.linkText}>Solved</Text>
-          </Pressable>
-          <Text style={styles.linkDivider}>·</Text>
-          <Pressable onPress={() => router.push(mostWantedWatchedHref())}>
-            <Text style={styles.linkText}>Watching</Text>
-          </Pressable>
-          <Text style={styles.linkDivider}>·</Text>
-          <Pressable onPress={() => router.push(mostWantedContributionsHref())}>
-            <Text style={styles.linkText}>My Contributions</Text>
-          </Pressable>
-        </View>
-      </View>
-
-      {!loading && !error && items.length === 0 && !featured ? (
-        <MostWantedEmptyState
-          title={mostWantedCopy.emptyTitle}
-          body={mostWantedCopy.emptyBody}
-          s={s}
-          t={t}
-        />
-      ) : null}
-
-      {!error
-        ? items.map((hunt) => (
+          {items.map((hunt) => (
             <WantedCard
               key={hunt.id}
               hunt={hunt}
@@ -298,28 +317,59 @@ function MostWantedScreenBody() {
               onPress={() => openDetail(hunt.id)}
               onContribute={() => openSubmit(hunt.id)}
             />
-          ))
-        : null}
+          ))}
+        </>
+      ) : null}
+
+      <View style={styles.shortcutRow}>
+        {shortcuts.map((item) => (
+          <Pressable
+            key={item.label}
+            style={styles.shortcutPill}
+            onPress={() => router.push(item.href)}
+            accessibilityRole="button"
+            accessibilityLabel={item.label}
+          >
+            <Text style={styles.shortcutText}>{item.label}</Text>
+          </Pressable>
+        ))}
+      </View>
     </FigmaScreen>
   );
 }
 
 function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
-    chipRow: { marginTop: s(20), marginBottom: 0 },
-    linkRow: { flexDirection: 'row', alignItems: 'center', gap: s(6) },
-    linkText: {
-      fontFamily: 'EBGaramond_400Regular',
-      fontSize: t(13),
-      color: figmaColors.accent
-    },
-    linkDivider: { color: figmaColors.gray },
+    scrollInner: { flexGrow: 1 },
+    chipRow: { marginTop: s(4), marginBottom: s(8) },
     rankingsSection: { marginBottom: s(16) },
     rankingsHeader: {
       flexDirection: 'row',
       alignItems: 'flex-start',
       justifyContent: 'space-between',
       gap: s(8)
+    },
+    shortcutRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: s(8),
+      marginTop: 'auto' as const,
+      paddingTop: s(16),
+      paddingBottom: s(8)
+    },
+    shortcutPill: {
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      backgroundColor: figmaColors.cream,
+      borderRadius: s(999),
+      paddingHorizontal: s(12),
+      paddingVertical: s(8)
+    },
+    shortcutText: {
+      fontFamily: appFonts.accent,
+      fontSize: t(12),
+      color: figmaColors.charcoal,
+      letterSpacing: 0.4
     }
   });
 }

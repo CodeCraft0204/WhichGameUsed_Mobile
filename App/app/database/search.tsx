@@ -264,13 +264,15 @@ export default function DatabaseSearchScreen() {
               </Text>
               {debouncedQuery.trim() ? (
                 <Pressable
+                  style={styles.emptyCta}
                   onPress={() =>
                     router.push(databaseWishlistAddHref({ query: debouncedQuery.trim() }))
                   }
+                  accessibilityRole="button"
                 >
-                  <Text style={styles.emptyLink}>
-                    {databaseCopy.cardNotFound} {databaseCopy.requestAddLink}
-                  </Text>
+                  <Text style={styles.emptyCtaTitle}>{databaseCopy.searchEmptyCtaTitle}</Text>
+                  <Text style={styles.emptyCtaBody}>{databaseCopy.searchEmptyCtaBody}</Text>
+                  <Text style={styles.emptyLink}>{databaseCopy.requestAddLink}</Text>
                 </Pressable>
               ) : null}
             </View>
@@ -387,11 +389,35 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       marginTop: s(24),
       paddingHorizontal: s(12)
     },
-    emptyLink: {
-      fontFamily: appFonts.body,
-      fontSize: tb(16),
-      color: figmaColors.bronze,
+    emptyCta: {
+      width: '100%',
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      borderRadius: s(14),
+      backgroundColor: figmaColors.cream,
+      paddingHorizontal: s(16),
+      paddingVertical: s(16),
+      gap: s(8)
+    },
+    emptyCtaTitle: {
+      fontFamily: appFonts.bodyBold,
+      fontSize: tb(18),
+      color: figmaColors.charcoal,
       textAlign: 'center'
+    },
+    emptyCtaBody: {
+      fontFamily: appFonts.body,
+      fontSize: tb(15),
+      lineHeight: tb(22),
+      color: figmaColors.gray,
+      textAlign: 'center'
+    },
+    emptyLink: {
+      fontFamily: appFonts.bodyBold,
+      fontSize: tb(15),
+      color: figmaColors.bronze,
+      textAlign: 'center',
+      marginTop: s(4)
     },
     loadMore: {
       alignItems: 'center',

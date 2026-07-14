@@ -59,7 +59,7 @@ export default function MostWantedWatchedScreen() {
         <ProfileSubpageHeader
           title={mostWantedCopy.watchedTitle}
           subtitle={mostWantedCopy.watchedSubtitle}
-          description="Track progress on hunts you care about and jump back in when new evidence appears."
+          description="Track progress on Most Wanted cards you care about and jump back in when new evidence appears."
           s={s}
           t={t}
           onBack={() => router.back()}

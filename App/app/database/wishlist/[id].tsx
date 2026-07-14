@@ -49,6 +49,25 @@ function statusLabel(status: WishlistDisplayStatus): string {
   }
 }
 
+function statusStory(status: WishlistDisplayStatus): string {
+  switch (status) {
+    case 'saved':
+      return databaseCopy.wishlistStorySaved;
+    case 'requested':
+      return databaseCopy.wishlistStoryRequested;
+    case 'under_review':
+      return databaseCopy.wishlistStoryUnderReview;
+    case 'promoted_to_most_wanted':
+      return databaseCopy.wishlistStoryPromoted;
+    case 'evidence_needed':
+      return databaseCopy.wishlistStoryEvidence;
+    case 'added_to_database':
+      return databaseCopy.wishlistStoryAdded;
+    default:
+      return '';
+  }
+}
+
 export default function WishlistDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -100,6 +119,29 @@ export default function WishlistDetailScreen() {
       item.most_wanted_status === 'solved');
   const canViewCard = !!catalogId;
 
+  const primaryCta = (() => {
+    if (!item) return null;
+    if (canViewMw && item.most_wanted_hunt_id) {
+      return {
+        label: databaseCopy.wishlistCtaViewMostWanted,
+        onPress: () => router.push(mostWantedDetailHref(item.most_wanted_hunt_id!))
+      };
+    }
+    if (canViewCard && item.display_status === 'added_to_database') {
+      return {
+        label: databaseCopy.wishlistCtaViewCard,
+        onPress: () => router.push(databaseCardHref(catalogId!))
+      };
+    }
+    if (canAuth) {
+      return {
+        label: databaseCopy.wishlistCtaAuthenticate,
+        onPress: () => router.push(createWithLinkedCardHref(catalogId!, item.card_title))
+      };
+    }
+    return null;
+  })();
+
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -127,28 +169,31 @@ export default function WishlistDetailScreen() {
             <View style={styles.statusBadge}>
               <Text style={styles.statusText}>{statusLabel(item.display_status)}</Text>
             </View>
+            <Text style={styles.story}>{statusStory(item.display_status)}</Text>
 
             {[item.player_name, item.product_year, item.product_name].filter(Boolean).length > 0 ? (
               <Text style={styles.meta}>
-                {[item.player_name, item.product_year, item.product_name].filter(Boolean).join(' · ')}
+                {[item.player_name, item.product_year, item.product_name]
+                  .filter(Boolean)
+                  .join(' · ')}
               </Text>
             ) : null}
 
             {item.review_notes?.trim() ? (
               <Text style={styles.notes}>Reviewer notes: {item.review_notes.trim()}</Text>
             ) : null}
-            {item.notes?.trim() ? <Text style={styles.notes}>Your notes: {item.notes.trim()}</Text> : null}
+            {item.notes?.trim() ? (
+              <Text style={styles.notes}>Your notes: {item.notes.trim()}</Text>
+            ) : null}
 
             <View style={styles.actions}>
-              {canAuth ? (
-                <AuthPrimaryButton
-                  label={databaseCopy.wishlistCtaAuthenticate}
-                  onPress={() =>
-                    router.push(createWithLinkedCardHref(catalogId!, item.card_title))
-                  }
-                />
+              {primaryCta ? (
+                <AuthPrimaryButton label={primaryCta.label} onPress={primaryCta.onPress} />
               ) : null}
-              {canViewMw && item.most_wanted_hunt_id ? (
+
+              {canViewMw &&
+              item.most_wanted_hunt_id &&
+              primaryCta?.label !== databaseCopy.wishlistCtaViewMostWanted ? (
                 <Pressable
                   style={styles.secondaryBtn}
                   onPress={() => router.push(mostWantedDetailHref(item.most_wanted_hunt_id!))}
@@ -156,7 +201,19 @@ export default function WishlistDetailScreen() {
                   <Text style={styles.secondaryText}>{databaseCopy.wishlistCtaViewMostWanted}</Text>
                 </Pressable>
               ) : null}
-              {canViewCard ? (
+
+              {canAuth && primaryCta?.label !== databaseCopy.wishlistCtaAuthenticate ? (
+                <Pressable
+                  style={styles.secondaryBtn}
+                  onPress={() =>
+                    router.push(createWithLinkedCardHref(catalogId!, item.card_title))
+                  }
+                >
+                  <Text style={styles.secondaryText}>{databaseCopy.wishlistCtaAuthenticate}</Text>
+                </Pressable>
+              ) : null}
+
+              {canViewCard && primaryCta?.label !== databaseCopy.wishlistCtaViewCard ? (
                 <Pressable
                   style={styles.secondaryBtn}
                   onPress={() => router.push(databaseCardHref(catalogId!))}
@@ -164,11 +221,8 @@ export default function WishlistDetailScreen() {
                   <Text style={styles.secondaryText}>{databaseCopy.wishlistCtaViewCard}</Text>
                 </Pressable>
               ) : null}
-              <Pressable
-                style={styles.removeBtn}
-                disabled={busy}
-                onPress={() => void handleRemove()}
-              >
+
+              <Pressable style={styles.removeBtn} disabled={busy} onPress={() => void handleRemove()}>
                 <Text style={styles.removeText}>{databaseCopy.wishlistCtaRemove}</Text>
               </Pressable>
             </View>
@@ -216,9 +270,9 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     statusBadge: {
       alignSelf: 'flex-start',
-      backgroundColor: figmaColors.tagBg,
+      backgroundColor: figmaColors.surfaceHighlight,
       borderWidth: 1,
-      borderColor: figmaColors.borderLight,
+      borderColor: figmaColors.accent,
       borderRadius: s(8),
       paddingHorizontal: s(10),
       paddingVertical: s(4)
@@ -227,6 +281,12 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontFamily: appFonts.accent,
       fontSize: t(11),
       letterSpacing: 0.4,
+      color: figmaColors.accentStrong
+    },
+    story: {
+      fontFamily: appFonts.body,
+      fontSize: t(15),
+      lineHeight: t(22),
       color: figmaColors.charcoal
     },
     meta: {
