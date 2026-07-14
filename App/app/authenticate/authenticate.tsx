@@ -2,7 +2,6 @@
 import { appFonts } from '@/constants/appFonts';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Image,
   Pressable,
   RefreshControl,
@@ -13,6 +12,7 @@ import {
 import { AuthenticateDraftCard } from '@/components/figma/AuthenticateRecordCard';
 import { ContextScrollView } from '@/components/context-header/ContextScrollView';
 import { chipOptionsFromLabels, FigmaChipRow } from '@/components/figma/FigmaChipRow';
+import { FigmaContentLoading } from '@/components/figma/FigmaContentLoading';
 import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
@@ -154,10 +154,7 @@ export default function AuthenticateScreen() {
           </View>
 
           {loading ? (
-            <View style={styles.sectionLoader}>
-              <ActivityIndicator size="small" color={figmaColors.charcoal} />
-              <Text style={styles.loadingText}>Loading submissions…</Text>
-            </View>
+            <FigmaContentLoading message="Loading submissions…" s={s} t={t} />
           ) : error ? (
             <Text style={styles.errorText}>{error}</Text>
           ) : activeList.length > 0 ? (
@@ -194,17 +191,23 @@ export default function AuthenticateScreen() {
             <Text style={styles.emptyText}>{activeEmptyCopy}</Text>
           )}
 
-          <ScanSubmitButton s={s} t={t} onPress={() => router.push('/create/create')} />
+          <View style={styles.ctaAnchor}>
+            <ScanSubmitButton s={s} t={t} onPress={() => router.push('/create/create')} />
 
-          <View style={styles.ctaCard}>
-            <Image source={authenticateIcons.ctaIcon} style={page.ctaIcon} resizeMode="contain" />
-            <View style={page.ctaTextWrap}>
-              <Text style={styles.ctaTitle}>LET THE GAMES BEGIN.</Text>
-              <Text style={styles.ctaBody}>
-                Scan your cards, see the evidence, and submit for a FREE tamper-proof QR-linked label.
-              </Text>
+            <View style={styles.ctaCard}>
+              <Image source={authenticateIcons.ctaIcon} style={page.ctaIcon} resizeMode="contain" />
+              <View style={page.ctaTextWrap}>
+                <Text style={styles.ctaTitle}>LET THE GAMES BEGIN.</Text>
+                <Text style={styles.ctaBody}>
+                  Scan your cards, see the evidence, and submit for a FREE tamper-proof QR-linked label.
+                </Text>
+              </View>
+              <Image
+                source={authenticateIcons.sectionChevron}
+                style={page.ctaArrow}
+                resizeMode="contain"
+              />
             </View>
-            <Image source={authenticateIcons.sectionChevron} style={page.ctaArrow} resizeMode="contain" />
           </View>
         </ContextScrollView>
         </View>
@@ -226,11 +229,16 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     contentScroll: { flex: 1 },
     contentScrollBody: {
+      flexGrow: 1,
       paddingTop: s(8),
       paddingBottom: s(16)
     },
     chipRow: {
       marginVertical: 0
+    },
+    ctaAnchor: {
+      marginTop: 'auto' as const,
+      gap: s(12)
     },
     ctaCard: {
       minHeight: s(108),
@@ -259,17 +267,6 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       lineHeight: 22,
       color: figmaColors.gray,
       marginBottom: s(12)
-    },
-    sectionLoader: {
-      paddingVertical: s(28),
-      alignItems: 'center',
-      gap: s(10),
-      marginBottom: s(12)
-    },
-    loadingText: {
-      fontFamily: appFonts.body,
-      fontSize: 16,
-      color: figmaColors.gray
     },
     errorText: {
       fontFamily: appFonts.body,

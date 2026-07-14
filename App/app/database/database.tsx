@@ -2,7 +2,6 @@
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Image,
   Pressable,
   RefreshControl,
@@ -15,6 +14,7 @@ import { DatabaseChipRow } from '@/components/database/DatabaseChipRow';
 import { ContextScrollView } from '@/components/context-header/ContextScrollView';
 import { DatabaseStatsBar } from '@/components/database/DatabaseStatsBar';
 import { DatabaseRecordCard } from '@/components/figma/DatabaseRecordCard';
+import { FigmaContentLoading } from '@/components/figma/FigmaContentLoading';
 import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
@@ -264,10 +264,7 @@ export default function DatabaseScreen() {
           ) : null}
 
           {loading ? (
-            <View style={styles.sectionLoader}>
-              <ActivityIndicator size="small" color={figmaColors.charcoal} />
-              <Text style={styles.loadingText}>{databaseCopy.loadingCatalog}</Text>
-            </View>
+            <FigmaContentLoading message={databaseCopy.loadingCatalog} s={s} t={t} />
           ) : isSearching ? (
             <>
               <View style={page.sectionHeaderRow}>
@@ -300,7 +297,7 @@ export default function DatabaseScreen() {
 
           {!isSearching ? (
             <Pressable
-              style={page.ctaCard}
+              style={[page.ctaCard, styles.ctaAnchor]}
               onPress={() => router.push('/education/education')}
               accessibilityRole="button"
             >
@@ -351,19 +348,12 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     cardScroll: { flex: 1 },
     cardScrollContent: {
+      flexGrow: 1,
       paddingTop: s(8),
       paddingBottom: s(16)
     },
-    sectionLoader: {
-      paddingVertical: s(32),
-      alignItems: 'center',
-      gap: s(10),
-      marginBottom: s(16)
-    },
-    loadingText: {
-      fontFamily: appFonts.body,
-      fontSize: tb(16),
-      color: figmaColors.gray
+    ctaAnchor: {
+      marginTop: 'auto' as const
     },
     sectionEmpty: {
       fontFamily: appFonts.body,

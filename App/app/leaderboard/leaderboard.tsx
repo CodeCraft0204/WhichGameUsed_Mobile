@@ -1,13 +1,9 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { appFonts } from '@/constants/appFonts';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  View
-} from 'react-native';import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
+import { FigmaContentLoading } from '@/components/figma/FigmaContentLoading';
 import { FigmaHubBottomNav } from '@/components/figma/FigmaHubBottomNav';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
@@ -55,9 +51,12 @@ function LeaderboardScreenBody() {
   const router = useRouter();
   const { user, profile } = useAuth();
   const { unreadInboxCount, refreshCounts } = useSocialNotifications();
-  const { s, t } = useFigmaLayout(0.92);  const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
+  const { s, t } = useFigmaLayout(0.92);
+  const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
-  const scrollProps = useContextHeaderScrollProps({ contentContainerStyle: page.scrollContent });
+  const scrollProps = useContextHeaderScrollProps({
+    contentContainerStyle: [page.scrollContent, styles.scrollInner]
+  });
 
   const [activeTab, setActiveTab] = useState<(typeof leaderboardPeriodTabs)[number]>(
     leaderboardPeriodTabs[0]
@@ -172,7 +171,8 @@ function LeaderboardScreenBody() {
         showUtilityMessages={Boolean(user)}
         utilityMessagesUnreadCount={unreadInboxCount}
         onPressUtilityMessages={handleOpenMessages}
-      >        <LeaderboardPeriodTabs
+      >
+        <LeaderboardPeriodTabs
           tabs={leaderboardPeriodTabs}
           value={activeTab}
           onChange={handleTabChange}
@@ -181,95 +181,96 @@ function LeaderboardScreenBody() {
         />
       </FigmaPageHeader>
 
-      {showMonthBanner ? (
-        <LeaderboardResetBanner s={s} t={t} prize={monthlyPrize} />
-      ) : null}
-
-      {user ? (
-        <LeaderboardSelfCard
-          entry={selfEntry}
-          isEligible={profile?.leaderboard_eligible ?? true}
-          onGoToSettings={handleOpenSettings}
-          onViewProfile={handleViewSelfProfile}
-          s={s}
-          t={t}
-        />
-      ) : null}
-
-      {refreshing ? (
-        <Text style={styles.refreshingText}>{leaderboardCopy.refreshing}</Text>
-      ) : null}
-
       {loading ? (
-        <View style={styles.centred}>
-          <ActivityIndicator size="large" color={figmaColors.charcoal} />
-          <Text style={styles.loadingText}>{leaderboardCopy.loading}</Text>
-        </View>
-      ) : error ? (
-        <View style={styles.centred}>
-          <Text style={styles.errorText}>{leaderboardCopy.error}</Text>
-          <Pressable
-            style={styles.retryBtn}
-            onPress={() => void load(activeTab)}
-            accessibilityRole="button"
-          >
-            <Text style={styles.retryText}>{leaderboardCopy.retry}</Text>
-          </Pressable>
-        </View>
-      ) : items.length === 0 ? (
-        <View style={styles.centred}>
-          <Text style={styles.emptyText}>{leaderboardCopy.empty}</Text>
-        </View>
+        <FigmaContentLoading message={leaderboardCopy.loading} s={s} t={t} />
       ) : (
         <>
-          {top3.length > 0 ? (
-            <LeaderboardPodium
-              top3={top3}
-              currentUserId={user?.id}
-              onPressUser={handlePressUser}
+          {showMonthBanner ? (
+            <LeaderboardResetBanner s={s} t={t} prize={monthlyPrize} />
+          ) : null}
+
+          {user ? (
+            <LeaderboardSelfCard
+              entry={selfEntry}
+              isEligible={profile?.leaderboard_eligible ?? true}
+              onGoToSettings={handleOpenSettings}
+              onViewProfile={handleViewSelfProfile}
               s={s}
               t={t}
             />
           ) : null}
 
-          <View style={styles.sectionHeader}>
-            <Text style={page.sectionTitle}>{leaderboardCopy.sectionRanking}</Text>
-            <Text style={styles.pointsHeader}>{leaderboardCopy.pointsColumn}</Text>
-          </View>
-
-          {rankingHint ? (
-            <Text style={styles.rankingHint}>{rankingHint}</Text>
+          {refreshing ? (
+            <Text style={styles.refreshingText}>{leaderboardCopy.refreshing}</Text>
           ) : null}
 
-          {items.map((entry) => (
-            <LeaderboardRankCard
-              key={entry.userId}
-              userId={entry.userId}
-              rank={entry.rank}
-              displayName={entry.displayName}
-              username={entry.username}
-              avatarUrl={entry.avatarUrl}
-              points={entry.points}
-              isCurrentUser={user?.id === entry.userId}
-              onPress={() => handlePressUser(entry)}
-              s={s}
-              t={t}
-            />
-          ))}
+          {error ? (
+            <View style={styles.centred}>
+              <Text style={styles.errorText}>{leaderboardCopy.error}</Text>
+              <Pressable
+                style={styles.retryBtn}
+                onPress={() => void load(activeTab)}
+                accessibilityRole="button"
+              >
+                <Text style={styles.retryText}>{leaderboardCopy.retry}</Text>
+              </Pressable>
+            </View>
+          ) : items.length === 0 ? (
+            <View style={styles.centred}>
+              <Text style={styles.emptyText}>{leaderboardCopy.empty}</Text>
+            </View>
+          ) : (
+            <>
+              {top3.length > 0 ? (
+                <LeaderboardPodium
+                  top3={top3}
+                  currentUserId={user?.id}
+                  onPressUser={handlePressUser}
+                  s={s}
+                  t={t}
+                />
+              ) : null}
 
-          <View style={styles.bottomCards}>
-            <LeaderboardPointsExplainer s={s} t={t} onSeeAll={handleViewPointsWork} />
-            {period === 'month' ? (
-              <LeaderboardPrizeCard
-              prize={monthlyPrize}
-              s={s}
-              t={t}
-              onLearnMore={handleViewMonthlyPrize}
-            />
-            ) : null}
-          </View>
+              <View style={styles.sectionHeader}>
+                <Text style={page.sectionTitle}>{leaderboardCopy.sectionRanking}</Text>
+                <Text style={styles.pointsHeader}>{leaderboardCopy.pointsColumn}</Text>
+              </View>
+
+              {rankingHint ? (
+                <Text style={styles.rankingHint}>{rankingHint}</Text>
+              ) : null}
+
+              {items.map((entry) => (
+                <LeaderboardRankCard
+                  key={entry.userId}
+                  userId={entry.userId}
+                  rank={entry.rank}
+                  displayName={entry.displayName}
+                  username={entry.username}
+                  avatarUrl={entry.avatarUrl}
+                  points={entry.points}
+                  isCurrentUser={user?.id === entry.userId}
+                  onPress={() => handlePressUser(entry)}
+                  s={s}
+                  t={t}
+                />
+              ))}
+            </>
+          )}
         </>
       )}
+
+      <View style={styles.bottomCards}>
+        <LeaderboardPointsExplainer s={s} t={t} onSeeAll={handleViewPointsWork} />
+        {period === 'month' ? (
+          <LeaderboardPrizeCard
+            prize={monthlyPrize}
+            s={s}
+            t={t}
+            onLearnMore={handleViewMonthlyPrize}
+          />
+        ) : null}
+      </View>
     </FigmaScreen>
   );
 }
@@ -310,21 +311,21 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       paddingHorizontal: s(12),
       marginBottom: s(12)
     },
-    bottomCards: {      flexDirection: 'row',
+    scrollInner: {
+      flexGrow: 1
+    },
+    bottomCards: {
+      flexDirection: 'row',
       gap: s(8),
-      marginTop: s(16),
+      marginTop: 'auto' as const,
       marginBottom: s(8),
+      paddingTop: s(16),
       alignItems: 'stretch'
     },
     centred: {
       alignItems: 'center',
       paddingVertical: s(36),
       gap: s(12)
-    },
-    loadingText: {
-      fontFamily: appFonts.body,
-      fontSize: tb(19),
-      color: figmaColors.gray
     },
     errorText: {
       fontFamily: appFonts.body,

@@ -15,6 +15,7 @@ import {
 import { DiscussionThreadCard } from '@/components/figma/DiscussionThreadCard';
 import { ContextScrollView } from '@/components/context-header/ContextScrollView';
 import { chipOptionsFromLabels, FigmaChipRow } from '@/components/figma/FigmaChipRow';
+import { FigmaContentLoading } from '@/components/figma/FigmaContentLoading';
 import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
@@ -222,116 +223,124 @@ export default function DiscussionScreen() {
         >
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-          <View style={page.sectionHeaderRow}>
-            <Text style={page.sectionTitle}>TOPICS</Text>
-          </View>
-
-          {topicsLoading && topics.length === 0 ? (
-            <ActivityIndicator color={figmaColors.charcoal} style={styles.loader} />
+          {topicsLoading && threadsLoading && topics.length === 0 && threads.length === 0 ? (
+            <FigmaContentLoading message="Loading discussion…" s={s} t={t} />
           ) : (
-            topics.map((topic) => (
-              <DiscussionTopicCard
-                key={topic.id}
-                icon={topicIconBySlug[topic.slug] ?? discussionIcons.topicAskAnything}
-                title={topic.title}
-                description={topic.description ?? ''}
-                threadsLabel={formatThreadCount(topic.thread_count)}
-                activityLabel={
-                  topic.last_activity_at
-                    ? `Active ${new Date(topic.last_activity_at).toLocaleDateString()}`
-                    : 'No activity yet'
-                }
-                s={s}
-                t={t}
-                onPress={() => router.push(discussionTopicHref(topic.slug))}
-              />
-            ))
+            <>
+              <View style={page.sectionHeaderRow}>
+                <Text style={page.sectionTitle}>TOPICS</Text>
+              </View>
+
+              {topicsLoading && topics.length === 0 ? (
+                <FigmaContentLoading message="Loading topics…" s={s} t={t} fill={false} />
+              ) : (
+                topics.map((topic) => (
+                  <DiscussionTopicCard
+                    key={topic.id}
+                    icon={topicIconBySlug[topic.slug] ?? discussionIcons.topicAskAnything}
+                    title={topic.title}
+                    description={topic.description ?? ''}
+                    threadsLabel={formatThreadCount(topic.thread_count)}
+                    activityLabel={
+                      topic.last_activity_at
+                        ? `Active ${new Date(topic.last_activity_at).toLocaleDateString()}`
+                        : 'No activity yet'
+                    }
+                    s={s}
+                    t={t}
+                    onPress={() => router.push(discussionTopicHref(topic.slug))}
+                  />
+                ))
+              )}
+
+              <View style={[page.sectionHeaderRow, styles.sectionSpaced]}>
+                <Text style={page.sectionTitle}>{sectionTitle}</Text>
+                {threadsLoading && threads.length > 0 ? (
+                  <ActivityIndicator color={figmaColors.gray} size="small" />
+                ) : null}
+              </View>
+
+              {threadsLoading && threads.length === 0 ? (
+                <FigmaContentLoading message="Loading threads…" s={s} t={t} fill={false} />
+              ) : threads.length === 0 ? (
+                <Text style={styles.emptyText}>
+                  {debouncedSearch
+                    ? 'No threads match your search.'
+                    : feedFilter === 'FOLLOWING'
+                      ? 'Follow collectors to see their threads here.'
+                      : 'No threads yet. Start the conversation.'}
+                </Text>
+              ) : (
+                threads.map((thread) => {
+                  const authorName =
+                    thread.author_display_name || thread.author_username || 'Collector';
+                  return (
+                    <DiscussionThreadCard
+                      key={thread.id}
+                      avatarUrl={thread.author_avatar_url}
+                      authorName={authorName}
+                      title={thread.title}
+                      category={thread.topic_title}
+                      author={authorName}
+                      comments={formatCommentCount(thread.comment_count)}
+                      votes={formatVoteScore(thread.vote_score)}
+                      saved={thread.saved}
+                      s={s}
+                      t={t}
+                      onPress={() => router.push(discussionThreadHref(thread.id))}
+                    />
+                  );
+                })
+              )}
+            </>
           )}
 
-          <View style={[page.sectionHeaderRow, styles.sectionSpaced]}>
-            <Text style={page.sectionTitle}>{sectionTitle}</Text>
-            {threadsLoading && threads.length > 0 ? (
-              <ActivityIndicator color={figmaColors.gray} size="small" />
-            ) : null}
-          </View>
-
-          {threadsLoading && threads.length === 0 ? (
-            <ActivityIndicator color={figmaColors.charcoal} style={styles.loader} />
-          ) : threads.length === 0 ? (
-            <Text style={styles.emptyText}>
-              {debouncedSearch
-                ? 'No threads match your search.'
-                : feedFilter === 'FOLLOWING'
-                  ? 'Follow collectors to see their threads here.'
-                  : 'No threads yet. Start the conversation.'}
-            </Text>
-          ) : (
-            threads.map((thread) => {
-              const authorName =
-                thread.author_display_name || thread.author_username || 'Collector';
-              return (
-                <DiscussionThreadCard
-                  key={thread.id}
-                  avatarUrl={thread.author_avatar_url}
-                  authorName={authorName}
-                  title={thread.title}
-                  category={thread.topic_title}
-                  author={authorName}
-                  comments={formatCommentCount(thread.comment_count)}
-                  votes={formatVoteScore(thread.vote_score)}
-                  saved={thread.saved}
-                  s={s}
-                  t={t}
-                  onPress={() => router.push(discussionThreadHref(thread.id))}
+          <View style={styles.bottomActions}>
+            <View style={styles.quickLinksRow}>
+              <Pressable
+                style={styles.quickLinkCard}
+                onPress={() => router.push(discussionSavedHref())}
+                accessibilityRole="button"
+                accessibilityLabel="View saved threads"
+              >
+                <Image
+                  source={discussionIcons.threadBookmark}
+                  style={styles.quickLinkIcon}
+                  resizeMode="contain"
                 />
-              );
-            })
-          )}
+                <Text style={styles.quickLinkLabel} numberOfLines={2}>
+                  Saved threads
+                </Text>
+              </Pressable>
 
-          <View style={styles.quickLinksRow}>
-            <Pressable
-              style={styles.quickLinkCard}
-              onPress={() => router.push(discussionSavedHref())}
-              accessibilityRole="button"
-              accessibilityLabel="View saved threads"
-            >
-              <Image
-                source={discussionIcons.threadBookmark}
-                style={styles.quickLinkIcon}
-                resizeMode="contain"
-              />
-              <Text style={styles.quickLinkLabel} numberOfLines={2}>
-                Saved threads
-              </Text>
-            </Pressable>
+              <Pressable
+                style={styles.quickLinkCard}
+                onPress={() => router.push(discussionFeedPreferencesHref())}
+                accessibilityRole="button"
+                accessibilityLabel="Manage hidden content"
+              >
+                <Image
+                  source={discussionIcons.metaActivity}
+                  style={styles.quickLinkIcon}
+                  resizeMode="contain"
+                />
+                <Text style={styles.quickLinkLabel} numberOfLines={2}>
+                  {hiddenCount > 0 ? `Hidden (${hiddenCount})` : 'Hidden content'}
+                </Text>
+              </Pressable>
+            </View>
 
-            <Pressable
-              style={styles.quickLinkCard}
-              onPress={() => router.push(discussionFeedPreferencesHref())}
-              accessibilityRole="button"
-              accessibilityLabel="Manage hidden content"
-            >
-              <Image
-                source={discussionIcons.metaActivity}
-                style={styles.quickLinkIcon}
-                resizeMode="contain"
-              />
-              <Text style={styles.quickLinkLabel} numberOfLines={2}>
-                {hiddenCount > 0 ? `Hidden (${hiddenCount})` : 'Hidden content'}
-              </Text>
+            <Pressable style={page.ctaCard} onPress={() => router.push(discussionCreateHref())}>
+              <Image source={discussionIcons.ctaIcon} style={page.ctaIcon} resizeMode="contain" />
+              <View style={page.ctaTextWrap}>
+                <Text style={page.ctaTitle}>THREADING THE NEEDLE.</Text>
+                <Text style={page.ctaBody}>
+                  Share what you know, question what you don't, and help the hobby get smarter.
+                </Text>
+              </View>
+              <Image source={discussionIcons.ctaArrow} style={page.ctaArrow} resizeMode="contain" />
             </Pressable>
           </View>
-
-          <Pressable style={page.ctaCard} onPress={() => router.push(discussionCreateHref())}>
-            <Image source={discussionIcons.ctaIcon} style={page.ctaIcon} resizeMode="contain" />
-            <View style={page.ctaTextWrap}>
-              <Text style={page.ctaTitle}>THREADING THE NEEDLE.</Text>
-              <Text style={page.ctaBody}>
-                Share what you know, question what you don't, and help the hobby get smarter.
-              </Text>
-            </View>
-            <Image source={discussionIcons.ctaArrow} style={page.ctaArrow} resizeMode="contain" />
-          </Pressable>
         </ContextScrollView>
         </View>
       </FigmaScreen>
@@ -356,6 +365,7 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       flex: 1
     },
     contentScrollInner: {
+      flexGrow: 1,
       paddingTop: s(4)
     },
     toolbarRow: {
@@ -437,9 +447,6 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
     sectionSpaced: {
       marginTop: s(4)
     },
-    loader: {
-      marginVertical: s(16)
-    },
     emptyText: {
       fontFamily: appFonts.body,
       fontSize: t(15),
@@ -452,10 +459,14 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       color: figmaColors.error,
       marginBottom: s(12)
     },
+    bottomActions: {
+      marginTop: 'auto' as const,
+      gap: s(10),
+      paddingTop: s(10)
+    },
     quickLinksRow: {
       flexDirection: 'row',
-      gap: s(18),
-      marginTop: s(10)
+      gap: s(18)
     },
     quickLinkCard: {
       flex: 1,
