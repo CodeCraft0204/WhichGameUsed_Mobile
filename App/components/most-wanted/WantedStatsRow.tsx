@@ -1,9 +1,8 @@
 import React, { useMemo } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { appFonts } from '@/constants/appFonts';
-import { figmaIcons } from '@/constants/figmaIcons';
+import { mostWantedIcons } from '@/constants/mostWantedContent';
 import { figmaColors } from '@/constants/figmaColors';
-import { mostWantedCopy } from '@/constants/mostWantedCopy';
 
 type WantedStatsRowProps = {
   activeHunts: number;
@@ -13,51 +12,38 @@ type WantedStatsRowProps = {
   t: (n: number) => number;
 };
 
-function StatCard({
+function StatItem({
   icon,
-  label,
-  value,
+  text,
   s,
   t
 }: {
   icon: number;
-  label: string;
-  value: string;
+  text: string;
   s: (n: number) => number;
   t: (n: number) => number;
 }) {
-  const styles = useMemo(() => createCardStyles(s, t), [s, t]);
+  const styles = useMemo(() => createItemStyles(s, t), [s, t]);
   return (
-    <View style={styles.card}>
+    <View style={styles.item}>
       <Image source={icon} style={styles.icon} resizeMode="contain" />
-      <Text style={styles.label}>{label}</Text>
-      <Text style={styles.value}>{value}</Text>
+      <Text style={styles.text}>{text}</Text>
     </View>
   );
 }
 
+/** Inline stat strip — "24 active requests • 8 near solved • 312 contributors". */
 export function WantedStatsRow({ activeHunts, solvedThisMonth, contributorCount, s, t }: WantedStatsRowProps) {
   const styles = useMemo(() => createStyles(s), [s]);
   return (
     <View style={styles.row}>
-      <StatCard
-        icon={figmaIcons.metaShield}
-        label={mostWantedCopy.statsActive}
-        value={String(activeHunts)}
-        s={s}
-        t={t}
-      />
-      <StatCard
-        icon={figmaIcons.sealApproved}
-        label={mostWantedCopy.statsSolved}
-        value={String(solvedThisMonth)}
-        s={s}
-        t={t}
-      />
-      <StatCard
-        icon={figmaIcons.metaPerson}
-        label={mostWantedCopy.statsContributors}
-        value={String(contributorCount)}
+      <StatItem icon={mostWantedIcons.statTarget} text={`${activeHunts} active cards`} s={s} t={t} />
+      <View style={styles.dot} />
+      <StatItem icon={mostWantedIcons.statPuzzle} text={`${solvedThisMonth} solved`} s={s} t={t} />
+      <View style={styles.dot} />
+      <StatItem
+        icon={mostWantedIcons.statContributors}
+        text={`${contributorCount} contributors`}
         s={s}
         t={t}
       />
@@ -69,41 +55,37 @@ function createStyles(s: (n: number) => number) {
   return StyleSheet.create({
     row: {
       flexDirection: 'row',
-      gap: s(8),
-      marginBottom: s(16)
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      flexWrap: 'wrap',
+      gap: s(6),
+      paddingHorizontal: s(2),
+      marginBottom: s(14)
+    },
+    dot: {
+      width: s(4),
+      height: s(4),
+      borderRadius: s(2),
+      backgroundColor: figmaColors.taupeLight
     }
   });
 }
 
-function createCardStyles(s: (n: number) => number, t: (n: number) => number) {
+function createItemStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
-    card: {
-      flex: 1,
-      backgroundColor: figmaColors.cream,
-      borderWidth: 1,
-      borderColor: figmaColors.borderLight,
-      borderRadius: s(10),
-      paddingVertical: s(10),
-      paddingHorizontal: s(8),
+    item: {
+      flexDirection: 'row',
       alignItems: 'center',
-      gap: s(4)
+      gap: s(5)
     },
     icon: {
-      width: s(22),
-      height: s(22)
+      width: s(14),
+      height: s(14)
     },
-    label: {
-      fontFamily: appFonts.body,
-      fontSize: t(10),
-      lineHeight: t(12),
-      color: figmaColors.gray,
-      textAlign: 'center'
-    },
-    value: {
-      fontFamily: appFonts.body,
-      fontSize: t(18),
-      lineHeight: t(22),
-      color: figmaColors.charcoal
+    text: {
+      fontFamily: appFonts.bodyBold,
+      fontSize: t(12),
+      color: figmaColors.brownMuted
     }
   });
 }

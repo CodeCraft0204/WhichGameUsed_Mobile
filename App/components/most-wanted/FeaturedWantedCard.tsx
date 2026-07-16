@@ -1,12 +1,9 @@
 import React, { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { appFonts } from '@/constants/appFonts';
-import { mostWantedCopy } from '@/constants/mostWantedCopy';
+import { mostWantedIcons } from '@/constants/mostWantedContent';
 import { figmaColors } from '@/constants/figmaColors';
-import { EvidenceProgressMeter } from '@/components/most-wanted/EvidenceProgressMeter';
 import { HuntCardImage } from '@/components/most-wanted/HuntCardImage';
-import { MostWantedContributorBadge } from '@/components/most-wanted/MostWantedShared';
 import { WantedStatusTagRow } from '@/components/most-wanted/WantedStatusTag';
 import {
   huntDisplayTitle,
@@ -25,55 +22,81 @@ export function FeaturedWantedCard({ hunt, s, t, onPress }: FeaturedWantedCardPr
   const styles = useMemo(() => createStyles(s, t), [s, t]);
   const tags = huntStatusTags(hunt);
   const primaryNeed = hunt.needed_labels[0] ?? 'Evidence';
+  const total = Math.max(hunt.requirements_total, 1);
+  const pct = Math.min(100, Math.round((hunt.requirements_fulfilled / total) * 100));
+  const fillColor =
+    hunt.status === 'near_solved' || pct >= 75 ? figmaColors.success : figmaColors.progressFill;
+
+  const meta = [hunt.team_name, hunt.product_year].filter(Boolean).join(' • ');
+  const highPriority = hunt.priority_tag === 'high_value';
+  const nearSolved = hunt.status === 'near_solved';
 
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
-      <View style={styles.header}>
-        <View style={styles.featuredRow}>
-          <Ionicons name="star" size={s(14)} color={figmaColors.accentStrong} />
-          <Text style={styles.label}>{mostWantedCopy.featuredLabel}</Text>
+      <View style={styles.bannerWrap}>
+        <View style={styles.banner}>
+          <Image source={mostWantedIcons.starFilled} style={styles.bannerStar} resizeMode="contain" />
+          <Text style={styles.bannerText}>FEATURED</Text>
         </View>
-        <MostWantedContributorBadge
-          label={mostWantedCopy.badgeCreditChip}
-          s={s}
-          t={t}
-          large
-          icon="ribbon"
-        />
       </View>
 
-      <View style={styles.imageWrap}>
-        <HuntCardImage
-          coverImageUrl={hunt.cover_image_url}
-          imageUrl={hunt.imageUrl}
-          style={styles.image}
-          framed
-          s={s}
-        />
-      </View>
+      <View style={styles.contentRow}>
+        <View style={styles.imageCol}>
+          <HuntCardImage
+            coverImageUrl={hunt.cover_image_url}
+            imageUrl={hunt.imageUrl}
+            style={styles.image}
+            framed
+            s={s}
+          />
+        </View>
 
-      <View style={styles.body}>
-        <WantedStatusTagRow tags={tags} s={s} t={t} />
-        <Text style={styles.title} numberOfLines={2}>
-          {huntDisplayTitle(hunt)}
-        </Text>
-        <Text style={styles.meta}>Priority need · {primaryNeed}</Text>
-        <View style={styles.watchRow}>
-          <Ionicons name="eye-outline" size={s(14)} color={figmaColors.gray} />
-          <Text style={styles.watchers}>
-            {hunt.watcher_count} {mostWantedCopy.watchersSuffix}
+        <View style={styles.middleCol}>
+          <Text style={styles.title} numberOfLines={2}>
+            {huntDisplayTitle(hunt)}
           </Text>
+          {meta ? <Text style={styles.meta}>{meta}</Text> : null}
+          <Text style={styles.summary} numberOfLines={2}>
+            Priority need · {primaryNeed}
+          </Text>
+          <WantedStatusTagRow tags={tags} s={s} t={t} />
         </View>
-        <EvidenceProgressMeter
-          fulfilled={hunt.requirements_fulfilled}
-          total={hunt.requirements_total}
-          s={s}
-          t={t}
-          nearComplete={hunt.status === 'near_solved'}
-        />
-        <View style={styles.cta}>
-          <Text style={styles.ctaText}>{mostWantedCopy.viewHunt}</Text>
+
+        <View style={styles.rightCol}>
+          {highPriority || nearSolved ? (
+            <View style={[styles.priorityBox, nearSolved && !highPriority && styles.priorityBoxSolved]}>
+              <Image
+                source={mostWantedIcons.shieldDark}
+                style={styles.priorityIcon}
+                resizeMode="contain"
+              />
+              <Text style={styles.priorityText}>
+                {highPriority ? 'HIGH\nPRIORITY' : 'NEAR\nSOLVED'}
+              </Text>
+            </View>
+          ) : null}
+          <View style={styles.statsCol}>
+            <View style={styles.statRow}>
+              <Image source={mostWantedIcons.eye} style={styles.statIcon} resizeMode="contain" />
+              <Text style={styles.statValue}>{hunt.watcher_count}</Text>
+            </View>
+            {(hunt.comment_count ?? 0) > 0 ? (
+              <View style={styles.statRow}>
+                <Image source={mostWantedIcons.comment} style={styles.statIcon} resizeMode="contain" />
+                <Text style={styles.statValue}>{hunt.comment_count}</Text>
+              </View>
+            ) : null}
+          </View>
         </View>
+      </View>
+
+      <View style={styles.progressRow}>
+        <Image source={mostWantedIcons.evidenceDoc} style={styles.progressIcon} resizeMode="contain" />
+        <Text style={styles.progressLabel}>Evidence Progress</Text>
+        <Text style={styles.progressPct}>{pct}%</Text>
+      </View>
+      <View style={styles.track}>
+        <View style={[styles.fill, { width: `${pct}%`, backgroundColor: fillColor }]} />
       </View>
     </Pressable>
   );
@@ -84,50 +107,55 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     card: {
       backgroundColor: figmaColors.cardFeaturedBg,
       borderWidth: 1,
-      borderColor: figmaColors.accent,
-      borderRadius: s(14),
+      borderColor: figmaColors.borderStrong,
+      borderRadius: s(12),
+      borderTopLeftRadius: s(20),
       marginBottom: s(18),
-      overflow: 'hidden'
+      paddingHorizontal: s(14),
+      paddingBottom: s(14)
     },
     pressed: { opacity: 0.95 },
-    header: {
+    bannerWrap: {
+      flexDirection: 'row',
+      marginLeft: s(-14),
+      marginBottom: s(6)
+    },
+    banner: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: s(14),
-      paddingTop: s(14),
-      paddingBottom: s(8)
+      gap: s(7),
+      backgroundColor: figmaColors.stone,
+      borderWidth: 1,
+      borderColor: figmaColors.borderStrong,
+      borderTopLeftRadius: s(20),
+      borderBottomRightRadius: s(10),
+      paddingHorizontal: s(16),
+      paddingVertical: s(7)
     },
-    featuredRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: s(6)
-    },
-    label: {
+    bannerStar: { width: s(13), height: s(13) },
+    bannerText: {
       fontFamily: appFonts.accent,
       fontSize: t(12),
-      letterSpacing: 0.8,
-      color: figmaColors.accentStrong
+      letterSpacing: 1,
+      color: figmaColors.brown
     },
-    imageWrap: {
-      paddingHorizontal: s(14),
-      paddingBottom: s(8),
-      alignItems: 'center'
+    contentRow: {
+      flexDirection: 'row',
+      gap: s(12)
     },
+    imageCol: { width: '32%' },
     image: {
       width: '100%',
-      height: s(190)
+      height: s(120)
     },
-    body: {
-      padding: s(14),
-      gap: s(8),
-      borderTopWidth: 1,
-      borderTopColor: figmaColors.borderLight
+    middleCol: {
+      flex: 1,
+      gap: s(5)
     },
     title: {
       fontFamily: appFonts.bodyBold,
-      fontSize: t(19),
-      lineHeight: t(24),
+      fontSize: t(17),
+      lineHeight: t(21),
       color: figmaColors.charcoal
     },
     meta: {
@@ -135,31 +163,86 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: t(13),
       color: figmaColors.gray
     },
-    watchRow: {
+    summary: {
+      fontFamily: appFonts.body,
+      fontSize: t(12),
+      lineHeight: t(16),
+      color: figmaColors.brownMuted
+    },
+    rightCol: {
+      alignItems: 'flex-end',
+      justifyContent: 'space-between',
+      gap: s(8)
+    },
+    priorityBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(6),
+      backgroundColor: figmaColors.surfaceHighlight,
+      borderWidth: 1.5,
+      borderColor: figmaColors.borderStrong,
+      borderRadius: s(10),
+      paddingHorizontal: s(8),
+      paddingVertical: s(6)
+    },
+    priorityBoxSolved: {
+      backgroundColor: figmaColors.successBg,
+      borderColor: figmaColors.success
+    },
+    priorityIcon: { width: s(15), height: s(18) },
+    priorityText: {
+      fontFamily: appFonts.accent,
+      fontSize: t(9),
+      lineHeight: t(11),
+      letterSpacing: 0.4,
+      color: figmaColors.brown
+    },
+    statsCol: {
+      borderLeftWidth: 1,
+      borderLeftColor: figmaColors.borderLight,
+      paddingLeft: s(8),
+      gap: s(6),
+      alignItems: 'flex-start'
+    },
+    statRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: s(6)
     },
-    watchers: {
+    statIcon: { width: s(13), height: s(11) },
+    statValue: {
       fontFamily: appFonts.body,
       fontSize: t(12),
       color: figmaColors.gray
     },
-    cta: {
-      alignSelf: 'stretch',
-      marginTop: s(4),
-      backgroundColor: figmaColors.buttonPrimaryBg,
-      borderRadius: s(10),
-      paddingVertical: s(12),
+    progressRow: {
+      flexDirection: 'row',
       alignItems: 'center',
-      borderWidth: 1,
-      borderColor: figmaColors.buttonPrimaryBorder
+      gap: s(6),
+      marginTop: s(12),
+      marginBottom: s(6)
     },
-    ctaText: {
-      fontFamily: appFonts.accent,
-      fontSize: t(12),
-      letterSpacing: 0.6,
-      color: figmaColors.buttonPrimaryText
+    progressIcon: { width: s(12), height: s(14) },
+    progressLabel: {
+      flex: 1,
+      fontFamily: appFonts.body,
+      fontSize: t(13),
+      color: figmaColors.gray
+    },
+    progressPct: {
+      fontFamily: appFonts.bodyBold,
+      fontSize: t(13),
+      color: figmaColors.brownMuted
+    },
+    track: {
+      height: s(7),
+      backgroundColor: figmaColors.progressTrack,
+      borderRadius: s(4),
+      overflow: 'hidden'
+    },
+    fill: {
+      height: '100%',
+      borderRadius: s(4)
     }
   });
 }

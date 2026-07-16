@@ -14,30 +14,47 @@ type Props = {
   onVote: (action: 'upvote' | 'downvote') => void;
 };
 
+function statusPresentation(status: string): { label: string; color: string } {
+  const normalized = status.toLowerCase();
+  if (normalized.includes('near')) return { label: 'Near Solved', color: figmaColors.success };
+  if (normalized.includes('high') || normalized.includes('priority')) {
+    return { label: 'High Priority', color: figmaColors.accentStrong };
+  }
+  return { label: status.replace(/_/g, ' '), color: figmaColors.grayMuted };
+}
+
 export function BountyRankingCard({ row, rank, s, t, onVote }: Props) {
   const rankStyle = rankingRankStyle(rank);
   const styles = useMemo(() => createStyles(s, t, rankStyle), [s, t, rankStyle]);
   const title = row.card_title?.trim() || row.player_name?.trim() || 'Card request';
+  const status = statusPresentation(row.status);
+  const meta = [row.product_year, row.product_name].filter(Boolean).join(' • ');
 
   return (
     <View style={styles.card}>
       <View style={styles.rankBadge}>
         <Text style={styles.rankText}>#{rank}</Text>
       </View>
+
       <View style={styles.body}>
-        <Text style={styles.title} numberOfLines={2}>
+        <Text style={styles.title} numberOfLines={1}>
           {title}
         </Text>
-        <Text style={styles.meta}>
-          {[row.product_year, row.product_name].filter(Boolean).join(' · ')}
-        </Text>
+        {meta ? (
+          <Text style={styles.meta} numberOfLines={1}>
+            {meta}
+          </Text>
+        ) : null}
         <View style={styles.statsRow}>
           <Text style={styles.statHighlight}>{row.bounty_score} demand</Text>
           <Text style={styles.stat}>· {row.wishlist_count} saves</Text>
-          <Text style={styles.stat}>· {row.vote_score} votes</Text>
         </View>
-        <Text style={styles.statusLine}>{row.status.replace(/_/g, ' ')}</Text>
+        <View style={styles.statusRow}>
+          <View style={[styles.statusDot, { backgroundColor: status.color }]} />
+          <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
+        </View>
       </View>
+
       <View style={styles.votes}>
         <Pressable
           onPress={() => onVote('upvote')}
@@ -45,17 +62,18 @@ export function BountyRankingCard({ row, rank, s, t, onVote }: Props) {
         >
           <Ionicons
             name="chevron-up"
-            size={s(16)}
+            size={s(15)}
             color={row.user_vote === 'upvote' ? figmaColors.accentStrong : figmaColors.gray}
           />
         </Pressable>
+        <Text style={styles.voteScore}>{row.vote_score}</Text>
         <Pressable
           onPress={() => onVote('downvote')}
           style={[styles.voteBtn, row.user_vote === 'downvote' && styles.voteBtnActive]}
         >
           <Ionicons
             name="chevron-down"
-            size={s(16)}
+            size={s(15)}
             color={row.user_vote === 'downvote' ? figmaColors.error : figmaColors.gray}
           />
         </Pressable>
@@ -73,19 +91,20 @@ function createStyles(
     card: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: s(10),
-      backgroundColor: rankStyle.bg,
+      gap: s(12),
+      backgroundColor: figmaColors.cream,
       borderWidth: 1,
-      borderColor: rankStyle.border,
-      borderRadius: s(12),
-      padding: s(12),
-      marginBottom: s(10)
+      borderColor: figmaColors.borderLight,
+      borderRadius: s(9),
+      paddingVertical: s(10),
+      paddingHorizontal: s(10),
+      marginBottom: s(8)
     },
     rankBadge: {
-      width: s(36),
-      height: s(36),
-      borderRadius: s(18),
-      backgroundColor: figmaColors.surface,
+      width: s(38),
+      height: s(38),
+      borderRadius: s(8),
+      backgroundColor: rankStyle.bg,
       borderWidth: 1,
       borderColor: rankStyle.border,
       alignItems: 'center',
@@ -93,10 +112,10 @@ function createStyles(
     },
     rankText: {
       fontFamily: appFonts.bodyBold,
-      fontSize: t(13),
+      fontSize: t(14),
       color: rankStyle.label
     },
-    body: { flex: 1, gap: s(4) },
+    body: { flex: 1, gap: s(3) },
     title: {
       fontFamily: appFonts.bodyBold,
       fontSize: t(15),
@@ -105,14 +124,13 @@ function createStyles(
     meta: {
       fontFamily: appFonts.body,
       fontSize: t(12),
-      color: figmaColors.gray
+      color: figmaColors.grayMuted
     },
     statsRow: {
       flexDirection: 'row',
       flexWrap: 'wrap',
       alignItems: 'center',
-      gap: s(2),
-      marginTop: s(2)
+      gap: s(3)
     },
     statHighlight: {
       fontFamily: appFonts.bodyBold,
@@ -124,19 +142,32 @@ function createStyles(
       fontSize: t(11),
       color: figmaColors.gray
     },
-    statusLine: {
-      fontFamily: appFonts.accent,
-      fontSize: t(10),
-      letterSpacing: 0.4,
-      color: figmaColors.gray,
-      textTransform: 'uppercase',
-      marginTop: s(2)
+    statusRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(5),
+      marginTop: s(1)
     },
-    votes: { gap: s(6) },
+    statusDot: {
+      width: s(7),
+      height: s(7),
+      borderRadius: s(4)
+    },
+    statusText: {
+      fontFamily: appFonts.body,
+      fontSize: t(12)
+    },
+    votes: {
+      alignItems: 'center',
+      gap: s(3),
+      borderLeftWidth: 1,
+      borderLeftColor: figmaColors.borderLight,
+      paddingLeft: s(10)
+    },
     voteBtn: {
-      width: s(34),
-      height: s(30),
-      borderRadius: s(8),
+      width: s(32),
+      height: s(24),
+      borderRadius: s(7),
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
       alignItems: 'center',
@@ -146,6 +177,11 @@ function createStyles(
     voteBtnActive: {
       borderColor: figmaColors.accent,
       backgroundColor: figmaColors.surfaceHighlight
+    },
+    voteScore: {
+      fontFamily: appFonts.bodyBold,
+      fontSize: t(12),
+      color: figmaColors.brownMuted
     }
   });
 }

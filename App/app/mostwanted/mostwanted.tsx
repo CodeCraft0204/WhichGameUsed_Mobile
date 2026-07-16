@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { chipOptionsFromLabels, FigmaChipRow } from '@/components/figma/FigmaChipRow';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaContentLoading } from '@/components/figma/FigmaContentLoading';
@@ -10,11 +10,7 @@ import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import { BountyRankingCard } from '@/components/most-wanted/BountyRankingCard';
 import { FeaturedWantedCard } from '@/components/most-wanted/FeaturedWantedCard';
 import { MostWantedSearchSort } from '@/components/most-wanted/MostWantedSearchSort';
-import {
-  MostWantedEmptyState,
-  MostWantedLinkPill,
-  MostWantedSectionLabel
-} from '@/components/most-wanted/MostWantedShared';
+import { MostWantedEmptyState } from '@/components/most-wanted/MostWantedShared';
 import { WantedCard } from '@/components/most-wanted/WantedCard';
 import { WantedStatsRow } from '@/components/most-wanted/WantedStatsRow';
 import {
@@ -219,6 +215,15 @@ function MostWantedScreenBody() {
         page={page}
       />
 
+      <FigmaChipRow
+        options={chipOptionsFromLabels(mostWantedFilterTabs)}
+        value={activeTab}
+        onChange={(tab) => setActiveTab(tab as MostWantedFilterTab)}
+        s={s}
+        t={t}
+        style={styles.chipRow}
+      />
+
       <WantedStatsRow
         activeHunts={stats.activeHunts}
         solvedThisMonth={stats.solvedThisMonth}
@@ -253,19 +258,27 @@ function MostWantedScreenBody() {
           {previewRankings.length > 0 ? (
             <View style={styles.rankingsSection}>
               <View style={styles.rankingsHeader}>
-                <MostWantedSectionLabel
-                  title={mostWantedCopy.bountyRankingsTitle}
-                  subtitle={mostWantedCopy.bountyRankingsSubtitle}
-                  s={s}
-                  t={t}
+                <Image
+                  source={mostWantedIcons.trophy}
+                  style={styles.rankingsTrophy}
+                  resizeMode="contain"
                 />
-                <MostWantedLinkPill
-                  label="View all"
+                <Text style={styles.rankingsTitle}>{mostWantedCopy.bountyRankingsTitle}</Text>
+                <Pressable
                   onPress={() => router.push(mostWantedRankingsHref())}
-                  s={s}
-                  t={t}
-                />
+                  style={styles.viewAll}
+                  accessibilityRole="button"
+                  accessibilityLabel="View all community priority"
+                >
+                  <Text style={styles.viewAllText}>VIEW ALL</Text>
+                  <Image
+                    source={mostWantedIcons.ctaArrow}
+                    style={styles.viewAllArrow}
+                    resizeMode="contain"
+                  />
+                </Pressable>
               </View>
+              <Text style={styles.rankingsSubtitle}>{mostWantedCopy.bountyRankingsSubtitle}</Text>
               {previewRankings.map((row, index) => (
                 <BountyRankingCard
                   key={row.card_request_id}
@@ -278,15 +291,6 @@ function MostWantedScreenBody() {
               ))}
             </View>
           ) : null}
-
-          <FigmaChipRow
-            options={chipOptionsFromLabels(mostWantedFilterTabs)}
-            value={activeTab}
-            onChange={(tab) => setActiveTab(tab as MostWantedFilterTab)}
-            s={s}
-            t={t}
-            style={styles.chipRow}
-          />
 
           <MostWantedSearchSort
             search={search}
@@ -343,14 +347,40 @@ function MostWantedScreenBody() {
 function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({
     scrollInner: { flexGrow: 1 },
-    chipRow: { marginTop: s(4), marginBottom: s(8) },
+    chipRow: { marginTop: s(4), marginBottom: s(10) },
     rankingsSection: { marginBottom: s(16) },
     rankingsHeader: {
       flexDirection: 'row',
-      alignItems: 'flex-start',
-      justifyContent: 'space-between',
-      gap: s(8)
+      alignItems: 'center',
+      gap: s(8),
+      marginBottom: s(4)
     },
+    rankingsTrophy: { width: s(18), height: s(16) },
+    rankingsTitle: {
+      flex: 1,
+      fontFamily: appFonts.bodyBold,
+      fontSize: t(16),
+      letterSpacing: 0.4,
+      color: figmaColors.brown
+    },
+    rankingsSubtitle: {
+      fontFamily: appFonts.body,
+      fontSize: t(12),
+      color: figmaColors.grayMuted,
+      marginBottom: s(8)
+    },
+    viewAll: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(5)
+    },
+    viewAllText: {
+      fontFamily: appFonts.accent,
+      fontSize: t(12),
+      letterSpacing: 0.4,
+      color: figmaColors.brownMuted
+    },
+    viewAllArrow: { width: s(10), height: s(9) },
     shortcutRow: {
       flexDirection: 'row',
       flexWrap: 'wrap',
