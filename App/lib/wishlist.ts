@@ -135,28 +135,41 @@ export async function listMyWishlist(): Promise<{
 export async function getWishlistEntryForCard(
   cardId: string
 ): Promise<{ itemId: string | null; error: string | null }> {
+  const { data: userData } = await supabase.auth.getUser();
+  const userId = userData.user?.id;
+  if (!userId) return { itemId: null, error: null };
+
+  // Scope to current user — admins can RLS-read everyone's wishlist, and
+  // .maybeSingle() fails with "JSON object requested, multiple (or no) rows returned".
   const { data, error } = await supabase
     .from('wish_list_items')
     .select('id')
     .eq('card_id', cardId)
-    .maybeSingle();
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(1);
 
   if (error) return { itemId: null, error: error.message };
-  return { itemId: (data?.id as string | undefined) ?? null, error: null };
+  const row = (data ?? [])[0] as { id: string } | undefined;
+  return { itemId: row?.id ?? null, error: null };
 }
 
 export async function removeWishlistByCardId(cardId: string): Promise<{ error: string | null }> {
-  const { error } = await supabase.from('wish_list_items').delete().eq('card_id', cardId);
+  const { data: userData } = await supabase.auth.getUser();
+  const userId = userData.user?.id;
+  if (!userId) return { error: 'Sign in required.' };
+
+  const { error } = await supabase
+    .from('wish_list_items')
+    .delete()
+    .eq('card_id', cardId)
+    .eq('user_id', userId);
   return { error: error?.message ?? null };
 }
 
 export async function isCardOnWishlist(cardId: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from('wish_list_items')
-    .select('id')
-    .eq('card_id', cardId)
-    .maybeSingle();
-  return !error && !!data;
+  const { itemId, error } = await getWishlistEntryForCard(cardId);
+  return !error && !!itemId;
 }
 
 export async function addCardToWishlist(
@@ -164,14 +177,17 @@ export async function addCardToWishlist(
   cardId: string,
   notes?: string
 ): Promise<{ itemId: string | null; error: string | null }> {
-  const { data: existing } = await supabase
+  const { data: existingRows, error: existingError } = await supabase
     .from('wish_list_items')
     .select('id')
     .eq('user_id', userId)
     .eq('card_id', cardId)
-    .maybeSingle();
+    .order('created_at', { ascending: false })
+    .limit(1);
 
-  if (existing?.id) return { itemId: existing.id as string, error: null };
+  if (existingError) return { itemId: null, error: existingError.message };
+  const existing = (existingRows ?? [])[0] as { id: string } | undefined;
+  if (existing?.id) return { itemId: existing.id, error: null };
 
   const { data, error } = await supabase
     .from('wish_list_items')

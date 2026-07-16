@@ -6,10 +6,9 @@ import { mostWantedCopy } from '@/constants/mostWantedCopy';
 import { figmaColors } from '@/constants/figmaColors';
 import { EvidenceProgressMeter } from '@/components/most-wanted/EvidenceProgressMeter';
 import { HuntCardImage } from '@/components/most-wanted/HuntCardImage';
-import { MostWantedRewardBadge } from '@/components/most-wanted/MostWantedShared';
+import { MostWantedContributorBadge } from '@/components/most-wanted/MostWantedShared';
 import { WantedStatusTagRow } from '@/components/most-wanted/WantedStatusTag';
 import {
-  formatRewardLabel,
   huntDisplayTitle,
   huntStatusTags,
   type MostWantedHuntRow
@@ -34,11 +33,12 @@ export function FeaturedWantedCard({ hunt, s, t, onPress }: FeaturedWantedCardPr
           <Ionicons name="star" size={s(14)} color={figmaColors.accentStrong} />
           <Text style={styles.label}>{mostWantedCopy.featuredLabel}</Text>
         </View>
-        <MostWantedRewardBadge
-          label={formatRewardLabel(hunt.reward_amount_cents, hunt.reward_label)}
+        <MostWantedContributorBadge
+          label={mostWantedCopy.badgeCreditChip}
           s={s}
           t={t}
           large
+          icon="ribbon"
         />
       </View>
 

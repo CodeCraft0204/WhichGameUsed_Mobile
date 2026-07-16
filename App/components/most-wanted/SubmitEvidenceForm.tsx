@@ -304,6 +304,8 @@ export function SubmitEvidenceForm({
         </View>
       ) : null}
 
+      <Text style={styles.creditFooter}>{mostWantedCopy.submitCreditFooter}</Text>
+
       <View style={styles.navRow}>
         {step > 0 ? (
           <Pressable style={styles.backBtn} onPress={goBack} disabled={busy}>
@@ -327,7 +329,10 @@ export function SubmitEvidenceForm({
         )}
       </View>
       {busy ? <ActivityIndicator color={figmaColors.charcoal} style={{ marginTop: s(8) }} /> : null}
-      <Text style={styles.hint}>Your submission will appear under Contributions as Pending.</Text>
+      <Text style={styles.hint}>
+        Your submission will appear under Contributions as Pending. Approved evidence earns
+        contributor credit and leaderboard points.
+      </Text>
     </View>
   );
 }
@@ -604,6 +609,13 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontFamily: appFonts.body,
       fontSize: t(13),
       color: figmaColors.error
+    },
+    creditFooter: {
+      fontFamily: appFonts.body,
+      fontSize: t(13),
+      lineHeight: t(18),
+      color: figmaColors.gray,
+      textAlign: 'center'
     },
     hint: {
       fontFamily: appFonts.body,

@@ -1,9 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { appFonts } from '@/constants/appFonts';
 import { figmaColors } from '@/constants/figmaColors';
-import { figmaIcons } from '@/constants/figmaIcons';
 import { EvidenceProgressMeter } from '@/components/most-wanted/EvidenceProgressMeter';
 import { HuntCardImage } from '@/components/most-wanted/HuntCardImage';
 import { huntDisplayTitle, type SolvedHuntRow } from '@/lib/most-wanted';
@@ -49,7 +48,9 @@ export function SolvedHuntCard({ hunt, s, t, onPress, onViewCatalog }: SolvedHun
             {contributorCount} contributor{contributorCount === 1 ? '' : 's'}
             {contributors.length > 0 ? ` · ${contributors.join(', ')}` : ''}
           </Text>
-        ) : null}
+        ) : (
+          <Text style={styles.contributors}>Badge credit earned by community contributors</Text>
+        )}
         <EvidenceProgressMeter
           fulfilled={hunt.requirements_fulfilled}
           total={hunt.requirements_total}
@@ -57,12 +58,10 @@ export function SolvedHuntCard({ hunt, s, t, onPress, onViewCatalog }: SolvedHun
           t={t}
           compact
         />
-        {hunt.reward_claimed ? (
-          <View style={styles.claimedPill}>
-            <Image source={figmaIcons.sealApproved} style={styles.claimedIcon} resizeMode="contain" />
-            <Text style={styles.claimedText}>Reward Claimed</Text>
-          </View>
-        ) : null}
+        <View style={styles.claimedPill}>
+          <Ionicons name="ribbon" size={s(14)} color={figmaColors.accentStrong} />
+          <Text style={styles.claimedText}>Contributor recognition</Text>
+        </View>
         {hunt.card_id && onViewCatalog ? (
           <Pressable onPress={onViewCatalog} style={styles.catalogBtn}>
             <Text style={styles.catalogText}>View catalog card</Text>

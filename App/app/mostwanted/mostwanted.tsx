@@ -77,7 +77,9 @@ function MostWantedScreenBody() {
   const [stats, setStats] = useState<MostWantedStats>({
     activeHunts: 0,
     solvedThisMonth: 0,
-    rewardPoolCents: 0
+    rewardPoolCents: 0,
+    contributorCount: 0,
+    badgesAwarded: 0
   });
   const [featured, setFeatured] = useState<MostWantedHuntRow | null>(null);
   const [items, setItems] = useState<MostWantedHuntRow[]>([]);
@@ -220,7 +222,7 @@ function MostWantedScreenBody() {
       <WantedStatsRow
         activeHunts={stats.activeHunts}
         solvedThisMonth={stats.solvedThisMonth}
-        rewardPoolCents={stats.rewardPoolCents}
+        contributorCount={stats.contributorCount}
         s={s}
         t={t}
       />

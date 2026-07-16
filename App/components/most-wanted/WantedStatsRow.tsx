@@ -4,12 +4,11 @@ import { appFonts } from '@/constants/appFonts';
 import { figmaIcons } from '@/constants/figmaIcons';
 import { figmaColors } from '@/constants/figmaColors';
 import { mostWantedCopy } from '@/constants/mostWantedCopy';
-import { formatRewardPool } from '@/lib/most-wanted';
 
 type WantedStatsRowProps = {
   activeHunts: number;
   solvedThisMonth: number;
-  rewardPoolCents: number;
+  contributorCount: number;
   s: (n: number) => number;
   t: (n: number) => number;
 };
@@ -37,7 +36,7 @@ function StatCard({
   );
 }
 
-export function WantedStatsRow({ activeHunts, solvedThisMonth, rewardPoolCents, s, t }: WantedStatsRowProps) {
+export function WantedStatsRow({ activeHunts, solvedThisMonth, contributorCount, s, t }: WantedStatsRowProps) {
   const styles = useMemo(() => createStyles(s), [s]);
   return (
     <View style={styles.row}>
@@ -56,9 +55,9 @@ export function WantedStatsRow({ activeHunts, solvedThisMonth, rewardPoolCents, 
         t={t}
       />
       <StatCard
-        icon={figmaIcons.treasureChest}
-        label={mostWantedCopy.statsRewardPool}
-        value={formatRewardPool(rewardPoolCents)}
+        icon={figmaIcons.metaPerson}
+        label={mostWantedCopy.statsContributors}
+        value={String(contributorCount)}
         s={s}
         t={t}
       />

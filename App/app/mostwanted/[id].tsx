@@ -18,13 +18,13 @@ import { EvidenceChecklist } from '@/components/most-wanted/EvidenceChecklist';
 import { EvidenceProgressMeter } from '@/components/most-wanted/EvidenceProgressMeter';
 import { HuntCardImage } from '@/components/most-wanted/HuntCardImage';
 import {
-  MostWantedEmptyState,
-  MostWantedRewardBadge
+  MostWantedContributorBadge,
+  MostWantedEmptyState
 } from '@/components/most-wanted/MostWantedShared';
 import { SolvedStatusBanner, WantedStatusTagRow } from '@/components/most-wanted/WantedStatusTag';
 import { appFonts } from '@/constants/appFonts';
 import { databaseCopy } from '@/constants/databaseCopy';
-import { mostWantedCopy } from '@/constants/mostWantedCopy';
+import { mostWantedBadgeCatalog, mostWantedCopy } from '@/constants/mostWantedCopy';
 import { huntCardBorder } from '@/constants/mostWantedStyles';
 import {
   databaseCardHref,
@@ -37,13 +37,13 @@ import { useAuth } from '@/context/AuthContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import { useMostWantedRealtime } from '@/hooks/useMostWantedRealtime';
 import {
-  claimMostWantedReward,
-  formatRewardLabel,
   getMostWantedDetail,
   huntDisplayTitle,
   huntStatusTagsFromLabels,
   leadSummary,
+  listHuntContributorBadges,
   toggleMostWantedWatch,
+  type MostWantedContributorBadgeRow,
   type MostWantedDetailPayload
 } from '@/lib/most-wanted';
 import { addCardToWishlist } from '@/lib/wishlist';
@@ -56,23 +56,26 @@ export default function MostWantedDetailScreen() {
   const styles = useMemo(() => createStyles(s, t), [s, t]);
 
   const [detail, setDetail] = useState<MostWantedDetailPayload | null>(null);
+  const [badges, setBadges] = useState<MostWantedContributorBadgeRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [wishlistBusy, setWishlistBusy] = useState(false);
   const [watchBusy, setWatchBusy] = useState(false);
-  const [claimBusy, setClaimBusy] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
-  const [claimSubmitted, setClaimSubmitted] = useState(false);
 
   const reload = useCallback(
     async (opts?: { silent?: boolean }) => {
       if (!id || typeof id !== 'string') return;
       if (!opts?.silent) setLoading(true);
       setError(null);
-      const { detail: payload, error: err } = await getMostWantedDetail(id);
+      const [{ detail: payload, error: err }, badgesRes] = await Promise.all([
+        getMostWantedDetail(id),
+        listHuntContributorBadges(id)
+      ]);
       setDetail(payload);
-      setError(err);
+      setBadges(badgesRes.items);
+      setError(err ?? badgesRes.error);
       setLoading(false);
       setRefreshing(false);
     },
@@ -136,19 +139,6 @@ export default function MostWantedDetailScreen() {
     setActionMessage(wishError ? wishError : databaseCopy.wishlistAddedFromMostWanted);
   }, [hunt, user]);
 
-  const handleClaimReward = useCallback(async () => {
-    if (!hunt || !user) return;
-    setClaimBusy(true);
-    const { claimed, error: claimError } = await claimMostWantedReward(hunt.id);
-    setClaimBusy(false);
-    if (claimError) setActionMessage(claimError);
-    else if (claimed) {
-      setClaimSubmitted(true);
-      setActionMessage(mostWantedCopy.detailRewardPending);
-      void reload({ silent: true });
-    }
-  }, [hunt, reload, user]);
-
   const handleDiscuss = useCallback(() => {
     if (hunt?.forum_thread_id) {
       router.push(discussionThreadHref(hunt.forum_thread_id));
@@ -170,12 +160,8 @@ export default function MostWantedDetailScreen() {
     );
   }
 
-  const canClaim =
-    hunt?.status === 'solved' &&
-    user?.id === hunt.solved_by &&
-    !hunt.reward_claimed &&
-    !claimSubmitted;
-  const rewardClaimed = Boolean(hunt?.reward_claimed) || claimSubmitted;
+  const myBadges = user ? badges.filter((b) => b.user_id === user.id) : [];
+  const uniqueContributors = [...new Set(badges.map((b) => b.display_name))];
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -212,7 +198,6 @@ export default function MostWantedDetailScreen() {
                 <SolvedStatusBanner
                   solverName={hunt.solver_name}
                   solvedAt={hunt.solved_at}
-                  rewardClaimed={hunt.reward_claimed}
                   s={s}
                   t={t}
                 />
@@ -229,16 +214,15 @@ export default function MostWantedDetailScreen() {
                     framed
                     s={s}
                   />
-                  {hunt.reward_amount_cents > 0 ? (
-                    <View style={styles.rewardOverlay}>
-                      <MostWantedRewardBadge
-                        label={formatRewardLabel(hunt.reward_amount_cents, hunt.reward_label)}
-                        s={s}
-                        t={t}
-                        large
-                      />
-                    </View>
-                  ) : null}
+                  <View style={styles.rewardOverlay}>
+                    <MostWantedContributorBadge
+                      label={mostWantedCopy.badgeCreditChip}
+                      s={s}
+                      t={t}
+                      large
+                      icon="ribbon"
+                    />
+                  </View>
                 </View>
 
                 <View style={styles.heroBody}>
@@ -261,10 +245,11 @@ export default function MostWantedDetailScreen() {
 
               <View style={styles.statusBar}>
                 <View style={styles.statusBarItem}>
-                  <MostWantedRewardBadge
-                    label={formatRewardLabel(hunt.reward_amount_cents, hunt.reward_label)}
+                  <MostWantedContributorBadge
+                    label={mostWantedCopy.badgeCreditChip}
                     s={s}
                     t={t}
+                    icon="ribbon"
                   />
                 </View>
                 <Pressable
@@ -340,27 +325,79 @@ export default function MostWantedDetailScreen() {
                 ))
               )}
 
-              <Text style={styles.sectionTitle}>{mostWantedCopy.detailReward}</Text>
+              <Text style={styles.sectionTitle}>
+                {hunt.status === 'solved'
+                  ? mostWantedCopy.detailContributors
+                  : mostWantedCopy.detailBadgePanel}
+              </Text>
               <View style={styles.rewardCard}>
-                <MostWantedRewardBadge
-                  label={formatRewardLabel(hunt.reward_amount_cents, hunt.reward_label)}
+                <MostWantedContributorBadge
+                  label={
+                    hunt.status === 'solved'
+                      ? mostWantedCopy.detailBadgeCredit
+                      : mostWantedCopy.detailBadgePanel
+                  }
                   s={s}
                   t={t}
                   large
+                  icon="ribbon"
                 />
-                <Text style={styles.rewardSub}>
-                  Contributor recognition is available when your evidence is approved. Solvers can
-                  claim the bounty when the card is solved.
-                </Text>
-                {rewardClaimed ? (
-                  <View style={styles.claimedBanner}>
-                    <Ionicons name="checkmark-circle" size={s(18)} color={figmaColors.success} />
-                    <Text style={styles.rewardClaimed}>
-                      {hunt.reward_claimed
-                        ? mostWantedCopy.detailRewardClaimed
-                        : mostWantedCopy.detailRewardPending}
-                    </Text>
-                  </View>
+                <Text style={styles.rewardSub}>{mostWantedCopy.detailBadgeBody}</Text>
+                {hunt.status !== 'solved' ? (
+                  <>
+                    <Text style={styles.badgeGroupLabel}>{mostWantedCopy.detailBadgesAvailable}</Text>
+                    <View style={styles.badgeWrap}>
+                      {mostWantedBadgeCatalog.map((badge) => (
+                        <MostWantedContributorBadge
+                          key={badge.key}
+                          label={badge.label}
+                          icon={badge.icon}
+                          s={s}
+                          t={t}
+                        />
+                      ))}
+                    </View>
+                  </>
+                ) : null}
+                {myBadges.length > 0 ? (
+                  <>
+                    <Text style={styles.badgeGroupLabel}>{mostWantedCopy.detailYourBadges}</Text>
+                    <View style={styles.badgeWrap}>
+                      {myBadges.map((badge) => (
+                        <MostWantedContributorBadge
+                          key={badge.id}
+                          label={badge.badge_label}
+                          s={s}
+                          t={t}
+                          icon="checkmark-circle"
+                        />
+                      ))}
+                    </View>
+                  </>
+                ) : null}
+                {hunt.status === 'solved' ? (
+                  <>
+                    {uniqueContributors.length > 0 ? (
+                      <Text style={styles.rewardSub}>
+                        Recognized: {uniqueContributors.join(', ')}
+                      </Text>
+                    ) : (
+                      <Text style={styles.rewardSub}>{mostWantedCopy.emptyBadges}</Text>
+                    )}
+                    {badges.length > 0 ? (
+                      <View style={styles.badgeWrap}>
+                        {badges.slice(0, 8).map((badge) => (
+                          <MostWantedContributorBadge
+                            key={badge.id}
+                            label={`${badge.display_name}: ${badge.badge_label}`}
+                            s={s}
+                            t={t}
+                            icon="ribbon"
+                          />
+                        ))}
+                      </View>
+                    ) : null}
+                  </>
                 ) : null}
               </View>
 
@@ -404,19 +441,9 @@ export default function MostWantedDetailScreen() {
                 label={mostWantedCopy.detailSubmit}
                 onPress={() => router.push(mostWantedSubmitHref(hunt.id))}
               />
-            ) : canClaim ? (
-              <AuthPrimaryButton
-                label={mostWantedCopy.detailClaimReward}
-                onPress={() => void handleClaimReward()}
-                disabled={claimBusy}
-              />
             ) : (
               <View style={styles.stickyIdle}>
-                <Text style={styles.stickyIdleText}>
-                  {rewardClaimed
-                    ? mostWantedCopy.detailRewardClaimed
-                    : 'This Most Wanted card is solved.'}
-                </Text>
+                <Text style={styles.stickyIdleText}>This Most Wanted card is solved.</Text>
               </View>
             )}
           </View>
@@ -658,6 +685,17 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: t(13),
       color: figmaColors.success,
       flex: 1
+    },
+    badgeGroupLabel: {
+      fontFamily: appFonts.bodyBold,
+      fontSize: t(12),
+      color: figmaColors.charcoal,
+      marginTop: s(4)
+    },
+    badgeWrap: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: s(6)
     },
     stickyCta: {
       borderTopWidth: 1,

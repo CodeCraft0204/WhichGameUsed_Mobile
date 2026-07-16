@@ -42,6 +42,21 @@ export type MostWantedStats = {
   activeHunts: number;
   solvedThisMonth: number;
   rewardPoolCents: number;
+  contributorCount: number;
+  badgesAwarded: number;
+};
+
+export type MostWantedContributorBadgeRow = {
+  id: string;
+  hunt_id: string;
+  user_id: string;
+  display_name: string;
+  submission_id: string | null;
+  badge_key: string;
+  badge_label: string;
+  source: string;
+  confirmed_at: string | null;
+  created_at: string;
 };
 
 export type MostWantedRequirement = {
@@ -320,15 +335,36 @@ export async function fetchMostWantedStats(): Promise<{ stats: MostWantedStats |
   const { data, error } = await supabase.rpc('get_most_wanted_stats');
   if (error) return { stats: null, error: error.message };
   const row = Array.isArray(data) ? data[0] : data;
-  if (!row) return { stats: { activeHunts: 0, solvedThisMonth: 0, rewardPoolCents: 0 }, error: null };
+  if (!row) {
+    return {
+      stats: {
+        activeHunts: 0,
+        solvedThisMonth: 0,
+        rewardPoolCents: 0,
+        contributorCount: 0,
+        badgesAwarded: 0
+      },
+      error: null
+    };
+  }
   return {
     stats: {
       activeHunts: row.active_hunts ?? 0,
       solvedThisMonth: row.solved_this_month ?? 0,
-      rewardPoolCents: row.reward_pool_cents ?? 0
+      rewardPoolCents: row.reward_pool_cents ?? 0,
+      contributorCount: row.contributor_count ?? 0,
+      badgesAwarded: row.badges_awarded ?? 0
     },
     error: null
   };
+}
+
+export async function listHuntContributorBadges(
+  huntId: string
+): Promise<{ items: MostWantedContributorBadgeRow[]; error: string | null }> {
+  const { data, error } = await supabase.rpc('list_most_wanted_hunt_badges', { p_hunt_id: huntId });
+  if (error) return { items: [], error: error.message };
+  return { items: (data ?? []) as MostWantedContributorBadgeRow[], error: null };
 }
 
 export async function listMostWantedHunts(opts?: {
@@ -367,15 +403,14 @@ export async function findMostWantedByCardId(
     .eq('card_id', cardId)
     .in('status', ['active', 'near_solved', 'solved'])
     .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(1);
 
   if (error) return { item: null, error: error.message };
-  if (!data) return { item: null, error: null };
-  return {
-    item: data as Pick<MostWantedHuntRow, 'id' | 'card_title' | 'status' | 'reward_label'>,
-    error: null
-  };
+  const row = (data ?? [])[0] as
+    | Pick<MostWantedHuntRow, 'id' | 'card_title' | 'status' | 'reward_label'>
+    | undefined;
+  if (!row) return { item: null, error: null };
+  return { item: row, error: null };
 }
 
 export async function getMostWantedDetail(id: string): Promise<{ detail: MostWantedDetailPayload | null; error: string | null }> {
@@ -540,20 +575,25 @@ export async function submitMostWantedEvidence(
   if (input.imageUri) {
     try {
       const blob = await uriToBlob(input.imageUri);
-      const path = `most-wanted/${userData.user.id}/${data.id}.jpg`;
+      // storage RLS (user_content_auth_upload): first folder must be auth.uid()
+      const path = `${userData.user.id}/most-wanted/${data.id}.jpg`;
       const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, blob, {
         contentType: 'image/jpeg',
         upsert: true
       });
-      if (uploadError) return { submissionId: null, error: uploadError.message };
+      if (uploadError) return { submissionId: data.id as string, error: uploadError.message };
 
       const { error: updateError } = await supabase
         .from('most_wanted_evidence_submissions')
         .update({ image_bucket: BUCKET, image_storage_path: path })
-        .eq('id', data.id);
-      if (updateError) return { submissionId: null, error: updateError.message };
+        .eq('id', data.id)
+        .eq('submitted_by', userData.user.id);
+      if (updateError) return { submissionId: data.id as string, error: updateError.message };
     } catch (e) {
-      return { submissionId: null, error: e instanceof Error ? e.message : 'Upload failed.' };
+      return {
+        submissionId: data.id as string,
+        error: e instanceof Error ? e.message : 'Upload failed.'
+      };
     }
   }
 

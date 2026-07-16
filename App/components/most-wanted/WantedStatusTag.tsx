@@ -63,13 +63,11 @@ export function WantedStatusTagRow({
 export function SolvedStatusBanner({
   solverName,
   solvedAt,
-  rewardClaimed,
   s,
   t
 }: {
   solverName?: string | null;
   solvedAt?: string | null;
-  rewardClaimed?: boolean;
   s: (n: number) => number;
   t: (n: number) => number;
 }) {
@@ -80,7 +78,7 @@ export function SolvedStatusBanner({
       <View style={styles.body}>
         <Text style={styles.title}>Solved by {solverName ?? 'Community'}</Text>
         {solvedAt ? <Text style={styles.meta}>{new Date(solvedAt).toLocaleDateString()}</Text> : null}
-        {rewardClaimed ? <Text style={styles.claimed}>Reward claimed</Text> : null}
+        <Text style={styles.claimed}>Contributor recognition awarded</Text>
       </View>
     </View>
   );

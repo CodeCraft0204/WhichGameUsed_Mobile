@@ -7,10 +7,9 @@ import { huntCardBackground, huntCardBorder } from '@/constants/mostWantedStyles
 import { figmaColors } from '@/constants/figmaColors';
 import { EvidenceProgressMeter } from '@/components/most-wanted/EvidenceProgressMeter';
 import { HuntCardImage } from '@/components/most-wanted/HuntCardImage';
-import { MostWantedRewardBadge } from '@/components/most-wanted/MostWantedShared';
+import { MostWantedContributorBadge } from '@/components/most-wanted/MostWantedShared';
 import { WantedStatusTagRow } from '@/components/most-wanted/WantedStatusTag';
 import {
-  formatRewardLabel,
   huntDisplayTitle,
   huntStatusTags,
   huntSubtitle,
@@ -45,15 +44,14 @@ export function WantedCard({ hunt, s, t, onPress, onContribute, compact }: Wante
           framed
           s={s}
         />
-        {hunt.reward_amount_cents > 0 ? (
-          <View style={styles.rewardOverlay}>
-            <MostWantedRewardBadge
-              label={formatRewardLabel(hunt.reward_amount_cents, hunt.reward_label)}
-              s={s}
-              t={t}
-            />
-          </View>
-        ) : null}
+        <View style={styles.rewardOverlay}>
+          <MostWantedContributorBadge
+            label={mostWantedCopy.badgeCreditChip}
+            s={s}
+            t={t}
+            icon="ribbon"
+          />
+        </View>
       </View>
 
       <View style={styles.body}>

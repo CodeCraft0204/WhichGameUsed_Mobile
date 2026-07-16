@@ -1,10 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo } from 'react';
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { appFonts } from '@/constants/appFonts';
 import { contributionStatusColors, type MwContributionStatus } from '@/constants/mostWantedStyles';
 import { figmaColors } from '@/constants/figmaColors';
-import { figmaIcons } from '@/constants/figmaIcons';
 
 export function MostWantedSectionLabel({
   title,
@@ -26,6 +25,29 @@ export function MostWantedSectionLabel({
   );
 }
 
+export function MostWantedContributorBadge({
+  label,
+  s,
+  t,
+  large,
+  icon = 'ribbon'
+}: {
+  label: string;
+  s: (n: number) => number;
+  t: (n: number) => number;
+  large?: boolean;
+  icon?: keyof typeof Ionicons.glyphMap;
+}) {
+  const styles = useMemo(() => createRewardStyles(s, t, large), [s, t, large]);
+  return (
+    <View style={styles.badge}>
+      <Ionicons name={icon} size={large ? s(16) : s(12)} color={figmaColors.accentStrong} />
+      <Text style={styles.text}>{label}</Text>
+    </View>
+  );
+}
+
+/** @deprecated Prefer MostWantedContributorBadge */
 export function MostWantedRewardBadge({
   label,
   s,
@@ -37,13 +59,7 @@ export function MostWantedRewardBadge({
   t: (n: number) => number;
   large?: boolean;
 }) {
-  const styles = useMemo(() => createRewardStyles(s, t, large), [s, t, large]);
-  return (
-    <View style={styles.badge}>
-      <Image source={figmaIcons.treasureChest} style={styles.icon} resizeMode="contain" />
-      <Text style={styles.text}>{label}</Text>
-    </View>
-  );
+  return <MostWantedContributorBadge label={label} s={s} t={t} large={large} icon="ribbon" />;
 }
 
 export function MostWantedStatusBadge({

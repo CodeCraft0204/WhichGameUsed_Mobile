@@ -12,7 +12,7 @@ export type MostWantedFilterTab = (typeof mostWantedFilterTabs)[number];
 export const mostWantedSortOptions = [
   { key: 'most_wanted', label: 'Most Wanted' },
   { key: 'newest', label: 'Newest' },
-  { key: 'highest_reward', label: 'Highest Reward' },
+  { key: 'highest_reward', label: 'Most watched' },
   { key: 'near_solved', label: 'Near Solved' }
 ] as const;
 
@@ -53,19 +53,28 @@ export const mostWantedEvidenceTypes = [
 
 export type MostWantedEvidenceTypeKey = (typeof mostWantedEvidenceTypes)[number]['key'];
 
+export const mostWantedBadgeCatalog = [
+  { key: 'evidence_finder', label: 'Evidence Finder', icon: 'search' as const },
+  { key: 'source_hunter', label: 'Source Hunter', icon: 'link' as const },
+  { key: 'research_helper', label: 'Research Helper', icon: 'bulb' as const },
+  { key: 'card_solver', label: 'Card Solver', icon: 'medal' as const },
+  { key: 'most_wanted_contributor', label: 'Most Wanted Contributor', icon: 'ribbon' as const }
+] as const;
+
 export const mostWantedCopy = {
   pageTitle: 'MOST WANTED',
   pageSubtitle: 'Help the community find missing game-used evidence.',
   pageDescription:
-    'Browse active Most Wanted cards, contribute research, and earn rewards when your evidence helps prove a card.',
+    'Browse active Most Wanted cards, contribute research, and earn contributor badges plus leaderboard points when your evidence is approved.',
   statsActive: 'Active Cards',
   statsSolved: 'Solved This Month',
-  statsRewardPool: 'Reward Pool',
+  statsContributors: 'Contributors',
   featuredLabel: 'FEATURED MOST WANTED',
   viewHunt: 'View Card',
   contribute: 'Contribute',
   neededPrefix: 'Needed:',
   watchersSuffix: 'collectors watching',
+  badgeCreditChip: 'Badge credit',
   searchPlaceholder: 'Search player, team, year, set...',
   sortLabel: 'Sort',
   activeListTitle: 'ACTIVE MOST WANTED',
@@ -78,9 +87,9 @@ export const mostWantedCopy = {
   errorTitle: 'Could not load Most Wanted',
   loading: 'Loading Most Wanted…',
   solvedTitle: 'SOLVED ITEMS',
-  solvedSubtitle: 'Recently completed community research.',
+  solvedSubtitle: 'Recently completed community research and contributor recognition.',
   contributionsTitle: 'MY CONTRIBUTIONS',
-  contributionsSubtitle: 'Track evidence you submitted for review.',
+  contributionsSubtitle: 'Track evidence you submitted for review and badge credit.',
   submitTitle: 'SUBMIT EVIDENCE',
   submitSubtitle: 'A short guided flow to share evidence for review.',
   submitStepType: 'Evidence type',
@@ -91,6 +100,7 @@ export const mostWantedCopy = {
   submitStepNotesHint: 'Explain what this shows and why it helps close the case.',
   submitStepReview: 'Review & submit',
   submitStepReviewHint: 'Confirm everything looks right before sending for review.',
+  submitCreditFooter: 'Submit useful evidence to earn contributor credit.',
   submitUploadEmpty: 'Tap to add a photo from your library or camera.',
   submitNext: 'Continue',
   submitBack: 'Back',
@@ -98,7 +108,13 @@ export const mostWantedCopy = {
   detailTitle: 'MOST WANTED',
   detailWhatWeNeed: 'Evidence Still Needed',
   detailProgress: 'Evidence Progress',
-  detailReward: 'Bounty / Recognition',
+  detailBadgePanel: 'Contributor Badge Available',
+  detailBadgeCredit: 'Badge Credit Available',
+  detailBadgeBody:
+    'Earn recognition when your submitted evidence is approved. Approved contributions also earn leaderboard points — monthly cash prizes stay on the Leaderboard.',
+  detailBadgesAvailable: 'Badges you can earn',
+  detailYourBadges: 'Your badges on this card',
+  detailContributors: 'Contributor recognition',
   detailLeads: 'What Has Been Submitted',
   detailSubmit: 'Submit Evidence',
   detailWishlist: 'Add to Wishlist',
@@ -106,9 +122,6 @@ export const mostWantedCopy = {
   detailWatching: 'Watching',
   detailDiscuss: 'Discuss',
   detailShare: 'Share',
-  detailClaimReward: 'Claim Reward',
-  detailRewardClaimed: 'Reward Claimed',
-  detailRewardPending: 'Claim submitted — awaiting fulfillment',
   detailViewCatalog: 'View Catalog Card',
   watchedTitle: 'WATCHED',
   watchedSubtitle: 'Most Wanted cards you are following for updates.',
@@ -118,13 +131,14 @@ export const mostWantedCopy = {
   rankingsPageSubtitle: 'Ranked card requests by wishlist saves and community votes.',
   signInToContribute: 'Sign in to submit evidence for admin review.',
   emptyContributionsTitle: 'No contributions yet',
-  emptyContributionsBody: 'Submit evidence on an active Most Wanted card to help the community solve it.',
+  emptyContributionsBody: 'Submit evidence on an active Most Wanted card to earn contributor credit.',
   emptyWatchedTitle: 'No watched cards',
   emptyWatchedBody: 'Watch Most Wanted cards from the main board to track progress and new leads here.',
   emptySolvedTitle: 'No solved items yet',
   emptySolvedBody: 'When the community completes a Most Wanted card, it will appear in this archive.',
   emptyRankingsTitle: 'No ranked requests yet',
   emptyRankingsBody: 'Card requests will appear here as collectors save and vote on them.',
+  emptyBadges: 'No contributor badges awarded yet.',
   contributionSections: {
     pending_review: 'Pending',
     approved: 'Approved',
