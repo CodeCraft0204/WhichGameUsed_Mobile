@@ -83,6 +83,31 @@ function isPromoted(status: WishlistDisplayStatus): boolean {
   return status === 'promoted_to_most_wanted' || status === 'evidence_needed';
 }
 
+function journeyHint(status: WishlistDisplayStatus): string {
+  switch (status) {
+    case 'saved':
+      return databaseCopy.wishlistStorySaved;
+    case 'requested':
+      return databaseCopy.wishlistStoryRequested;
+    case 'under_review':
+      return databaseCopy.wishlistStoryUnderReview;
+    case 'promoted_to_most_wanted':
+      return databaseCopy.wishlistStoryPromoted;
+    case 'evidence_needed':
+      return databaseCopy.wishlistStoryEvidence;
+    case 'added_to_database':
+      return databaseCopy.wishlistStoryAdded;
+    default:
+      return databaseCopy.wishlistJourneyHint;
+  }
+}
+
+function statusChipTone(status: WishlistDisplayStatus): 'neutral' | 'mw' | 'done' {
+  if (status === 'added_to_database') return 'done';
+  if (isPromoted(status)) return 'mw';
+  return 'neutral';
+}
+
 export default function WishlistScreen() {
   const router = useRouter();
   const { user } = useAuth();
@@ -169,65 +194,75 @@ export default function WishlistScreen() {
               style={styles.chipRow}
             />
 
+            <Text style={styles.journeyHint}>{databaseCopy.wishlistJourneyHint}</Text>
+
             {filtered.length === 0 ? (
               <Text style={styles.emptyFilter}>No wishlist items in this status.</Text>
             ) : (
-              filtered.map((item) => (
-                <Pressable
-                  key={item.id}
-                  style={styles.card}
-                  onPress={() => router.push(databaseWishlistDetailHref(item.id))}
-                >
-                  <View style={styles.thumb}>
-                    {item.imageUrl ? (
-                      <Image
-                        source={{ uri: item.imageUrl }}
-                        style={styles.thumbImage}
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <Ionicons name="image-outline" size={s(22)} color={figmaColors.gray} />
-                    )}
-                  </View>
-                  <View style={styles.rowBody}>
-                    <Text style={styles.rowTitle} numberOfLines={2}>
-                      {item.card_title}
-                    </Text>
-                    {[item.player_name, item.product_year].filter(Boolean).length > 0 ? (
-                      <Text style={styles.rowMeta} numberOfLines={1}>
-                        {[item.player_name, item.product_year].filter(Boolean).join(' · ')}
+              filtered.map((item) => {
+                const tone = statusChipTone(item.display_status);
+                return (
+                  <Pressable
+                    key={item.id}
+                    style={styles.card}
+                    onPress={() => router.push(databaseWishlistDetailHref(item.id))}
+                  >
+                    <View style={styles.thumb}>
+                      {item.imageUrl ? (
+                        <Image
+                          source={{ uri: item.imageUrl }}
+                          style={styles.thumbImage}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <Ionicons name="image-outline" size={s(22)} color={figmaColors.gray} />
+                      )}
+                    </View>
+                    <View style={styles.rowBody}>
+                      <Text style={styles.rowTitle} numberOfLines={2}>
+                        {item.card_title}
                       </Text>
-                    ) : null}
-                    <View style={styles.badgeRow}>
-                      <View
-                        style={[
-                          styles.statusBadge,
-                          isPromoted(item.display_status) && styles.statusBadgeMw
-                        ]}
-                      >
-                        <Text
+                      {[item.player_name, item.product_year].filter(Boolean).length > 0 ? (
+                        <Text style={styles.rowMeta} numberOfLines={1}>
+                          {[item.player_name, item.product_year].filter(Boolean).join(' · ')}
+                        </Text>
+                      ) : null}
+                      <View style={styles.badgeRow}>
+                        <View
                           style={[
-                            styles.statusText,
-                            isPromoted(item.display_status) && styles.statusTextMw
+                            styles.statusBadge,
+                            tone === 'mw' && styles.statusBadgeMw,
+                            tone === 'done' && styles.statusBadgeDone
                           ]}
                         >
-                          {statusLabel(item.display_status)}
-                        </Text>
-                      </View>
-                      {isPromoted(item.display_status) ? (
-                        <View style={styles.mwBadge}>
-                          <Text style={styles.mwBadgeText}>
-                            {databaseCopy.wishlistMostWantedBadge}
+                          <Text
+                            style={[
+                              styles.statusText,
+                              tone === 'mw' && styles.statusTextMw,
+                              tone === 'done' && styles.statusTextDone
+                            ]}
+                          >
+                            {statusLabel(item.display_status)}
                           </Text>
                         </View>
-                      ) : null}
+                        {isPromoted(item.display_status) ? (
+                          <View style={styles.mwBadge}>
+                            <Text style={styles.mwBadgeText}>
+                              {databaseCopy.wishlistMostWantedBadge}
+                            </Text>
+                          </View>
+                        ) : null}
+                      </View>
+                      <Text style={styles.rowHint} numberOfLines={2}>
+                        {journeyHint(item.display_status)}
+                      </Text>
                     </View>
-                  </View>
-                  <Pressable onPress={() => void removeItem(item.id)} hitSlop={12}>
-                    <Ionicons name="close-circle-outline" size={s(22)} color={figmaColors.gray} />
+                    <Pressable onPress={() => void removeItem(item.id)} hitSlop={12}>
+                      <Ionicons name="close-circle-outline" size={s(22)} color={figmaColors.gray} />
+                    </Pressable>
                   </Pressable>
-                </Pressable>
-              ))
+                );
+              })
             )}
 
             <Pressable
@@ -297,18 +332,25 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       color: figmaColors.bronze
     },
     chipRow: {
+      marginBottom: s(8)
+    },
+    journeyHint: {
+      fontFamily: appFonts.body,
+      fontSize: t(13),
+      lineHeight: t(18),
+      color: figmaColors.grayMuted,
       marginBottom: s(12)
     },
     card: {
       flexDirection: 'row',
-      alignItems: 'center',
+      alignItems: 'flex-start',
       gap: s(12),
       borderWidth: 1,
-      borderColor: figmaColors.borderLight,
-      borderRadius: s(14),
+      borderColor: figmaColors.borderStrong,
+      borderRadius: s(12),
       padding: s(12),
       marginBottom: s(10),
-      backgroundColor: figmaColors.cream
+      backgroundColor: figmaColors.parchment
     },
     thumb: {
       width: s(56),
@@ -333,6 +375,12 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: t(13),
       color: figmaColors.gray
     },
+    rowHint: {
+      fontFamily: appFonts.body,
+      fontSize: t(12),
+      lineHeight: t(16),
+      color: figmaColors.brownMuted
+    },
     badgeRow: {
       flexDirection: 'row',
       flexWrap: 'wrap',
@@ -342,13 +390,17 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       backgroundColor: figmaColors.tagBg,
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
-      borderRadius: s(8),
+      borderRadius: s(5),
       paddingHorizontal: s(8),
       paddingVertical: s(3)
     },
     statusBadgeMw: {
       backgroundColor: figmaColors.surfaceHighlight,
-      borderColor: figmaColors.accent
+      borderColor: figmaColors.borderStrong
+    },
+    statusBadgeDone: {
+      backgroundColor: figmaColors.successBg,
+      borderColor: figmaColors.success
     },
     statusText: {
       fontFamily: appFonts.accent,
@@ -357,11 +409,14 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       color: figmaColors.charcoal
     },
     statusTextMw: {
-      color: figmaColors.accentStrong
+      color: figmaColors.brown
+    },
+    statusTextDone: {
+      color: figmaColors.success
     },
     mwBadge: {
-      backgroundColor: figmaColors.charcoal,
-      borderRadius: s(8),
+      backgroundColor: figmaColors.umber,
+      borderRadius: s(5),
       paddingHorizontal: s(8),
       paddingVertical: s(3)
     },

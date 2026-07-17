@@ -6,6 +6,14 @@ import type {
   MostWantedSortKey
 } from '@/constants/mostWantedCopy';
 import { supabase } from '@/lib/supabase';
+import {
+  huntEngagementMetrics,
+  requirementCollectionStatus,
+  type CollectionStatus
+} from '@/lib/most-wanted-metrics';
+
+export { huntEngagementMetrics, requirementCollectionStatus };
+export type { CollectionStatus };
 
 const BUCKET = 'user-content';
 
@@ -36,6 +44,8 @@ export type MostWantedHuntRow = HuntImageFields & {
   needed_labels: string[];
   is_watching: boolean;
   comment_count?: number;
+  contributor_count?: number;
+  evidence_submission_count?: number;
 };
 
 export type MostWantedStats = {
@@ -65,6 +75,7 @@ export type MostWantedRequirement = {
   label: string;
   sort_order: number;
   is_fulfilled: boolean;
+  collection_status?: CollectionStatus;
 };
 
 export type MostWantedLead = {
@@ -75,6 +86,9 @@ export type MostWantedLead = {
   status: string;
   created_at: string;
   submitter_name: string;
+  image_bucket?: string | null;
+  image_storage_path?: string | null;
+  imageUrl?: string | null;
 };
 
 export type MostWantedHuntDetail = HuntImageFields & {
@@ -92,6 +106,7 @@ export type MostWantedHuntDetail = HuntImageFields & {
   summary: string | null;
   status: string;
   priority_tag: string | null;
+  featured_at?: string | null;
   reward_amount_cents: number;
   reward_label: string | null;
   forum_thread_id: string | null;
@@ -108,6 +123,9 @@ export type MostWantedDetailPayload = {
   leads: MostWantedLead[];
   watcher_count: number;
   is_watching: boolean;
+  contributor_count?: number;
+  evidence_submission_count?: number;
+  comment_count?: number;
 };
 
 export type MostWantedContribution = {
@@ -426,11 +444,22 @@ export async function getMostWantedDetail(id: string): Promise<{ detail: MostWan
     leads: MostWantedLead[];
     watcher_count: number;
     is_watching: boolean;
+    contributor_count?: number;
+    evidence_submission_count?: number;
+    comment_count?: number;
   };
   const imageUrl = await resolveHuntImageUrl(payload.hunt);
+  const leads = await Promise.all(
+    (payload.leads ?? []).map(async (lead) => {
+      if (!lead.image_bucket || !lead.image_storage_path) return lead;
+      const signed = await getEvidenceImageSignedUrl(lead.image_bucket, lead.image_storage_path);
+      return { ...lead, imageUrl: signed };
+    })
+  );
   return {
     detail: {
       ...payload,
+      leads,
       hunt: { ...payload.hunt, imageUrl }
     },
     error: null

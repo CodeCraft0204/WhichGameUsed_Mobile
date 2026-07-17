@@ -4,7 +4,7 @@ import { appFonts } from '@/constants/appFonts';
 import { figmaColors } from '@/constants/figmaColors';
 import { HuntCardImage } from '@/components/most-wanted/HuntCardImage';
 import { mostWantedIcons } from '@/constants/mostWantedContent';
-import { huntDisplayTitle, type MostWantedHuntRow } from '@/lib/most-wanted';
+import { huntDisplayTitle, huntEngagementMetrics, type MostWantedHuntRow } from '@/lib/most-wanted';
 
 type WantedCardProps = {
   hunt: MostWantedHuntRow;
@@ -52,6 +52,7 @@ export function WantedCard({ hunt, s, t, onPress, rank, compact }: WantedCardPro
         : figmaColors.taupe;
 
   const meta = [hunt.team_name, hunt.product_year].filter(Boolean).join(' • ');
+  const metrics = huntEngagementMetrics(hunt);
 
   const chips: string[] = [hunt.sport_slug.toUpperCase()];
   if (hunt.priority_tag === 'high_value') chips.push('HIGH VALUE');
@@ -113,20 +114,16 @@ export function WantedCard({ hunt, s, t, onPress, rank, compact }: WantedCardPro
       <View style={styles.rail}>
         <View style={styles.statRow}>
           <Image source={mostWantedIcons.eye} style={styles.statIcon} resizeMode="contain" />
-          <Text style={styles.statValue}>{formatCount(hunt.watcher_count)}</Text>
+          <Text style={styles.statValue}>{formatCount(metrics.watching)}</Text>
         </View>
         <View style={styles.statRow}>
-          <Image source={mostWantedIcons.starSmall} style={styles.statIcon} resizeMode="contain" />
-          <Text style={styles.statValue}>
-            {hunt.requirements_fulfilled}/{hunt.requirements_total}
-          </Text>
+          <Image source={mostWantedIcons.people} style={styles.statIcon} resizeMode="contain" />
+          <Text style={styles.statValue}>{formatCount(metrics.middleValue)}</Text>
         </View>
-        {(hunt.comment_count ?? 0) > 0 ? (
-          <View style={styles.statRow}>
-            <Image source={mostWantedIcons.comment} style={styles.statIcon} resizeMode="contain" />
-            <Text style={styles.statValue}>{formatCount(hunt.comment_count ?? 0)}</Text>
-          </View>
-        ) : null}
+        <View style={styles.statRow}>
+          <Image source={mostWantedIcons.comment} style={styles.statIcon} resizeMode="contain" />
+          <Text style={styles.statValue}>{formatCount(metrics.comments)}</Text>
+        </View>
       </View>
     </Pressable>
   );

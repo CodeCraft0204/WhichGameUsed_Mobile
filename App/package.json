@@ -10,7 +10,9 @@
     "ios": "node --max-old-space-size=8192 ./node_modules/expo/bin/cli start --ios",
     "web": "expo start --web",
     "gen:backgrounds": "node scripts/gen-photo-backgrounds.mjs",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@expo-google-fonts/eb-garamond": "^0.4.2",
@@ -47,6 +49,7 @@
   "devDependencies": {
     "@types/react": "~19.1.10",
     "babel-preset-expo": "~54.0.10",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "vitest": "^3.2.4"
   }
 }

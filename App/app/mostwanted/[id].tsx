@@ -43,10 +43,13 @@ import {
   evidenceTypeLabel,
   getMostWantedDetail,
   huntDisplayTitle,
+  huntEngagementMetrics,
   huntStatusTagsFromLabels,
   listHuntContributorBadges,
   relativeTime,
+  requirementCollectionStatus,
   toggleMostWantedWatch,
+  type CollectionStatus,
   type MostWantedContributorBadgeRow,
   type MostWantedDetailPayload,
   type MostWantedLead,
@@ -202,7 +205,16 @@ export default function MostWantedDetailScreen() {
 
   const myBadges = user ? badges.filter((b) => b.user_id === user.id) : [];
   const uniqueContributors = [...new Set(badges.map((b) => b.display_name))];
-  const neededItems = detail?.requirements.filter((r) => !r.is_fulfilled) ?? [];
+  const engagement = detail
+    ? huntEngagementMetrics({
+        watcher_count: detail.watcher_count,
+        contributor_count: detail.contributor_count,
+        evidence_submission_count: detail.evidence_submission_count ?? detail.leads.length,
+        comment_count: detail.comment_count
+      })
+    : null;
+  const neededItems =
+    detail?.requirements.filter((r) => requirementCollectionStatus(r) !== 'collected') ?? [];
   const visibleLeads = showAllLeads
     ? detail?.leads ?? []
     : (detail?.leads ?? []).slice(0, LEADS_PREVIEW_COUNT);
@@ -247,6 +259,17 @@ export default function MostWantedDetailScreen() {
                 />
               ) : null}
 
+              {hunt.featured_at ? (
+                <View style={styles.featuredBanner}>
+                  <Image
+                    source={mostWantedIcons.starFilled}
+                    style={styles.featuredBannerStar}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.featuredBannerText}>FEATURED</Text>
+                </View>
+              ) : null}
+
               {/* Hero: open layout — framed card image left, identity right (Figma frame 1:1126) */}
               <View style={styles.heroRow}>
                 <View style={styles.heroImageCol}>
@@ -280,7 +303,7 @@ export default function MostWantedDetailScreen() {
                 <View style={styles.statCell}>
                   <View style={styles.statValueRow}>
                     <Image source={mostWantedIcons.eyeDark} style={styles.statIcon} resizeMode="contain" />
-                    <Text style={styles.statValue}>{detail.watcher_count}</Text>
+                    <Text style={styles.statValue}>{engagement?.watching ?? 0}</Text>
                   </View>
                   <Text style={styles.statLabel}>Watching</Text>
                 </View>
@@ -288,17 +311,17 @@ export default function MostWantedDetailScreen() {
                 <View style={styles.statCell}>
                   <View style={styles.statValueRow}>
                     <Image source={mostWantedIcons.people} style={styles.statIcon} resizeMode="contain" />
-                    <Text style={styles.statValue}>{uniqueContributors.length}</Text>
+                    <Text style={styles.statValue}>{engagement?.middleValue ?? 0}</Text>
                   </View>
-                  <Text style={styles.statLabel}>Contributors</Text>
+                  <Text style={styles.statLabel}>{engagement?.middleLabel ?? 'Evidence'}</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statCell}>
                   <View style={styles.statValueRow}>
-                    <Image source={mostWantedIcons.statPuzzle} style={styles.statIcon} resizeMode="contain" />
-                    <Text style={styles.statValue}>{detail.leads.length}</Text>
+                    <Image source={mostWantedIcons.commentDark} style={styles.statIcon} resizeMode="contain" />
+                    <Text style={styles.statValue}>{engagement?.comments ?? 0}</Text>
                   </View>
-                  <Text style={styles.statLabel}>Leads</Text>
+                  <Text style={styles.statLabel}>Comments</Text>
                 </View>
               </View>
 
@@ -439,33 +462,44 @@ export default function MostWantedDetailScreen() {
               {neededItems.length > 0 ? (
                 <View style={styles.sectionBox}>
                   <Text style={styles.sectionBoxTitle}>WHAT WE NEED</Text>
-                  {neededItems.map((req, index) => (
-                    <Pressable
-                      key={req.id}
-                      onPress={() => router.push(mostWantedSubmitHref(hunt.id))}
-                      style={[styles.needRow, index > 0 && styles.rowDividerTop]}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Submit ${req.label}`}
-                    >
-                      <Image
-                        source={requirementIcon(req.requirement_key)}
-                        style={styles.needIcon}
-                        resizeMode="contain"
-                      />
-                      <View style={styles.needBody}>
-                        <Text style={styles.needTitle}>{req.label}</Text>
-                        {requirementHint(req.requirement_key) ? (
-                          <Text style={styles.needHint} numberOfLines={2}>
-                            {requirementHint(req.requirement_key)}
+                  {neededItems.map((req, index) => {
+                    const status = requirementCollectionStatus(req);
+                    const chip = collectionStatusChip(status);
+                    return (
+                      <Pressable
+                        key={req.id}
+                        onPress={() => router.push(mostWantedSubmitHref(hunt.id))}
+                        style={[styles.needRow, index > 0 && styles.rowDividerTop]}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Submit ${req.label}`}
+                      >
+                        <Image
+                          source={requirementIcon(req.requirement_key)}
+                          style={styles.needIcon}
+                          resizeMode="contain"
+                        />
+                        <View style={styles.needBody}>
+                          <Text style={styles.needTitle}>{req.label}</Text>
+                          {requirementHint(req.requirement_key) ? (
+                            <Text style={styles.needHint} numberOfLines={2}>
+                              {requirementHint(req.requirement_key)}
+                            </Text>
+                          ) : null}
+                        </View>
+                        <View
+                          style={[
+                            styles.statusChip,
+                            { backgroundColor: chip.bg, borderColor: chip.border }
+                          ]}
+                        >
+                          <Text style={[styles.statusChipText, { color: chip.color }]}>
+                            {chip.label}
                           </Text>
-                        ) : null}
-                      </View>
-                      <View style={styles.missingChip}>
-                        <Text style={styles.missingChipText}>MISSING</Text>
-                      </View>
-                      <Ionicons name="chevron-forward" size={s(14)} color={figmaColors.taupe} />
-                    </Pressable>
-                  ))}
+                        </View>
+                        <Ionicons name="chevron-forward" size={s(14)} color={figmaColors.taupe} />
+                      </Pressable>
+                    );
+                  })}
                 </View>
               ) : null}
 
@@ -602,6 +636,40 @@ export default function MostWantedDetailScreen() {
   );
 }
 
+function collectionStatusChip(status: CollectionStatus): {
+  label: string;
+  color: string;
+  bg: string;
+  border: string;
+  icon: keyof typeof Ionicons.glyphMap;
+} {
+  if (status === 'collected') {
+    return {
+      label: 'COLLECTED',
+      color: figmaColors.success,
+      bg: figmaColors.successBg,
+      border: figmaColors.success,
+      icon: 'checkmark-circle'
+    };
+  }
+  if (status === 'partial') {
+    return {
+      label: 'PARTIAL',
+      color: '#B86B2E',
+      bg: '#F8F0E6',
+      border: '#D4A574',
+      icon: 'ellipse'
+    };
+  }
+  return {
+    label: 'MISSING',
+    color: figmaColors.error,
+    bg: figmaColors.errorBg,
+    border: figmaColors.errorBorder,
+    icon: 'ellipse-outline'
+  };
+}
+
 function EvidenceTile({
   requirement,
   s,
@@ -612,7 +680,8 @@ function EvidenceTile({
   t: (n: number) => number;
 }) {
   const styles = useMemo(() => createTileStyles(s, t), [s, t]);
-  const collected = requirement.is_fulfilled;
+  const status = requirementCollectionStatus(requirement);
+  const chip = collectionStatusChip(status);
   return (
     <View style={styles.tile}>
       <Image
@@ -624,13 +693,9 @@ function EvidenceTile({
         {requirement.label}
       </Text>
       <View style={styles.statusRow}>
-        <Ionicons
-          name={collected ? 'checkmark-circle' : 'ellipse-outline'}
-          size={s(11)}
-          color={collected ? figmaColors.success : figmaColors.error}
-        />
-        <Text style={[styles.statusText, { color: collected ? figmaColors.success : figmaColors.error }]}>
-          {collected ? 'Collected' : 'Missing'}
+        <Ionicons name={chip.icon} size={s(11)} color={chip.color} />
+        <Text style={[styles.statusText, { color: chip.color }]}>
+          {status === 'collected' ? 'Collected' : status === 'partial' ? 'Partial' : 'Missing'}
         </Text>
       </View>
     </View>
@@ -655,11 +720,15 @@ function LeadRow({
   return (
     <View style={[styles.row, !first && styles.rowDivider]}>
       <View style={styles.iconWrap}>
-        <Image
-          source={requirementIcon(lead.evidence_type)}
-          style={styles.icon}
-          resizeMode="contain"
-        />
+        {lead.imageUrl ? (
+          <Image source={{ uri: lead.imageUrl }} style={styles.thumb} resizeMode="cover" />
+        ) : (
+          <Image
+            source={requirementIcon(lead.evidence_type)}
+            style={styles.icon}
+            resizeMode="contain"
+          />
+        )}
       </View>
       <View style={styles.body}>
         <Text style={styles.title} numberOfLines={1}>
@@ -786,9 +855,11 @@ function createLeadStyles(s: (n: number) => number, t: (n: number) => number) {
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      overflow: 'hidden'
     },
     icon: { width: s(20), height: s(20) },
+    thumb: { width: '100%', height: '100%' },
     body: { flex: 1, gap: s(1) },
     title: {
       fontFamily: appFonts.bodyBold,
@@ -824,6 +895,28 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     safe: { flex: 1, backgroundColor: figmaColors.background },
     page: { flex: 1 },
     content: { paddingHorizontal: s(20), paddingBottom: s(24) },
+
+    featuredBanner: {
+      alignSelf: 'flex-start',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(7),
+      backgroundColor: figmaColors.stone,
+      borderWidth: 1,
+      borderColor: figmaColors.borderStrong,
+      borderTopLeftRadius: s(16),
+      borderBottomRightRadius: s(10),
+      paddingHorizontal: s(14),
+      paddingVertical: s(6),
+      marginBottom: s(10)
+    },
+    featuredBannerStar: { width: s(12), height: s(12) },
+    featuredBannerText: {
+      fontFamily: appFonts.accent,
+      fontSize: t(11),
+      letterSpacing: 1,
+      color: figmaColors.brown
+    },
 
     heroRow: {
       flexDirection: 'row',
@@ -1067,6 +1160,17 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: t(9),
       letterSpacing: 0.4,
       color: figmaColors.error
+    },
+    statusChip: {
+      borderWidth: 1,
+      borderRadius: s(5),
+      paddingHorizontal: s(7),
+      paddingVertical: s(4)
+    },
+    statusChipText: {
+      fontFamily: appFonts.accent,
+      fontSize: t(9),
+      letterSpacing: 0.4
     },
     seeAllLeads: {
       flexDirection: 'row',

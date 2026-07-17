@@ -4,7 +4,7 @@ import { appFonts } from '@/constants/appFonts';
 import { mostWantedIcons } from '@/constants/mostWantedContent';
 import { figmaColors } from '@/constants/figmaColors';
 import { HuntCardImage } from '@/components/most-wanted/HuntCardImage';
-import { huntDisplayTitle, type MostWantedHuntRow } from '@/lib/most-wanted';
+import { huntDisplayTitle, huntEngagementMetrics, type MostWantedHuntRow } from '@/lib/most-wanted';
 
 type FeaturedWantedCardProps = {
   hunt: MostWantedHuntRow;
@@ -24,6 +24,7 @@ export function FeaturedWantedCard({ hunt, s, t, onPress }: FeaturedWantedCardPr
   const meta = [hunt.team_name, hunt.product_year].filter(Boolean).join(' • ');
   const highPriority = hunt.priority_tag === 'high_value';
   const nearSolved = hunt.status === 'near_solved';
+  const metrics = huntEngagementMetrics(hunt);
 
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
@@ -76,18 +77,20 @@ export function FeaturedWantedCard({ hunt, s, t, onPress }: FeaturedWantedCardPr
               <View style={styles.statsCol}>
                 <View style={styles.statRow}>
                   <Image source={mostWantedIcons.eye} style={styles.statIcon} resizeMode="contain" />
-                  <Text style={styles.statValue}>{hunt.watcher_count}</Text>
+                  <Text style={styles.statValue}>{metrics.watching}</Text>
                 </View>
-                {(hunt.comment_count ?? 0) > 0 ? (
-                  <View style={styles.statRow}>
-                    <Image
-                      source={mostWantedIcons.comment}
-                      style={styles.statIcon}
-                      resizeMode="contain"
-                    />
-                    <Text style={styles.statValue}>{hunt.comment_count}</Text>
-                  </View>
-                ) : null}
+                <View style={styles.statRow}>
+                  <Image source={mostWantedIcons.people} style={styles.statIcon} resizeMode="contain" />
+                  <Text style={styles.statValue}>{metrics.middleValue}</Text>
+                </View>
+                <View style={styles.statRow}>
+                  <Image
+                    source={mostWantedIcons.comment}
+                    style={styles.statIcon}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.statValue}>{metrics.comments}</Text>
+                </View>
               </View>
             </View>
           </View>

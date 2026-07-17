@@ -46,6 +46,7 @@ export const databaseCopy = {
   wishlistCtaViewCard: 'VIEW DATABASE CARD',
   wishlistCtaRemove: 'REMOVE FROM WISHLIST',
   wishlistMostWantedBadge: 'Most Wanted',
+  wishlistJourneyHint: 'Tap a card to see its journey from saved interest to the database.',
   wishlistStorySaved: 'This catalog card is saved. Authenticate a similar copy whenever you are ready.',
   wishlistStoryRequested: 'You asked for this missing card. It is waiting for community demand and review.',
   wishlistStoryUnderReview: "Baxter's team is reviewing this request.",
