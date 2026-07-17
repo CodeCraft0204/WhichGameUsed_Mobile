@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { appFonts } from '@/constants/appFonts';
@@ -12,7 +11,8 @@ type WantedCardProps = {
   s: (n: number) => number;
   t: (n: number) => number;
   onPress: () => void;
-  onContribute: () => void;
+  /** Kept for API compatibility; the row itself opens the detail page where the submit CTA lives. */
+  onContribute?: () => void;
   /** Optional #n rank chip on the left (community priority list). */
   rank?: number;
   compact?: boolean;
@@ -34,7 +34,12 @@ function huntStatusPresentation(hunt: MostWantedHuntRow): { label: string; color
   return { label: 'Active', color: figmaColors.grayMuted };
 }
 
-export function WantedCard({ hunt, s, t, onPress, onContribute, rank, compact }: WantedCardProps) {
+function formatCount(n: number): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+  return String(n);
+}
+
+export function WantedCard({ hunt, s, t, onPress, rank, compact }: WantedCardProps) {
   const styles = useMemo(() => createStyles(s, t, compact), [s, t, compact]);
   const status = huntStatusPresentation(hunt);
   const total = Math.max(hunt.requirements_total, 1);
@@ -44,13 +49,13 @@ export function WantedCard({ hunt, s, t, onPress, onContribute, rank, compact }:
       ? figmaColors.success
       : hunt.priority_tag === 'high_value'
         ? figmaColors.accentStrong
-        : figmaColors.progressFill;
+        : figmaColors.taupe;
 
   const meta = [hunt.team_name, hunt.product_year].filter(Boolean).join(' • ');
 
   const chips: string[] = [hunt.sport_slug.toUpperCase()];
   if (hunt.priority_tag === 'high_value') chips.push('HIGH VALUE');
-  if (hunt.memorabilia_type) chips.push(hunt.memorabilia_type.toUpperCase());
+  else if (hunt.memorabilia_type) chips.push(hunt.memorabilia_type.toUpperCase());
 
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
@@ -74,51 +79,54 @@ export function WantedCard({ hunt, s, t, onPress, onContribute, rank, compact }:
         <Text style={styles.title} numberOfLines={1}>
           {huntDisplayTitle(hunt)}
         </Text>
-        {meta ? (
-          <Text style={styles.meta} numberOfLines={1}>
-            {meta}
-          </Text>
-        ) : null}
 
-        <View style={styles.statusRow}>
-          <View style={[styles.statusDot, { backgroundColor: status.color }]} />
-          <Text style={[styles.statusText, { color: status.color }]} numberOfLines={1}>
-            {status.label}
-          </Text>
-        </View>
-        <View style={styles.track}>
-          <View style={[styles.fill, { width: `${pct}%`, backgroundColor: fillColor }]} />
-        </View>
-
-        <View style={styles.chipRow}>
-          {chips.slice(0, 3).map((chip) => (
-            <View key={chip} style={styles.chip}>
-              <Text style={styles.chipText}>{chip}</Text>
+        <View style={styles.bottomRow}>
+          <View style={styles.infoCol}>
+            {meta ? (
+              <Text style={styles.meta} numberOfLines={1}>
+                {meta}
+              </Text>
+            ) : null}
+            <View style={styles.chipRow}>
+              {chips.slice(0, 2).map((chip) => (
+                <View key={chip} style={styles.chip}>
+                  <Text style={styles.chipText}>{chip}</Text>
+                </View>
+              ))}
             </View>
-          ))}
+          </View>
+
+          <View style={styles.statusCol}>
+            <View style={styles.statusRow}>
+              <View style={[styles.statusDot, { backgroundColor: status.color }]} />
+              <Text style={[styles.statusText, { color: status.color }]} numberOfLines={1}>
+                {status.label}
+              </Text>
+            </View>
+            <View style={styles.track}>
+              <View style={[styles.fill, { width: `${pct}%`, backgroundColor: fillColor }]} />
+            </View>
+          </View>
         </View>
       </View>
 
       <View style={styles.rail}>
         <View style={styles.statRow}>
           <Image source={mostWantedIcons.eye} style={styles.statIcon} resizeMode="contain" />
-          <Text style={styles.statValue}>{hunt.watcher_count}</Text>
+          <Text style={styles.statValue}>{formatCount(hunt.watcher_count)}</Text>
+        </View>
+        <View style={styles.statRow}>
+          <Image source={mostWantedIcons.starSmall} style={styles.statIcon} resizeMode="contain" />
+          <Text style={styles.statValue}>
+            {hunt.requirements_fulfilled}/{hunt.requirements_total}
+          </Text>
         </View>
         {(hunt.comment_count ?? 0) > 0 ? (
           <View style={styles.statRow}>
             <Image source={mostWantedIcons.comment} style={styles.statIcon} resizeMode="contain" />
-            <Text style={styles.statValue}>{hunt.comment_count}</Text>
+            <Text style={styles.statValue}>{formatCount(hunt.comment_count ?? 0)}</Text>
           </View>
         ) : null}
-        <Pressable
-          onPress={onContribute}
-          hitSlop={s(6)}
-          style={({ pressed }) => [styles.contributeBtn, pressed && { opacity: 0.7 }]}
-          accessibilityRole="button"
-          accessibilityLabel={`Contribute evidence for ${huntDisplayTitle(hunt)}`}
-        >
-          <Ionicons name="arrow-forward-circle-outline" size={s(20)} color={figmaColors.brown} />
-        </Pressable>
       </View>
     </Pressable>
   );
@@ -133,7 +141,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number, compac
       backgroundColor: figmaColors.cream,
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
-      borderRadius: s(10),
+      borderRadius: s(8),
       paddingVertical: s(10),
       paddingHorizontal: s(10),
       marginBottom: s(compact ? 8 : 10)
@@ -155,54 +163,36 @@ function createStyles(s: (n: number) => number, t: (n: number) => number, compac
       color: figmaColors.brown
     },
     thumbWrap: {
-      width: s(compact ? 52 : 58)
+      width: s(compact ? 46 : 50)
     },
     thumb: {
       width: '100%',
-      height: s(compact ? 52 : 58)
+      height: s(compact ? 58 : 64)
     },
-    body: { flex: 1, gap: s(3) },
+    body: { flex: 1, gap: s(5) },
     title: {
       fontFamily: appFonts.bodyBold,
       fontSize: t(compact ? 14 : 15),
+      lineHeight: t(compact ? 17 : 18),
       color: figmaColors.charcoal
+    },
+    bottomRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(8)
+    },
+    infoCol: {
+      flex: 1,
+      gap: s(6)
     },
     meta: {
       fontFamily: appFonts.body,
       fontSize: t(12),
       color: figmaColors.gray
     },
-    statusRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: s(5),
-      marginTop: s(1)
-    },
-    statusDot: {
-      width: s(7),
-      height: s(7),
-      borderRadius: s(4)
-    },
-    statusText: {
-      fontFamily: appFonts.body,
-      fontSize: t(12)
-    },
-    track: {
-      height: s(5),
-      width: '58%',
-      backgroundColor: figmaColors.progressTrack,
-      borderRadius: s(3),
-      overflow: 'hidden'
-    },
-    fill: {
-      height: '100%',
-      borderRadius: s(3)
-    },
     chipRow: {
       flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: s(5),
-      marginTop: s(3)
+      gap: s(5)
     },
     chip: {
       backgroundColor: figmaColors.surfaceMuted,
@@ -218,29 +208,55 @@ function createStyles(s: (n: number) => number, t: (n: number) => number, compac
       letterSpacing: 0.4,
       color: figmaColors.brownMuted
     },
+    statusCol: {
+      width: s(compact ? 78 : 88),
+      gap: s(5)
+    },
+    statusRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(5)
+    },
+    statusDot: {
+      width: s(8),
+      height: s(8),
+      borderRadius: s(4)
+    },
+    statusText: {
+      fontFamily: appFonts.body,
+      fontSize: t(12)
+    },
+    track: {
+      height: s(5),
+      alignSelf: 'stretch',
+      backgroundColor: figmaColors.progressTrack,
+      borderRadius: s(3),
+      overflow: 'hidden'
+    },
+    fill: {
+      height: '100%',
+      borderRadius: s(3)
+    },
     rail: {
       alignItems: 'flex-start',
+      justifyContent: 'center',
       gap: s(6),
       borderLeftWidth: 1,
       borderLeftColor: figmaColors.borderLight,
       paddingLeft: s(10),
       alignSelf: 'stretch',
-      justifyContent: 'center',
-      minWidth: s(52)
+      minWidth: s(54)
     },
     statRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: s(6)
     },
-    statIcon: { width: s(14), height: s(12) },
+    statIcon: { width: s(14), height: s(13) },
     statValue: {
       fontFamily: appFonts.body,
       fontSize: t(12),
       color: figmaColors.gray
-    },
-    contributeBtn: {
-      marginTop: s(2)
     }
   });
 }
