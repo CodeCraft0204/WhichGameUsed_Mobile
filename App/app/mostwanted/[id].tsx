@@ -28,7 +28,7 @@ import {
   mostWantedEvidenceTypes
 } from '@/constants/mostWantedCopy';
 import { mostWantedIcons } from '@/constants/mostWantedContent';
-import { contributionStatusColors, huntCardBorder, type MwContributionStatus } from '@/constants/mostWantedStyles';
+import { contributionStatusColors, type MwContributionStatus } from '@/constants/mostWantedStyles';
 import {
   databaseCardHref,
   discussionCreateHref,
@@ -247,8 +247,8 @@ export default function MostWantedDetailScreen() {
                 />
               ) : null}
 
-              {/* Hero: card image left, identity right (Figma frame 1:1126) */}
-              <View style={[styles.heroRow, { borderColor: huntCardBorder(hunt.status, statusTags) }]}>
+              {/* Hero: open layout — framed card image left, identity right (Figma frame 1:1126) */}
+              <View style={styles.heroRow}>
                 <View style={styles.heroImageCol}>
                   <HuntCardImage
                     coverImageUrl={hunt.cover_image_url}
@@ -827,37 +827,35 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
 
     heroRow: {
       flexDirection: 'row',
-      gap: s(14),
-      backgroundColor: figmaColors.cream,
-      borderWidth: 1,
-      borderRadius: s(12),
-      padding: s(12),
-      marginBottom: s(14)
+      gap: s(16),
+      marginTop: s(6),
+      marginBottom: s(16)
     },
-    heroImageCol: { width: '42%' },
+    heroImageCol: { width: '45%' },
     heroImage: {
       width: '100%',
-      height: s(170)
+      height: s(200)
     },
     heroBody: {
       flex: 1,
-      gap: s(6)
+      gap: s(8),
+      justifyContent: 'center'
     },
     heroTitle: {
       fontFamily: appFonts.bodyBold,
-      fontSize: t(19),
-      lineHeight: t(23),
+      fontSize: t(21),
+      lineHeight: t(26),
       color: figmaColors.charcoal
     },
     meta: {
       fontFamily: appFonts.body,
-      fontSize: t(13),
+      fontSize: t(14),
       color: figmaColors.gray
     },
     heroSummary: {
       fontFamily: appFonts.body,
-      fontSize: t(13),
-      lineHeight: t(18),
+      fontSize: t(14),
+      lineHeight: t(19),
       color: figmaColors.brownMuted
     },
 
@@ -865,9 +863,10 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       flexDirection: 'row',
       alignItems: 'stretch',
       borderTopWidth: 2,
-      borderBottomWidth: 2,
-      borderColor: figmaColors.stoneDark,
-      paddingVertical: s(10),
+      borderTopColor: figmaColors.stoneDark,
+      borderBottomWidth: 1,
+      borderBottomColor: figmaColors.borderLight,
+      paddingVertical: s(12),
       marginBottom: s(14)
     },
     statCell: {
@@ -878,17 +877,17 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     statValueRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: s(6)
+      gap: s(7)
     },
-    statIcon: { width: s(15), height: s(13) },
+    statIcon: { width: s(17), height: s(15) },
     statValue: {
       fontFamily: appFonts.bodyBold,
-      fontSize: t(15),
+      fontSize: t(17),
       color: figmaColors.charcoal
     },
     statLabel: {
       fontFamily: appFonts.body,
-      fontSize: t(12),
+      fontSize: t(13),
       color: figmaColors.gray
     },
     statDivider: {

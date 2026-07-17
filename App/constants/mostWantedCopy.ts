@@ -12,7 +12,7 @@ export type MostWantedFilterTab = (typeof mostWantedFilterTabs)[number];
 export const mostWantedSortOptions = [
   { key: 'most_wanted', label: 'Most Wanted' },
   { key: 'newest', label: 'Newest' },
-  { key: 'highest_reward', label: 'Most watched' },
+  { key: 'most_watched', label: 'Most watched' },
   { key: 'near_solved', label: 'Near Solved' }
 ] as const;
 

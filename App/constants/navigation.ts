@@ -195,14 +195,14 @@ export function mostWantedDetailHref(id: string): Href {
 
 export function mostWantedSubmitHref(
   huntId: string,
-  extras?: { evidenceType?: string; notes?: string }
+  extras?: { evidenceType?: string; submissionId?: string }
 ): Href {
   return {
     pathname: '/mostwanted/submit',
     params: {
       huntId,
       ...(extras?.evidenceType ? { evidenceType: extras.evidenceType } : {}),
-      ...(extras?.notes ? { notes: extras.notes } : {})
+      ...(extras?.submissionId ? { submissionId: extras.submissionId } : {})
     }
   } as unknown as Href;
 }

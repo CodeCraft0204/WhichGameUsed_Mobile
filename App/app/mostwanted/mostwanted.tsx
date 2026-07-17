@@ -314,10 +314,11 @@ function MostWantedScreenBody() {
             />
           ) : null}
 
-          {items.map((hunt) => (
+          {items.map((hunt, index) => (
             <WantedCard
               key={hunt.id}
               hunt={hunt}
+              rank={index + 1}
               s={s}
               t={t}
               onPress={() => openDetail(hunt.id)}

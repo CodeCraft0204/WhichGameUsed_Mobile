@@ -11,13 +11,14 @@ import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 
 export default function MostWantedSubmitScreen() {
   const router = useRouter();
-  const { huntId, evidenceType, notes } = useLocalSearchParams<{
+  const { huntId, evidenceType, submissionId } = useLocalSearchParams<{
     huntId: string;
     evidenceType?: string;
-    notes?: string;
+    submissionId?: string;
   }>();
   const { s, t } = useFigmaLayout();
   const styles = useMemo(() => createStyles(s, t), [s, t]);
+  const editing = typeof submissionId === 'string' && submissionId.length > 0;
 
   if (!huntId || typeof huntId !== 'string') {
     return (
@@ -33,15 +34,19 @@ export default function MostWantedSubmitScreen() {
         <ProfileSubpageHeader
           title={mostWantedCopy.submitTitle}
           subtitle={mostWantedCopy.submitSubtitle}
-          description="Follow the guided steps to share useful evidence for this Most Wanted card."
+          description={
+            editing
+              ? 'Update your submission based on the reviewer feedback, then send it back for review.'
+              : 'Follow the guided steps to share useful evidence for this Most Wanted card.'
+          }
           s={s}
           t={t}
           onBack={() => router.back()}
         />
         <SubmitEvidenceForm
           huntId={huntId}
+          submissionId={editing ? submissionId : undefined}
           initialEvidenceType={evidenceType as import('@/constants/mostWantedCopy').MostWantedEvidenceTypeKey | undefined}
-          initialNotes={notes}
           s={s}
           t={t}
           onSubmitted={() => router.replace(mostWantedContributionsHref())}

@@ -61,8 +61,8 @@ export function BountyRankingCard({ row, rank, s, t, onVote }: Props) {
           style={[styles.voteBtn, row.user_vote === 'upvote' && styles.voteBtnActive]}
         >
           <Ionicons
-            name="chevron-up"
-            size={s(15)}
+            name={row.user_vote === 'upvote' ? 'thumbs-up' : 'thumbs-up-outline'}
+            size={s(14)}
             color={row.user_vote === 'upvote' ? figmaColors.accentStrong : figmaColors.gray}
           />
         </Pressable>
@@ -72,8 +72,8 @@ export function BountyRankingCard({ row, rank, s, t, onVote }: Props) {
           style={[styles.voteBtn, row.user_vote === 'downvote' && styles.voteBtnActive]}
         >
           <Ionicons
-            name="chevron-down"
-            size={s(15)}
+            name={row.user_vote === 'downvote' ? 'thumbs-down' : 'thumbs-down-outline'}
+            size={s(14)}
             color={row.user_vote === 'downvote' ? figmaColors.error : figmaColors.gray}
           />
         </Pressable>
@@ -101,9 +101,9 @@ function createStyles(
       marginBottom: s(8)
     },
     rankBadge: {
-      width: s(38),
-      height: s(38),
-      borderRadius: s(8),
+      width: s(36),
+      height: s(36),
+      borderRadius: s(18),
       backgroundColor: rankStyle.bg,
       borderWidth: 1,
       borderColor: rankStyle.border,
@@ -112,7 +112,7 @@ function createStyles(
     },
     rankText: {
       fontFamily: appFonts.bodyBold,
-      fontSize: t(14),
+      fontSize: t(13),
       color: rankStyle.label
     },
     body: { flex: 1, gap: s(3) },

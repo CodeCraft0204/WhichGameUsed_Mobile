@@ -100,8 +100,6 @@ export type MostWantedHuntDetail = HuntImageFields & {
   solved_at: string | null;
   solved_by: string | null;
   solver_name?: string | null;
-  reward_claimed_at?: string | null;
-  reward_claimed?: boolean;
 };
 
 export type MostWantedDetailPayload = {
@@ -136,7 +134,6 @@ export type SolvedHuntRow = HuntImageFields & {
   solver_name: string;
   requirements_total: number;
   requirements_fulfilled: number;
-  reward_claimed: boolean;
   contributor_count?: number;
   top_contributors?: string[];
 };
@@ -208,17 +205,6 @@ export function huntSubtitle(hunt: Pick<MostWantedHuntRow, 'sport_slug' | 'memor
   if (hunt.memorabilia_type) parts.push(hunt.memorabilia_type);
   if (hunt.priority_tag === 'high_value') parts.push('High Priority');
   return parts.join(' · ');
-}
-
-export function formatRewardLabel(cents: number, label: string | null): string {
-  if (label?.trim()) return label;
-  if (cents <= 0) return 'Recognition';
-  return `$${(cents / 100).toFixed(cents % 100 === 0 ? 0 : 2)}`;
-}
-
-export function formatRewardPool(cents: number): string {
-  if (cents <= 0) return '$0';
-  return `$${Math.round(cents / 100)}`;
 }
 
 export function huntStatusTags(hunt: MostWantedHuntRow): WantedStatusTag[] {
@@ -413,6 +399,23 @@ export async function findMostWantedByCardId(
   return { item: row, error: null };
 }
 
+/** Hunt promoted from a given card request, if any (public read policy on most_wanted_hunts). */
+export async function getHuntForCardRequest(
+  cardRequestId: string
+): Promise<{ hunt: { id: string; card_title: string; status: string } | null; error: string | null }> {
+  const { data, error } = await supabase
+    .from('most_wanted_hunts')
+    .select('id, card_title, status')
+    .eq('card_request_id', cardRequestId)
+    .neq('status', 'archived')
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (error) return { hunt: null, error: error.message };
+  const row = (data ?? [])[0] as { id: string; card_title: string; status: string } | undefined;
+  return { hunt: row ?? null, error: null };
+}
+
 export async function getMostWantedDetail(id: string): Promise<{ detail: MostWantedDetailPayload | null; error: string | null }> {
   const { data, error } = await supabase.rpc('get_most_wanted_hunt_detail', { p_hunt_id: id });
   if (error) return { detail: null, error: error.message };
@@ -504,14 +507,6 @@ export async function toggleCardRequestVote(
   };
 }
 
-export async function claimMostWantedReward(
-  huntId: string
-): Promise<{ claimed: boolean; error: string | null }> {
-  const { data, error } = await supabase.rpc('claim_most_wanted_reward', { p_hunt_id: huntId });
-  if (error) return { claimed: false, error: error.message };
-  return { claimed: !!data, error: null };
-}
-
 export async function toggleMostWantedWatch(huntId: string): Promise<{ watching: boolean; error: string | null }> {
   const { data, error } = await supabase.rpc('toggle_most_wanted_watch', { p_hunt_id: huntId });
   if (error) return { watching: false, error: error.message };
@@ -598,4 +593,89 @@ export async function submitMostWantedEvidence(
   }
 
   return { submissionId: data.id as string, error: null };
+}
+
+export type MyEvidenceSubmission = {
+  id: string;
+  hunt_id: string;
+  evidence_type: string;
+  source_url: string | null;
+  notes: string | null;
+  status: string;
+  review_notes: string | null;
+  image_bucket: string | null;
+  image_storage_path: string | null;
+};
+
+/** Load one of the signed-in user's own evidence submissions (RLS: users_read_mw_evidence). */
+export async function getMyEvidenceSubmission(
+  submissionId: string
+): Promise<{ submission: MyEvidenceSubmission | null; error: string | null }> {
+  const { data, error } = await supabase
+    .from('most_wanted_evidence_submissions')
+    .select('id, hunt_id, evidence_type, source_url, notes, status, review_notes, image_bucket, image_storage_path')
+    .eq('id', submissionId)
+    .maybeSingle();
+
+  if (error) return { submission: null, error: error.message };
+  if (!data) return { submission: null, error: 'Submission not found.' };
+  return { submission: data as MyEvidenceSubmission, error: null };
+}
+
+export async function getEvidenceImageSignedUrl(
+  bucket: string,
+  path: string
+): Promise<string | null> {
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 3600);
+  if (error) return null;
+  return data.signedUrl;
+}
+
+export type ResubmitEvidenceInput = {
+  submissionId: string;
+  evidenceType: MostWantedEvidenceTypeKey;
+  sourceUrl?: string;
+  notes?: string;
+  /** New local image to replace the stored one; null/undefined keeps the existing image. */
+  imageUri?: string | null;
+};
+
+/**
+ * Update a returned (needs_more_info / rejected) submission in place and put it
+ * back into the review queue, instead of creating a duplicate submission row.
+ */
+export async function resubmitMostWantedEvidence(
+  input: ResubmitEvidenceInput
+): Promise<{ error: string | null }> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) return { error: 'Sign in required.' };
+
+  let imageBucket: string | null = null;
+  let imagePath: string | null = null;
+
+  if (input.imageUri) {
+    try {
+      const blob = await uriToBlob(input.imageUri);
+      const path = `${userData.user.id}/most-wanted/${input.submissionId}.jpg`;
+      const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, blob, {
+        contentType: 'image/jpeg',
+        upsert: true
+      });
+      if (uploadError) return { error: uploadError.message };
+      imageBucket = BUCKET;
+      imagePath = path;
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : 'Upload failed.' };
+    }
+  }
+
+  const { error } = await supabase.rpc('resubmit_most_wanted_evidence', {
+    p_submission_id: input.submissionId,
+    p_evidence_type: input.evidenceType,
+    p_source_url: input.sourceUrl?.trim() || null,
+    p_notes: input.notes?.trim() || null,
+    p_image_bucket: imageBucket,
+    p_image_storage_path: imagePath
+  });
+  return { error: error?.message ?? null };
 }

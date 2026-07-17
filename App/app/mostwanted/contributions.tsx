@@ -146,19 +146,20 @@ export default function MostWantedContributionsScreen() {
                     </View>
                   ) : null}
 
-                  {row.status === 'needs_more_info' ? (
+                  {row.status === 'needs_more_info' || row.status === 'rejected' ? (
                     <Pressable
                       onPress={() =>
                         router.push(
                           mostWantedSubmitHref(row.hunt_id, {
-                            evidenceType: row.evidence_type,
-                            notes: row.review_notes ?? undefined
+                            submissionId: row.id
                           })
                         )
                       }
                       style={styles.resubmitBtn}
                     >
-                      <Text style={styles.resubmit}>Update submission</Text>
+                      <Text style={styles.resubmit}>
+                        {row.status === 'rejected' ? 'Revise & resubmit' : 'Update submission'}
+                      </Text>
                       <Ionicons name="arrow-forward" size={s(14)} color={figmaColors.accent} />
                     </Pressable>
                   ) : null}

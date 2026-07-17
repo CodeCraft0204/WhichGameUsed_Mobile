@@ -14,9 +14,10 @@ import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader'
 import { appFonts } from '@/constants/appFonts';
 import { databaseCopy } from '@/constants/databaseCopy';
 import { figmaColors } from '@/constants/figmaColors';
-import { databaseCardHref } from '@/constants/navigation';
+import { databaseCardHref, mostWantedDetailHref } from '@/constants/navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import { getCardRequestById, type CardRequestRow } from '@/lib/card-requests';
+import { getHuntForCardRequest } from '@/lib/most-wanted';
 
 function requestTitle(row: CardRequestRow): string {
   return row.card_title?.trim() || row.player_name?.trim() || row.product_name?.trim() || 'Card request';
@@ -30,6 +31,7 @@ export default function CardRequestDetailScreen() {
   const [request, setRequest] = useState<CardRequestRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [promotedHunt, setPromotedHunt] = useState<{ id: string; card_title: string; status: string } | null>(null);
 
   useEffect(() => {
     if (!id || typeof id !== 'string') return;
@@ -40,6 +42,9 @@ export default function CardRequestDetailScreen() {
       setRequest(row);
       setError(err);
       setLoading(false);
+    });
+    void getHuntForCardRequest(id).then(({ hunt }) => {
+      if (active) setPromotedHunt(hunt);
     });
     return () => {
       active = false;
@@ -83,6 +88,17 @@ export default function CardRequestDetailScreen() {
                 </View>
               ))}
             </View>
+            {promotedHunt ? (
+              <Pressable
+                onPress={() => router.push(mostWantedDetailHref(promotedHunt.id))}
+                style={styles.huntLink}
+              >
+                <Text style={styles.huntLinkLabel}>Promoted to Most Wanted</Text>
+                <Text style={styles.huntLinkText} numberOfLines={1}>
+                  {promotedHunt.card_title || 'View hunt'} →
+                </Text>
+              </Pressable>
+            ) : null}
             {request.accepted_card_id ? (
               <AuthPrimaryButton
                 label={databaseCopy.viewAcceptedCard}
@@ -112,6 +128,27 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       padding: s(16),
       marginBottom: s(16),
       backgroundColor: figmaColors.cream
+    },
+    huntLink: {
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      borderRadius: s(12),
+      padding: s(14),
+      marginBottom: s(16),
+      backgroundColor: figmaColors.surfaceHighlight,
+      gap: s(4)
+    },
+    huntLinkLabel: {
+      fontFamily: appFonts.accent,
+      fontSize: t(11),
+      color: figmaColors.accent,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5
+    },
+    huntLinkText: {
+      fontFamily: appFonts.bodyBold,
+      fontSize: t(15),
+      color: figmaColors.charcoal
     },
     row: { marginBottom: s(12) },
     label: {

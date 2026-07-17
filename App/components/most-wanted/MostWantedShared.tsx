@@ -47,21 +47,6 @@ export function MostWantedContributorBadge({
   );
 }
 
-/** @deprecated Prefer MostWantedContributorBadge */
-export function MostWantedRewardBadge({
-  label,
-  s,
-  t,
-  large
-}: {
-  label: string;
-  s: (n: number) => number;
-  t: (n: number) => number;
-  large?: boolean;
-}) {
-  return <MostWantedContributorBadge label={label} s={s} t={t} large={large} icon="ribbon" />;
-}
-
 export function MostWantedStatusBadge({
   status,
   label,

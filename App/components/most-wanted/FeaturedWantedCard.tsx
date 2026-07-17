@@ -4,12 +4,7 @@ import { appFonts } from '@/constants/appFonts';
 import { mostWantedIcons } from '@/constants/mostWantedContent';
 import { figmaColors } from '@/constants/figmaColors';
 import { HuntCardImage } from '@/components/most-wanted/HuntCardImage';
-import { WantedStatusTagRow } from '@/components/most-wanted/WantedStatusTag';
-import {
-  huntDisplayTitle,
-  huntStatusTags,
-  type MostWantedHuntRow
-} from '@/lib/most-wanted';
+import { huntDisplayTitle, type MostWantedHuntRow } from '@/lib/most-wanted';
 
 type FeaturedWantedCardProps = {
   hunt: MostWantedHuntRow;
@@ -20,7 +15,6 @@ type FeaturedWantedCardProps = {
 
 export function FeaturedWantedCard({ hunt, s, t, onPress }: FeaturedWantedCardProps) {
   const styles = useMemo(() => createStyles(s, t), [s, t]);
-  const tags = huntStatusTags(hunt);
   const primaryNeed = hunt.needed_labels[0] ?? 'Evidence';
   const total = Math.max(hunt.requirements_total, 1);
   const pct = Math.min(100, Math.round((hunt.requirements_fulfilled / total) * 100));
@@ -51,52 +45,66 @@ export function FeaturedWantedCard({ hunt, s, t, onPress }: FeaturedWantedCardPr
           />
         </View>
 
-        <View style={styles.middleCol}>
-          <Text style={styles.title} numberOfLines={2}>
-            {huntDisplayTitle(hunt)}
-          </Text>
-          {meta ? <Text style={styles.meta}>{meta}</Text> : null}
-          <Text style={styles.summary} numberOfLines={2}>
-            Priority need · {primaryNeed}
-          </Text>
-          <WantedStatusTagRow tags={tags} s={s} t={t} />
-        </View>
-
-        <View style={styles.rightCol}>
-          {highPriority || nearSolved ? (
-            <View style={[styles.priorityBox, nearSolved && !highPriority && styles.priorityBoxSolved]}>
-              <Image
-                source={mostWantedIcons.shieldDark}
-                style={styles.priorityIcon}
-                resizeMode="contain"
-              />
-              <Text style={styles.priorityText}>
-                {highPriority ? 'HIGH\nPRIORITY' : 'NEAR\nSOLVED'}
+        <View style={styles.rightArea}>
+          <View style={styles.topRow}>
+            <View style={styles.titleCol}>
+              <Text style={styles.title} numberOfLines={2}>
+                {huntDisplayTitle(hunt)}
+              </Text>
+              {meta ? <Text style={styles.meta}>{meta}</Text> : null}
+              <Text style={styles.summary} numberOfLines={2}>
+                Priority need · {primaryNeed}
               </Text>
             </View>
-          ) : null}
-          <View style={styles.statsCol}>
-            <View style={styles.statRow}>
-              <Image source={mostWantedIcons.eye} style={styles.statIcon} resizeMode="contain" />
-              <Text style={styles.statValue}>{hunt.watcher_count}</Text>
-            </View>
-            {(hunt.comment_count ?? 0) > 0 ? (
-              <View style={styles.statRow}>
-                <Image source={mostWantedIcons.comment} style={styles.statIcon} resizeMode="contain" />
-                <Text style={styles.statValue}>{hunt.comment_count}</Text>
+
+            <View style={styles.rightRail}>
+              {highPriority || nearSolved ? (
+                <View
+                  style={[styles.priorityBox, nearSolved && !highPriority && styles.priorityBoxSolved]}
+                >
+                  <Image
+                    source={mostWantedIcons.shieldDark}
+                    style={styles.priorityIcon}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.priorityText}>
+                    {highPriority ? 'HIGH\nPRIORITY' : 'NEAR\nSOLVED'}
+                  </Text>
+                </View>
+              ) : null}
+              <View style={styles.railDivider} />
+              <View style={styles.statsCol}>
+                <View style={styles.statRow}>
+                  <Image source={mostWantedIcons.eye} style={styles.statIcon} resizeMode="contain" />
+                  <Text style={styles.statValue}>{hunt.watcher_count}</Text>
+                </View>
+                {(hunt.comment_count ?? 0) > 0 ? (
+                  <View style={styles.statRow}>
+                    <Image
+                      source={mostWantedIcons.comment}
+                      style={styles.statIcon}
+                      resizeMode="contain"
+                    />
+                    <Text style={styles.statValue}>{hunt.comment_count}</Text>
+                  </View>
+                ) : null}
               </View>
-            ) : null}
+            </View>
+          </View>
+
+          <View style={styles.progressRow}>
+            <Image
+              source={mostWantedIcons.evidenceDoc}
+              style={styles.progressIcon}
+              resizeMode="contain"
+            />
+            <Text style={styles.progressLabel}>Evidence Progress</Text>
+            <Text style={styles.progressPct}>{pct}%</Text>
+          </View>
+          <View style={styles.track}>
+            <View style={[styles.fill, { width: `${pct}%`, backgroundColor: fillColor }]} />
           </View>
         </View>
-      </View>
-
-      <View style={styles.progressRow}>
-        <Image source={mostWantedIcons.evidenceDoc} style={styles.progressIcon} resizeMode="contain" />
-        <Text style={styles.progressLabel}>Evidence Progress</Text>
-        <Text style={styles.progressPct}>{pct}%</Text>
-      </View>
-      <View style={styles.track}>
-        <View style={[styles.fill, { width: `${pct}%`, backgroundColor: fillColor }]} />
       </View>
     </Pressable>
   );
@@ -118,7 +126,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     bannerWrap: {
       flexDirection: 'row',
       marginLeft: s(-14),
-      marginBottom: s(6)
+      marginBottom: s(8)
     },
     banner: {
       flexDirection: 'row',
@@ -143,12 +151,17 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       flexDirection: 'row',
       gap: s(12)
     },
-    imageCol: { width: '32%' },
+    imageCol: { width: '38%' },
     image: {
       width: '100%',
-      height: s(120)
+      height: s(150)
     },
-    middleCol: {
+    rightArea: { flex: 1 },
+    topRow: {
+      flexDirection: 'row',
+      gap: s(10)
+    },
+    titleCol: {
       flex: 1,
       gap: s(5)
     },
@@ -169,9 +182,8 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       lineHeight: t(16),
       color: figmaColors.brownMuted
     },
-    rightCol: {
+    rightRail: {
       alignItems: 'flex-end',
-      justifyContent: 'space-between',
       gap: s(8)
     },
     priorityBox: {
@@ -197,19 +209,23 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       letterSpacing: 0.4,
       color: figmaColors.brown
     },
+    railDivider: {
+      alignSelf: 'stretch',
+      height: 1,
+      backgroundColor: figmaColors.borderLight
+    },
     statsCol: {
-      borderLeftWidth: 1,
-      borderLeftColor: figmaColors.borderLight,
-      paddingLeft: s(8),
       gap: s(6),
-      alignItems: 'flex-start'
+      alignItems: 'flex-start',
+      alignSelf: 'stretch',
+      paddingLeft: s(4)
     },
     statRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: s(6)
+      gap: s(7)
     },
-    statIcon: { width: s(13), height: s(11) },
+    statIcon: { width: s(14), height: s(12) },
     statValue: {
       fontFamily: appFonts.body,
       fontSize: t(12),
@@ -219,7 +235,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       flexDirection: 'row',
       alignItems: 'center',
       gap: s(6),
-      marginTop: s(12),
+      marginTop: s(10),
       marginBottom: s(6)
     },
     progressIcon: { width: s(12), height: s(14) },
