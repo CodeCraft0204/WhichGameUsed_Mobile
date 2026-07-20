@@ -222,3 +222,23 @@ export function mostWantedSolvedHref(): Href {
 export function mostWantedRankingsHref(): Href {
   return '/mostwanted/rankings' as unknown as Href;
 }
+
+export function mostWantedHref(): Href {
+  return '/mostwanted/mostwanted' as unknown as Href;
+}
+
+export function discussionHref(): Href {
+  return '/discussion/discussion' as unknown as Href;
+}
+
+export function authenticateHref(): Href {
+  return '/authenticate/authenticate' as unknown as Href;
+}
+
+export function educationHref(): Href {
+  return '/education/education' as unknown as Href;
+}
+
+export function educationGuideOutlineHref(slug: string): Href {
+  return { pathname: '/education/guides/[slug]', params: { slug } } as unknown as Href;
+}

@@ -86,11 +86,13 @@ export const contextHeaderByPage: Record<ContextHeaderPageKey, ContextHeaderConf
     key: 'education',
     icon: figmaIcons.guidesBook,
     messages: [
-      { text: 'Featured guides walk through spotting fakes and studying game-used evidence.' },
-      { text: 'Videos break down patch types, provenance clues, and research methods.' },
-      { text: 'Use the tabs to switch between guides, videos, and learning paths.' },
-      { text: 'Download PDF guides to reference while examining cards offline.' },
-      { text: 'Strong research habits protect you from overpaying for unverified memorabilia.' }
+      {
+        text: 'Follow Learn → Verify → Research → Apply: guides and videos, then tools, then in-app action.'
+      },
+      { text: 'Featured guides cover altered patches, catalog research, and PSA fraud reporting.' },
+      { text: 'Use Collector Research Tools to check PSA certs, MLB/UDA holograms, and auction archives.' },
+      { text: 'Case studies deep-link into Most Wanted, Authenticate, Wishlist, and Discussion.' },
+      { text: 'WGU outline screens work now; open the PDF when it is hosted.' }
     ]
   },
   mostwanted: {

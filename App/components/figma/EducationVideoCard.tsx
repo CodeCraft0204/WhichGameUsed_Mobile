@@ -1,31 +1,14 @@
 import React from 'react';
 import { appFonts } from '@/constants/appFonts';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { educationIcons, type EducationVideo } from '@/constants/educationContent';
 import { figmaColors } from '@/constants/figmaColors';
 
-type EducationVideoCardProps = EducationVideo & {
+type EducationVideoCardProps = Omit<EducationVideo, 'key'> & {
   s: (n: number) => number;
   t: (n: number) => number;
+  onPress?: () => void;
 };
-
-function MenuDots({ s }: { s: (n: number) => number }) {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(4) }}>
-      {[0, 1, 2].map((index) => (
-        <View
-          key={index}
-          style={{
-            width: s(4),
-            height: s(4),
-            borderRadius: s(2),
-            backgroundColor: figmaColors.gray
-          }}
-        />
-      ))}
-    </View>
-  );
-}
 
 export function EducationVideoCard({
   thumb,
@@ -33,35 +16,56 @@ export function EducationVideoCard({
   channel,
   duration,
   platform,
+  publisher,
+  contentType,
+  isExternal,
+  lastReviewed,
   s,
-  t
+  t,
+  onPress
 }: EducationVideoCardProps) {
   const styles = createStyles(s, t);
+  const typeLabel = contentType === 'web_guide' ? 'GUIDE' : 'VIDEO';
 
   return (
-    <View style={styles.card}>
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      style={({ pressed }) => [styles.card, pressed && onPress ? styles.pressed : null]}
+      accessibilityRole={onPress ? 'button' : undefined}
+    >
       <View style={styles.thumbWrap}>
         <Image source={thumb} style={styles.thumb} resizeMode="cover" />
-        <View style={styles.playOverlay}>
-          <Image source={educationIcons.playButton} style={styles.playButton} resizeMode="contain" />
-        </View>
+        {contentType === 'video' ? (
+          <View style={styles.playOverlay}>
+            <Image source={educationIcons.playButton} style={styles.playButton} resizeMode="contain" />
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.body}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.channel}>{channel}</Text>
-        <Text style={styles.duration}>{duration}</Text>
-      </View>
-
-      <View style={styles.actions}>
-        <View style={styles.actionsRow}>
-          <Text style={styles.platform} numberOfLines={1}>
-            {platform}
-          </Text>
-          <MenuDots s={s} />
+        <View style={styles.metaRow}>
+          <View style={styles.chip}>
+            <Text style={styles.chipText}>{typeLabel}</Text>
+          </View>
+          {isExternal ? (
+            <View style={[styles.chip, styles.chipExternal]}>
+              <Text style={styles.chipText}>EXTERNAL</Text>
+            </View>
+          ) : null}
         </View>
+        <Text style={styles.title} numberOfLines={3}>
+          {title}
+        </Text>
+        <Text style={styles.channel} numberOfLines={1}>
+          {publisher || channel}
+        </Text>
+        <Text style={styles.duration}>
+          {duration} · {platform}
+        </Text>
+        <Text style={styles.reviewed}>Reviewed {lastReviewed}</Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -80,8 +84,9 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       paddingHorizontal: s(8),
       gap: s(10)
     },
+    pressed: { opacity: 0.92 },
     thumbWrap: {
-      width: s(168),
+      width: s(132),
       height: s(96),
       borderRadius: s(8),
       overflow: 'hidden',
@@ -98,21 +103,42 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       justifyContent: 'center'
     },
     playButton: {
-      width: s(40),
-      height: s(40)
+      width: s(36),
+      height: s(36)
     },
     body: {
       flex: 1,
       minWidth: 0,
       justifyContent: 'center',
-      gap: s(4),
+      gap: s(3),
       paddingRight: s(4)
     },
+    metaRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: s(6)
+    },
+    chip: {
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      backgroundColor: figmaColors.tagBg,
+      borderRadius: s(4),
+      paddingHorizontal: s(6),
+      paddingVertical: s(2)
+    },
+    chipExternal: {
+      backgroundColor: figmaColors.surfaceHighlight
+    },
+    chipText: {
+      fontFamily: appFonts.accent,
+      fontSize: t(9),
+      letterSpacing: 0.3,
+      color: figmaColors.brown
+    },
     title: {
-      fontFamily: appFonts.body,
-      fontSize: t(17),
-      marginRight: s(20),
-      lineHeight: t(22),
+      fontFamily: appFonts.bodyBold,
+      fontSize: t(15),
+      lineHeight: t(20),
       color: figmaColors.charcoal
     },
     channel: {
@@ -123,28 +149,14 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     duration: {
       fontFamily: appFonts.body,
-      fontSize: t(13),
-      lineHeight: t(16),
+      fontSize: t(12),
+      lineHeight: t(15),
       color: figmaColors.gray
     },
-    actions: {
-      width: s(108),
-      justifyContent: 'center',
-      flexShrink: 0
-    },
-    actionsRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'flex-end',
-      gap: s(8)
-    },
-    platform: {
+    reviewed: {
       fontFamily: appFonts.body,
-      fontSize: t(14),
-      lineHeight: t(16),
-      color: figmaColors.gray,
-      textAlign: 'right',
-      flexShrink: 1
+      fontSize: t(11),
+      color: figmaColors.grayMuted
     }
   });
 }
