@@ -1,5 +1,18 @@
 ﻿import type { Href } from 'expo-router';
+import { router } from 'expo-router';
 import type { LeaderboardPeriod } from '@/lib/leaderboard';
+
+/**
+ * Prefer history back; if the stack is empty (deep link / replace / cold start),
+ * land on `fallback` instead of firing an unhandled GO_BACK warning.
+ */
+export function safeGoBack(fallback: Href): void {
+  if (router.canGoBack()) {
+    router.back();
+    return;
+  }
+  router.replace(fallback);
+}
 
 export const authNav: Array<{ label: string; href: Href }> = [
   { label: 'Sign In', href: '/sign-in/sign-in' },

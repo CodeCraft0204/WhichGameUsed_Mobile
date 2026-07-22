@@ -19,7 +19,7 @@ import { EmptyMessagesState } from '@/components/messages/MessageConversationRow
 import { appFonts } from '@/constants/appFonts';
 import { bodyText } from '@/constants/appTypography';
 import { figmaColors } from '@/constants/figmaColors';
-import { messageConversationHref, messagesInboxHref, publicProfileHref } from '@/constants/navigation';
+import { messageConversationHref, messagesInboxHref, publicProfileHref, safeGoBack } from '@/constants/navigation';
 import { socialCopy } from '@/constants/socialCopy';
 import { useAuth } from '@/context/AuthContext';
 import { useSocialNotifications } from '@/context/SocialNotificationsContext';
@@ -286,7 +286,7 @@ export default function MessageThreadScreen() {
           presence={peerPresence}
           s={s}
           t={t}
-          onBack={() => router.back()}
+          onBack={() => safeGoBack(messagesInboxHref())}
           onPressProfile={
             conversation?.peerId
               ? () => router.push(publicProfileHref(conversation.peerId))

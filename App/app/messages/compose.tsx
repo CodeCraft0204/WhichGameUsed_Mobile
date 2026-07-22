@@ -14,7 +14,7 @@ import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader'
 import { appFonts } from '@/constants/appFonts';
 import { bodyText } from '@/constants/appTypography';
 import { figmaColors } from '@/constants/figmaColors';
-import { messageConversationHref } from '@/constants/navigation';
+import { messageConversationHref, messagesInboxHref, safeGoBack } from '@/constants/navigation';
 import { messageTopicOptions, socialCopy } from '@/constants/socialCopy';
 import { useAuth } from '@/context/AuthContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
@@ -69,7 +69,7 @@ export default function MessageComposeScreen() {
           title={socialCopy.compose.title}
           s={s}
           t={t}
-          onBack={() => router.back()}
+          onBack={() => safeGoBack(messagesInboxHref())}
         />
         <AuthPrimaryButton label="Sign in" onPress={() => router.push('/sign-in/sign-in')} />
       </FigmaScreen>
@@ -84,7 +84,7 @@ export default function MessageComposeScreen() {
           subtitle={`To ${recipientName}`}
           s={s}
           t={t}
-          onBack={() => router.back()}
+          onBack={() => safeGoBack(messagesInboxHref())}
         />
         <Text style={styles.notAllowed}>{socialCopy.compose.notAllowed}</Text>
       </FigmaScreen>
@@ -99,7 +99,7 @@ export default function MessageComposeScreen() {
         description={`To ${recipientName}`}
         s={s}
         t={t}
-        onBack={() => router.back()}
+        onBack={() => safeGoBack(messagesInboxHref())}
       />
 
       <Text style={styles.label}>{socialCopy.compose.topicLabel}</Text>

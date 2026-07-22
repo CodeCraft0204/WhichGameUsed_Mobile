@@ -14,6 +14,7 @@ import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader'
 import { appFonts } from '@/constants/appFonts';
 import { bodyText } from '@/constants/appTypography';
 import { figmaColors } from '@/constants/figmaColors';
+import { messagesInboxHref, safeGoBack } from '@/constants/navigation';
 import { socialCopy } from '@/constants/socialCopy';
 import { useSocialNotifications } from '@/context/SocialNotificationsContext';
 import { defaultHrefForNotification } from '@/lib/notification-navigation';
@@ -66,7 +67,7 @@ export default function SocialNotificationsScreen() {
         subtitle={socialCopy.notifications.subtitle}
         s={s}
         t={t}
-        onBack={() => router.back()}
+        onBack={() => safeGoBack(messagesInboxHref())}
       />
 
       <Pressable

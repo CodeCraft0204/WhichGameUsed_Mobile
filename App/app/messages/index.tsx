@@ -25,7 +25,7 @@ import { PresenceStatusPicker } from '@/components/messages/PresenceStatusPicker
 import { appFonts } from '@/constants/appFonts';
 import { bodyText } from '@/constants/appTypography';
 import { figmaColors } from '@/constants/figmaColors';
-import { messageConversationHref, publicProfileHref } from '@/constants/navigation';
+import { messageConversationHref, publicProfileHref, safeGoBack } from '@/constants/navigation';
 import { socialCopy } from '@/constants/socialCopy';
 import { useAuth } from '@/context/AuthContext';
 import { useSocialNotifications } from '@/context/SocialNotificationsContext';
@@ -122,7 +122,7 @@ export default function MessagesIndexScreen() {
             title={socialCopy.inbox.title}
             s={s}
             t={t}
-            onBack={() => router.back()}
+            onBack={() => safeGoBack('/leaderboard/leaderboard')}
             onCompose={openCompose}
           />
 
