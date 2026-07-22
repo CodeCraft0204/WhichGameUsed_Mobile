@@ -1,11 +1,13 @@
 import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { PresenceDot } from '@/components/messages/PresenceDot';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { appFonts } from '@/constants/appFonts';
 import { bodyText } from '@/constants/appTypography';
 import { figmaColors } from '@/constants/figmaColors';
 import { formatInboxWhen } from '@/lib/messaging-format';
 import type { Conversation } from '@/lib/messages';
+import { presenceLabel } from '@/lib/presence';
 
 type Props = {
   conversation: Conversation;
@@ -16,11 +18,12 @@ type Props = {
   t: (n: number) => number;
 };
 
-function peerSubtitle(conversation: Conversation): string | null {
+function peerSubtitle(conversation: Conversation): string {
+  const bits = [presenceLabel(conversation.peerPresence ?? 'offline')];
   if (conversation.peerRank != null) {
-    return `Top Researcher • Rank #${conversation.peerRank}`;
+    bits.push(`Top Researcher • Rank #${conversation.peerRank}`);
   }
-  return null;
+  return bits.join(' · ');
 }
 
 export function MessageConversationRow({
@@ -57,11 +60,20 @@ export function MessageConversationRow({
         accessibilityRole="button"
         accessibilityLabel={`Open ${conversation.peerDisplayName} profile`}
       >
-        <ProfileAvatar
-          url={conversation.peerAvatarUrl}
-          name={conversation.peerDisplayName}
-          size={s(52)}
-        />
+        <View style={styles.avatarWrap}>
+          <ProfileAvatar
+            url={conversation.peerAvatarUrl}
+            name={conversation.peerDisplayName}
+            size={s(52)}
+          />
+          <View style={styles.dotWrap}>
+            <PresenceDot
+              status={conversation.peerPresence ?? 'offline'}
+              size={s(14)}
+              borderColor={figmaColors.cream}
+            />
+          </View>
+        </View>
       </Pressable>
 
       <View style={styles.content}>
@@ -145,6 +157,8 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       backgroundColor: 'rgba(247, 241, 228, 0.72)'
     },
     pressed: { opacity: 0.88 },
+    avatarWrap: { position: 'relative' },
+    dotWrap: { position: 'absolute', right: 0, bottom: 0 },
     activeBar: {
       position: 'absolute',
       left: 0,

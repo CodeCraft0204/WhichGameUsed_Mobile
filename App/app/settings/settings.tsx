@@ -13,6 +13,7 @@ import { ProfileMenuRow } from '@/components/profile/ProfileMenuRow';
 import { ProfileSection } from '@/components/profile/ProfileSection';
 import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader';
 import { ProfileToggleRow } from '@/components/profile/ProfileToggleRow';
+import { PresenceStatusPicker } from '@/components/messages/PresenceStatusPicker';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { settingsCopy } from '@/constants/settingsContent';
@@ -208,6 +209,8 @@ export default function SettingsScreen() {
         </ProfileSection>
 
         <ProfileSection title={settingsCopy.social.section} s={s} t={t}>
+          <Text style={styles.groupHint}>{settingsCopy.social.presenceStatusHint}</Text>
+          <PresenceStatusPicker s={s} t={t} />
           <ProfileMenuRow
             label={settingsCopy.social.messages}
             value={unreadInboxCount > 0 ? String(unreadInboxCount) : undefined}

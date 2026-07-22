@@ -1,4 +1,5 @@
 import { getUserStanding } from '@/lib/leaderboard';
+import { resolvePresenceStatus, type PresenceStatus } from '@/lib/presence';
 import { displayName, resolveProfileAvatarUrl } from '@/lib/profile';
 import { supabase } from '@/lib/supabase';
 
@@ -16,6 +17,7 @@ export type Conversation = {
   peerUsername: string | null;
   peerAvatarUrl: string | null;
   peerRank: number | null;
+  peerPresence: PresenceStatus;
 };
 
 export type Message = {
@@ -44,6 +46,9 @@ type InboxRow = {
   peer_display_name: string | null;
   peer_username: string | null;
   peer_avatar_url: string | null;
+  peer_last_seen_at?: string | null;
+  peer_presence_status?: string | null;
+  peer_effective_status?: string | null;
 };
 
 async function peerRank(userId: string): Promise<number | null> {
@@ -66,7 +71,11 @@ function mapInboxRow(row: InboxRow, rank: number | null): Conversation {
     }),
     peerUsername: row.peer_username,
     peerAvatarUrl: resolveProfileAvatarUrl(row.peer_avatar_url),
-    peerRank: rank
+    peerRank: rank,
+    peerPresence: resolvePresenceStatus(
+      row.peer_effective_status ?? row.peer_presence_status,
+      row.peer_last_seen_at
+    )
   };
 }
 

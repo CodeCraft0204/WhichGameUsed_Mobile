@@ -26,7 +26,9 @@ export const settingsCopy = {
     whoCanMessage: 'Who can message me',
     whoCanMessageHint: 'Control who can start a private conversation.',
     showForumActivity: 'Show forum activity on profile',
-    showForumActivityHint: 'Display your recent discussion threads on your public profile.'
+    showForumActivityHint: 'Display your recent discussion threads on your public profile.',
+    presenceStatus: 'Chat status',
+    presenceStatusHint: 'Choose how you appear to other collectors in messaging.'
   },
   account: {
     editProfile: 'Edit profile',

@@ -37,6 +37,11 @@ import {
   type Conversation,
   type Message
 } from '@/lib/messages';
+import {
+  getProfilesPresence,
+  subscribeProfilePresence,
+  type PresenceStatus
+} from '@/lib/presence';
 
 export default function MessageThreadScreen() {
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
@@ -49,10 +54,20 @@ export default function MessageThreadScreen() {
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversation, setConversation] = useState<Conversation | null>(null);
+  const [peerPresence, setPeerPresence] = useState<PresenceStatus>('offline');
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const refreshPeerPresence = useCallback(async (peerId: string | null | undefined) => {
+    if (!peerId) {
+      setPeerPresence('offline');
+      return;
+    }
+    const { items } = await getProfilesPresence([peerId]);
+    setPeerPresence(items[0]?.effectiveStatus ?? 'offline');
+  }, []);
 
   const listItems = useMemo(() => buildMessageListItems(messages), [messages]);
 
@@ -70,6 +85,10 @@ export default function MessageThreadScreen() {
     ]);
 
     setConversation(convoRes.conversation);
+    if (convoRes.conversation) {
+      setPeerPresence(convoRes.conversation.peerPresence);
+      void refreshPeerPresence(convoRes.conversation.peerId);
+    }
     if (msgRes.error) {
       setError(msgRes.error);
       setMessages([]);
@@ -81,7 +100,7 @@ export default function MessageThreadScreen() {
     await refreshCounts();
     setLoading(false);
     scrollToLatest();
-  }, [conversationId, refreshCounts, scrollToLatest, user]);
+  }, [conversationId, refreshCounts, refreshPeerPresence, scrollToLatest, user]);
 
   useFocusEffect(
     useCallback(() => {
@@ -93,9 +112,25 @@ export default function MessageThreadScreen() {
   useEffect(() => {
     if (!conversationId) return;
     return subscribeConversationThread(conversationId, () => {
+      // Soft refresh — keep the thread open; pick up hide/restore and new messages.
       void load();
     });
   }, [conversationId, load]);
+
+  useEffect(() => {
+    const peerId = conversation?.peerId;
+    if (!peerId) return;
+    const unsub = subscribeProfilePresence(peerId, () => {
+      void refreshPeerPresence(peerId);
+    });
+    const interval = setInterval(() => {
+      void refreshPeerPresence(peerId);
+    }, 60_000);
+    return () => {
+      unsub();
+      clearInterval(interval);
+    };
+  }, [conversation?.peerId, refreshPeerPresence]);
 
   const submit = async () => {
     if (!conversationId || !draft.trim()) return;
@@ -248,6 +283,7 @@ export default function MessageThreadScreen() {
           displayName={peerName}
           avatarUrl={conversation?.peerAvatarUrl ?? null}
           subtitle={peerSubtitle}
+          presence={peerPresence}
           s={s}
           t={t}
           onBack={() => router.back()}

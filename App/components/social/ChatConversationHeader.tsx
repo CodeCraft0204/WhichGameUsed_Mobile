@@ -1,15 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { PresenceDot } from '@/components/messages/PresenceDot';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { appFonts } from '@/constants/appFonts';
 import { bodyText } from '@/constants/appTypography';
 import { figmaColors } from '@/constants/figmaColors';
+import { presenceLabel, type PresenceStatus } from '@/lib/presence';
 
 type Props = {
   displayName: string;
   avatarUrl: string | null;
   subtitle?: string | null;
+  presence?: PresenceStatus | null;
   s: (n: number) => number;
   t: (n: number) => number;
   onBack: () => void;
@@ -21,6 +24,7 @@ export function ChatConversationHeader({
   displayName,
   avatarUrl,
   subtitle,
+  presence,
   s,
   t,
   onBack,
@@ -28,6 +32,8 @@ export function ChatConversationHeader({
   onPressMenu
 }: Props) {
   const styles = useMemo(() => createStyles(s, t), [s, t]);
+  const status = presence ?? 'offline';
+  const statusLine = presenceLabel(status);
 
   return (
     <View style={styles.wrap}>
@@ -41,7 +47,12 @@ export function ChatConversationHeader({
         disabled={!onPressProfile}
         accessibilityRole="button"
       >
-        <ProfileAvatar url={avatarUrl} name={displayName} size={s(42)} />
+        <View style={styles.avatarWrap}>
+          <ProfileAvatar url={avatarUrl} name={displayName} size={s(42)} />
+          <View style={styles.dotWrap}>
+            <PresenceDot status={status} size={s(12)} borderColor={figmaColors.parchment} />
+          </View>
+        </View>
         <View style={styles.textCol}>
           <View style={styles.nameRow}>
             <Text style={styles.name} numberOfLines={1}>
@@ -49,11 +60,10 @@ export function ChatConversationHeader({
             </Text>
             <Ionicons name="shield-checkmark" size={s(14)} color={figmaColors.navActive} />
           </View>
-          {subtitle ? (
-            <Text style={styles.subtitle} numberOfLines={1}>
-              {subtitle}
-            </Text>
-          ) : null}
+          <Text style={styles.subtitle} numberOfLines={1}>
+            {statusLine}
+            {subtitle ? ` · ${subtitle}` : ''}
+          </Text>
         </View>
       </Pressable>
 
@@ -95,6 +105,14 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       alignItems: 'center',
       gap: s(10),
       minWidth: 0
+    },
+    avatarWrap: {
+      position: 'relative'
+    },
+    dotWrap: {
+      position: 'absolute',
+      right: 0,
+      bottom: 0
     },
     textCol: {
       flex: 1,

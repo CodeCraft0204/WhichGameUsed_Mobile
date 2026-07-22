@@ -10,6 +10,7 @@ import { AppBootstrapGate } from '@/components/AppBootstrapGate';
 import { AppSplashScreen } from '@/components/AppSplashScreen';
 import { AuthNavigationGuard } from '@/components/AuthNavigationGuard';
 import { AuthProvider } from '@/context/AuthContext';
+import { PresenceHeartbeat } from '@/components/PresenceHeartbeat';
 import { SocialNotificationsProvider } from '@/context/SocialNotificationsContext';
 import { SocialNotificationBanner } from '@/components/social/SocialNotificationBanner';
 import { useBootstrapProgress } from '@/hooks/useBootstrapProgress';
@@ -39,6 +40,7 @@ export default function RootLayout() {
       <AuthProvider>
         <AppBootstrapGate fontsReady={fontsLoaded}>
           <SocialNotificationsProvider>
+            <PresenceHeartbeat />
             <AuthNavigationGuard>
               <>
                 <Stack screenOptions={{ headerShown: false }} />

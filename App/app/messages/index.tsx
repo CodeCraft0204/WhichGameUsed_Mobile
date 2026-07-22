@@ -21,6 +21,7 @@ import {
 import { InboxSegmentTabs, type InboxSegment } from '@/components/social/InboxSegmentTabs';
 import { MessageSearchField } from '@/components/social/MessageSearchField';
 import { MessagesHubHeader } from '@/components/social/MessagesHubHeader';
+import { PresenceStatusPicker } from '@/components/messages/PresenceStatusPicker';
 import { appFonts } from '@/constants/appFonts';
 import { bodyText } from '@/constants/appTypography';
 import { figmaColors } from '@/constants/figmaColors';
@@ -124,6 +125,8 @@ export default function MessagesIndexScreen() {
             onBack={() => router.back()}
             onCompose={openCompose}
           />
+
+          <PresenceStatusPicker s={s} t={t} compact />
 
           <InboxSegmentTabs value={segment} onChange={setSegment} s={s} t={t} />
 

@@ -50,6 +50,11 @@ export function subscribeConversationInbox(userId: string, onChange: VoidListene
         { event: 'INSERT', schema: 'public', table: 'collector_messages' },
         () => emitInbox()
       )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'collector_messages' },
+        () => emitInbox()
+      )
       .subscribe();
   }
 
@@ -84,7 +89,7 @@ export function subscribeConversationThread(
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
           table: 'collector_messages',
           filter: `conversation_id=eq.${conversationId}`
