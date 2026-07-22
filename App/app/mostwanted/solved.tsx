@@ -9,7 +9,7 @@ import {
 } from '@/components/most-wanted/MostWantedShared';
 import { SolvedHuntCard } from '@/components/most-wanted/SolvedHuntCard';
 import { mostWantedCopy } from '@/constants/mostWantedCopy';
-import { mostWantedDetailHref, databaseCardHref } from '@/constants/navigation';
+import { mostWantedDetailHref, databaseCardHref, mostWantedHref, safeGoBack } from '@/constants/navigation';
 import { figmaColors } from '@/constants/figmaColors';
 import { appFonts } from '@/constants/appFonts';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
@@ -62,7 +62,7 @@ export default function MostWantedSolvedScreen() {
           description="Solved archive — contributors, completed evidence, badge recognition, and solve date."
           s={s}
           t={t}
-          onBack={() => router.back()}
+          onBack={() => safeGoBack(mostWantedHref())}
         />
 
         {loading ? <MostWantedLoadingState message="Loading solved hunts…" s={s} t={t} /> : null}

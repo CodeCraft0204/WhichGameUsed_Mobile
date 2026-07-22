@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader';
 import { SubmitEvidenceForm } from '@/components/most-wanted/SubmitEvidenceForm';
 import { mostWantedCopy } from '@/constants/mostWantedCopy';
-import { mostWantedContributionsHref } from '@/constants/navigation';
+import { mostWantedContributionsHref, mostWantedHref, safeGoBack } from '@/constants/navigation';
 import { figmaColors } from '@/constants/figmaColors';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 
@@ -41,7 +41,7 @@ export default function MostWantedSubmitScreen() {
           }
           s={s}
           t={t}
-          onBack={() => router.back()}
+          onBack={() => safeGoBack(mostWantedHref())}
         />
         <SubmitEvidenceForm
           huntId={huntId}

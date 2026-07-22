@@ -18,7 +18,7 @@ import {
 } from '@/components/most-wanted/MostWantedShared';
 import { mostWantedCopy } from '@/constants/mostWantedCopy';
 import type { MwContributionStatus } from '@/constants/mostWantedStyles';
-import { mostWantedDetailHref, mostWantedSubmitHref } from '@/constants/navigation';
+import { mostWantedDetailHref, mostWantedHref, mostWantedSubmitHref, safeGoBack } from '@/constants/navigation';
 import { figmaColors } from '@/constants/figmaColors';
 import { appFonts } from '@/constants/appFonts';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
@@ -90,7 +90,7 @@ export default function MostWantedContributionsScreen() {
           description="Evidence you submit is reviewed before it counts toward Most Wanted progress."
           s={s}
           t={t}
-          onBack={() => router.back()}
+          onBack={() => safeGoBack(mostWantedHref())}
         />
 
         {loading ? <MostWantedLoadingState message="Loading contributions…" s={s} t={t} /> : null}

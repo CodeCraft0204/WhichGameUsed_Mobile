@@ -33,7 +33,9 @@ import {
   databaseCardHref,
   discussionCreateHref,
   discussionThreadHref,
-  mostWantedSubmitHref
+  mostWantedHref,
+  mostWantedSubmitHref,
+  safeGoBack
 } from '@/constants/navigation';
 import { figmaColors } from '@/constants/figmaColors';
 import { useAuth } from '@/context/AuthContext';
@@ -240,7 +242,7 @@ export default function MostWantedDetailScreen() {
             subtitle={hunt ? huntDisplayTitle(hunt) : undefined}
             s={s}
             t={t}
-            onBack={() => router.back()}
+            onBack={() => safeGoBack(mostWantedHref())}
           />
 
           {loading ? (

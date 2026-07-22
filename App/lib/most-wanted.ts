@@ -157,7 +157,9 @@ export type SolvedHuntRow = HuntImageFields & {
 };
 
 export type BountyRankingRow = {
-  card_request_id: string;
+  source_kind?: 'request' | 'catalog' | string;
+  card_request_id: string | null;
+  card_id?: string | null;
   card_title: string | null;
   player_name: string | null;
   product_name: string | null;
@@ -506,12 +508,28 @@ export async function listBountyRankings(limit = 10): Promise<{ items: BountyRan
   const items: BountyRankingRow[] = [];
   for (const row of data ?? []) {
     const r = row as BountyRankingRow;
+    const isCatalog = r.source_kind === 'catalog' || (!!r.card_id && !r.card_request_id);
+    if (isCatalog && r.card_id) {
+      const { data: voteState } = await supabase.rpc('get_catalog_card_vote_state', {
+        p_card_id: r.card_id
+      });
+      const state = voteState as { user_vote?: string | null; vote_score?: number } | null;
+      items.push({
+        ...r,
+        source_kind: 'catalog',
+        vote_score: state?.vote_score ?? r.vote_score,
+        user_vote: (state?.user_vote as BountyRankingRow['user_vote']) ?? null
+      });
+      continue;
+    }
+    if (!r.card_request_id) continue;
     const { data: voteState } = await supabase.rpc('get_card_request_vote_state', {
       p_card_request_id: r.card_request_id
     });
     const state = voteState as { user_vote?: string | null; vote_score?: number } | null;
     items.push({
       ...r,
+      source_kind: r.source_kind ?? 'request',
       vote_score: state?.vote_score ?? r.vote_score,
       user_vote: (state?.user_vote as BountyRankingRow['user_vote']) ?? null
     });
@@ -534,6 +552,37 @@ export async function toggleCardRequestVote(
     userVote: (payload.user_vote as 'upvote' | 'downvote' | null) ?? null,
     error: null
   };
+}
+
+export async function toggleCatalogCardVote(
+  cardId: string,
+  action: 'upvote' | 'downvote'
+): Promise<{ voteScore: number; userVote: 'upvote' | 'downvote' | null; error: string | null }> {
+  const { data, error } = await supabase.rpc('toggle_catalog_card_vote', {
+    p_card_id: cardId,
+    p_action: action
+  });
+  if (error) return { voteScore: 0, userVote: null, error: error.message };
+  const payload = data as { user_vote?: string | null; vote_score?: number };
+  return {
+    voteScore: payload.vote_score ?? 0,
+    userVote: (payload.user_vote as 'upvote' | 'downvote' | null) ?? null,
+    error: null
+  };
+}
+
+export async function toggleDemandVote(
+  row: BountyRankingRow,
+  action: 'upvote' | 'downvote'
+): Promise<{ voteScore: number; userVote: 'upvote' | 'downvote' | null; error: string | null }> {
+  if (row.source_kind === 'catalog' || (row.card_id && !row.card_request_id)) {
+    if (!row.card_id) return { voteScore: 0, userVote: null, error: 'Missing catalog card.' };
+    return toggleCatalogCardVote(row.card_id, action);
+  }
+  if (!row.card_request_id) {
+    return { voteScore: 0, userVote: null, error: 'Missing card request.' };
+  }
+  return toggleCardRequestVote(row.card_request_id, action);
 }
 
 export async function toggleMostWantedWatch(huntId: string): Promise<{ watching: boolean; error: string | null }> {

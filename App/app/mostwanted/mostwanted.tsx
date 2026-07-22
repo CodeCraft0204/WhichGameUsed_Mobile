@@ -43,7 +43,7 @@ import {
   fetchMostWantedStats,
   listBountyRankings,
   listMostWantedHunts,
-  toggleCardRequestVote,
+  toggleDemandVote,
   type BountyRankingRow,
   type MostWantedHuntRow,
   type MostWantedStats
@@ -160,20 +160,18 @@ function MostWantedScreenBody() {
     [router]
   );
 
-  const handleVote = useCallback(async (cardRequestId: string, action: 'upvote' | 'downvote') => {
-    const { voteScore, userVote, error: voteError } = await toggleCardRequestVote(
-      cardRequestId,
-      action
-    );
+  const handleVote = useCallback(async (row: BountyRankingRow, action: 'upvote' | 'downvote') => {
+    const key = row.card_request_id ?? row.card_id;
+    const { voteScore, userVote, error: voteError } = await toggleDemandVote(row, action);
     if (voteError) {
       setError(voteError);
       return;
     }
     setRankings((prev) =>
-      prev.map((row) =>
-        row.card_request_id === cardRequestId
-          ? { ...row, vote_score: voteScore, user_vote: userVote }
-          : row
+      prev.map((item) =>
+        (item.card_request_id ?? item.card_id) === key
+          ? { ...item, vote_score: voteScore, user_vote: userVote }
+          : item
       )
     );
   }, []);
@@ -281,12 +279,12 @@ function MostWantedScreenBody() {
               <Text style={styles.rankingsSubtitle}>{mostWantedCopy.bountyRankingsSubtitle}</Text>
               {previewRankings.map((row, index) => (
                 <BountyRankingCard
-                  key={row.card_request_id}
+                  key={row.card_request_id ?? row.card_id ?? `${row.card_title}-${index}`}
                   row={row}
                   rank={index + 1}
                   s={s}
                   t={t}
-                  onVote={(action) => void handleVote(row.card_request_id, action)}
+                  onVote={(action) => void handleVote(row, action)}
                 />
               ))}
             </View>

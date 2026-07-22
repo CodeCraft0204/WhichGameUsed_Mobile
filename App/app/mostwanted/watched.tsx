@@ -9,7 +9,7 @@ import {
 } from '@/components/most-wanted/MostWantedShared';
 import { WantedCard } from '@/components/most-wanted/WantedCard';
 import { mostWantedCopy } from '@/constants/mostWantedCopy';
-import { mostWantedDetailHref, mostWantedSubmitHref } from '@/constants/navigation';
+import { mostWantedDetailHref, mostWantedHref, mostWantedSubmitHref, safeGoBack } from '@/constants/navigation';
 import { figmaColors } from '@/constants/figmaColors';
 import { appFonts } from '@/constants/appFonts';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
@@ -62,7 +62,7 @@ export default function MostWantedWatchedScreen() {
           description="Track progress on Most Wanted cards you care about and jump back in when new evidence appears."
           s={s}
           t={t}
-          onBack={() => router.back()}
+          onBack={() => safeGoBack(mostWantedHref())}
         />
 
         {loading ? <MostWantedLoadingState message="Loading watch list…" s={s} t={t} /> : null}

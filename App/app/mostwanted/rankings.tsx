@@ -1,4 +1,4 @@
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,10 +12,10 @@ import { mostWantedCopy } from '@/constants/mostWantedCopy';
 import { figmaColors } from '@/constants/figmaColors';
 import { appFonts } from '@/constants/appFonts';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
-import { listBountyRankings, toggleCardRequestVote, type BountyRankingRow } from '@/lib/most-wanted';
+import { mostWantedHref, safeGoBack } from '@/constants/navigation';
+import { listBountyRankings, toggleDemandVote, type BountyRankingRow } from '@/lib/most-wanted';
 
 export default function MostWantedRankingsScreen() {
-  const router = useRouter();
   const { s, t } = useFigmaLayout();
   const styles = useMemo(() => createStyles(s, t), [s, t]);
   const [items, setItems] = useState<BountyRankingRow[]>([]);
@@ -37,17 +37,18 @@ export default function MostWantedRankingsScreen() {
     }, [load])
   );
 
-  const handleVote = useCallback(async (cardRequestId: string, action: 'upvote' | 'downvote') => {
-    const { voteScore, userVote, error: voteError } = await toggleCardRequestVote(cardRequestId, action);
+  const handleVote = useCallback(async (row: BountyRankingRow, action: 'upvote' | 'downvote') => {
+    const key = row.card_request_id ?? row.card_id;
+    const { voteScore, userVote, error: voteError } = await toggleDemandVote(row, action);
     if (voteError) {
       setError(voteError);
       return;
     }
     setItems((prev) =>
-      prev.map((row) =>
-        row.card_request_id === cardRequestId
-          ? { ...row, vote_score: voteScore, user_vote: userVote }
-          : row
+      prev.map((item) =>
+        (item.card_request_id ?? item.card_id) === key
+          ? { ...item, vote_score: voteScore, user_vote: userVote }
+          : item
       )
     );
   }, []);
@@ -73,7 +74,7 @@ export default function MostWantedRankingsScreen() {
           description="Help decide which mystery cards the community should research next."
           s={s}
           t={t}
-          onBack={() => router.back()}
+          onBack={() => safeGoBack(mostWantedHref())}
         />
 
         {loading ? <MostWantedLoadingState message="Loading rankings…" s={s} t={t} /> : null}
@@ -91,12 +92,12 @@ export default function MostWantedRankingsScreen() {
 
         {items.map((row, index) => (
           <BountyRankingCard
-            key={row.card_request_id}
+            key={row.card_request_id ?? row.card_id ?? `${row.card_title}-${index}`}
             row={row}
             rank={index + 1}
             s={s}
             t={t}
-            onVote={(action) => void handleVote(row.card_request_id, action)}
+            onVote={(action) => void handleVote(row, action)}
           />
         ))}
       </ScrollView>

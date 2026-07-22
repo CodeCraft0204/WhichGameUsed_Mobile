@@ -95,9 +95,15 @@ export async function loadManualPresence(): Promise<PresenceStatus> {
   return manualStatus;
 }
 
-export async function touchMyPresence(status: PresenceStatus = 'online'): Promise<void> {
+export async function touchMyPresence(
+  status: PresenceStatus = 'online'
+): Promise<{ error: string | null }> {
+  // Heartbeat can race ahead of the JWT being attached after sign-in.
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) return { error: 'Sign in required' };
+
   const { error } = await supabase.rpc('touch_my_presence', { p_status: status });
-  if (error) throw new Error(error.message);
+  return { error: error?.message ?? null };
 }
 
 /** Persist preference + publish immediately. Heartbeat will keep this status. */
@@ -106,12 +112,7 @@ export async function setMyPresenceStatus(
 ): Promise<{ error: string | null }> {
   emitManualPresence(status);
   await persistManualPresence(status);
-  try {
-    await touchMyPresence(status);
-    return { error: null };
-  } catch (err) {
-    return { error: err instanceof Error ? err.message : 'Could not update status.' };
-  }
+  return touchMyPresence(status);
 }
 
 export async function getProfilesPresence(
@@ -178,6 +179,7 @@ export function startPresenceHeartbeat(getSignedIn: () => boolean): () => void {
 
   const beat = (status: PresenceStatus) => {
     if (cancelled || !getSignedIn()) return;
+    // Quiet: session may still be hydrating right after sign-in.
     void touchMyPresence(status);
   };
 
@@ -192,23 +194,43 @@ export function startPresenceHeartbeat(getSignedIn: () => boolean): () => void {
     }, 45_000);
   };
 
-  void loadManualPresence().then(() => {
+  void (async () => {
+    await loadManualPresence();
     if (cancelled) return;
+    // Wait until Supabase has a session before the first beat.
+    const { data } = await supabase.auth.getSession();
+    if (cancelled || !data.session || !getSignedIn()) return;
     sync();
     if (appState === 'active') startTimer();
+  })();
+
+  const { data: authSub } = supabase.auth.onAuthStateChange((event, session) => {
+    if (cancelled) return;
+    if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') && session) {
+      if (!getSignedIn()) return;
+      sync();
+      if (appState === 'active') startTimer();
+    }
   });
 
   const unsubPref = subscribeManualPresence(() => {
-    sync();
+    if (!getSignedIn()) return;
+    void supabase.auth.getSession().then(({ data }) => {
+      if (cancelled || !data.session) return;
+      sync();
+    });
   });
 
   const sub = AppState.addEventListener('change', (next) => {
     appState = next;
     if (next === 'active') {
-      sync();
-      startTimer();
+      void supabase.auth.getSession().then(({ data }) => {
+        if (cancelled || !data.session || !getSignedIn()) return;
+        sync();
+        startTimer();
+      });
     } else if (next === 'background' || next === 'inactive') {
-      sync();
+      if (getSignedIn()) sync();
       if (timer) {
         clearInterval(timer);
         timer = null;
@@ -218,6 +240,7 @@ export function startPresenceHeartbeat(getSignedIn: () => boolean): () => void {
 
   return () => {
     cancelled = true;
+    authSub.subscription.unsubscribe();
     unsubPref();
     sub.remove();
     if (timer) clearInterval(timer);

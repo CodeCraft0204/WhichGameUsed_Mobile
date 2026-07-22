@@ -26,8 +26,10 @@ function statusPresentation(status: string): { label: string; color: string } {
 export function BountyRankingCard({ row, rank, s, t, onVote }: Props) {
   const rankStyle = rankingRankStyle(rank);
   const styles = useMemo(() => createStyles(s, t, rankStyle), [s, t, rankStyle]);
-  const title = row.card_title?.trim() || row.player_name?.trim() || 'Card request';
-  const status = statusPresentation(row.status);
+  const title = row.card_title?.trim() || row.player_name?.trim() || 'Demand candidate';
+  const status = statusPresentation(
+    row.source_kind === 'catalog' ? 'Catalog card' : row.status
+  );
   const meta = [row.product_year, row.product_name].filter(Boolean).join(' • ');
 
   return (
