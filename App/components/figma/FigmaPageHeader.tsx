@@ -29,8 +29,11 @@ type FigmaPageHeaderProps = {
   page: ReturnType<typeof createFigmaPageStyles>;
   showUtilityBar?: boolean;
   showUtilityMessages?: boolean;
+  showUtilityNotifications?: boolean;
   utilityMessagesUnreadCount?: number;
+  utilityNotificationsUnreadCount?: number;
   onPressUtilityMessages?: () => void;
+  onPressUtilityNotifications?: () => void;
   guidanceKey?: ContextHeaderPageKey;
   titleStyle?: StyleProp<TextStyle>;
   subtitleStyle?: StyleProp<TextStyle>;
@@ -54,9 +57,12 @@ export function FigmaPageHeader({
   s,
   page,
   showUtilityBar = true,
-  showUtilityMessages = false,
-  utilityMessagesUnreadCount = 0,
+  showUtilityMessages = true,
+  showUtilityNotifications = true,
+  utilityMessagesUnreadCount,
+  utilityNotificationsUnreadCount,
   onPressUtilityMessages,
+  onPressUtilityNotifications,
   guidanceKey,
   titleStyle,
   subtitleStyle,
@@ -112,8 +118,11 @@ export function FigmaPageHeader({
         <FigmaUtilityBar
           s={s}
           showMessages={showUtilityMessages}
+          showNotifications={showUtilityNotifications}
           messagesUnreadCount={utilityMessagesUnreadCount}
+          notificationsUnreadCount={utilityNotificationsUnreadCount}
           onPressMessages={onPressUtilityMessages}
+          onPressNotifications={onPressUtilityNotifications}
         />
       ) : null}
       {children}

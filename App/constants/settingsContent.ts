@@ -18,7 +18,7 @@ export const settingsCopy = {
     section: 'SOCIAL & MESSAGING',
     messages: 'Messages inbox',
     following: 'Collectors you follow',
-    notifications: 'Social notifications',
+    notifications: 'Notifications',
     pushMessages: 'Push alerts for messages',
     pushMessagesHint: 'Notify immediately when someone sends you a direct message.',
     pushFollows: 'Push alerts for new followers',

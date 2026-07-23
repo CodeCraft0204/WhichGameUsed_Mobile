@@ -56,10 +56,12 @@ export const socialCopy = {
     noDiscussions: 'No public forum threads yet.'
   },
   notifications: {
-    title: 'SOCIAL ACTIVITY',
-    subtitle: 'FOLLOWS & MESSAGES.',
+    title: 'NOTIFICATIONS',
+    subtitle: 'YOUR ACTIVITY LOG.',
+    description: 'Authentication, catalog, Most Wanted, follows, and messages — all in one place.',
     markAllRead: 'Mark all read',
-    empty: 'No recent social activity.',
+    empty: 'No notifications yet.',
+    loadMore: 'LOAD MORE',
     newFollower: 'started following you',
     newMessage: 'sent you a message'
   },
@@ -71,7 +73,7 @@ export const socialCopy = {
     showForumActivityHint: 'Display your recent discussion threads on your public profile.',
     messagesLink: 'Messages inbox',
     followingLink: 'Collectors you follow',
-    notificationsLink: 'Social notifications'
+    notificationsLink: 'Notifications'
   }
 } as const;
 

@@ -20,7 +20,7 @@ import {
 } from '@/context/ContextHeaderScrollContext';
 import { leaderboardIcons, leaderboardPeriodTabs } from '@/constants/leaderboardContent';
 import { leaderboardCopy } from '@/constants/leaderboardCopy';
-import { publicProfileHref, pointsWorkHref, monthlyPrizeHref, messagesInboxHref } from '@/constants/navigation';
+import { publicProfileHref, pointsWorkHref, monthlyPrizeHref } from '@/constants/navigation';
 import { figmaColors } from '@/constants/figmaColors';
 import { bodyText } from '@/constants/appTypography';
 import { useAuth } from '@/context/AuthContext';
@@ -50,7 +50,7 @@ export default function LeaderboardScreen() {
 function LeaderboardScreenBody() {
   const router = useRouter();
   const { user, profile } = useAuth();
-  const { unreadInboxCount, refreshCounts } = useSocialNotifications();
+  const { refreshCounts } = useSocialNotifications();
   const { s, t } = useFigmaLayout(0.92);
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
@@ -129,10 +129,6 @@ function LeaderboardScreenBody() {
     router.push(pointsWorkHref());
   }, [router]);
 
-  const handleOpenMessages = useCallback(() => {
-    router.push(messagesInboxHref());
-  }, [router]);
-
   const handleViewMonthlyPrize = useCallback(() => {
     router.push(monthlyPrizeHref());
   }, [router]);
@@ -168,9 +164,6 @@ function LeaderboardScreenBody() {
         guidanceKey="leaderboard"
         s={s}
         page={page}
-        showUtilityMessages={Boolean(user)}
-        utilityMessagesUnreadCount={unreadInboxCount}
-        onPressUtilityMessages={handleOpenMessages}
       >
         <LeaderboardPeriodTabs
           tabs={leaderboardPeriodTabs}

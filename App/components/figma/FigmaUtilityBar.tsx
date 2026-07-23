@@ -1,28 +1,67 @@
 import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { figmaColors } from '@/constants/figmaColors';
 import { figmaIcons } from '@/constants/figmaIcons';
 import { figmaSharedIcons } from '@/constants/figmaShared';
+import { messagesInboxHref, socialNotificationsHref } from '@/constants/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { useSocialNotifications } from '@/context/SocialNotificationsContext';
+import { appFonts } from '@/constants/appFonts';
 
 type FigmaUtilityBarProps = {
   s: (n: number) => number;
   showMessages?: boolean;
+  showNotifications?: boolean;
   messagesUnreadCount?: number;
+  notificationsUnreadCount?: number;
   onPressMessages?: () => void;
+  onPressNotifications?: () => void;
 };
+
+function formatBadgeCount(count: number): string {
+  if (count > 99) return '99+';
+  return String(count);
+}
 
 export function FigmaUtilityBar({
   s,
-  showMessages = false,
-  messagesUnreadCount = 0,
-  onPressMessages
+  showMessages,
+  showNotifications,
+  messagesUnreadCount,
+  notificationsUnreadCount,
+  onPressMessages,
+  onPressNotifications
 }: FigmaUtilityBarProps) {
   const router = useRouter();
-  const itemCount = showMessages ? 4 : 3;
+  const { user } = useAuth();
+  const { unreadInboxCount, unreadNotificationCount } = useSocialNotifications();
+
+  const signedIn = Boolean(user);
+  const showMsg = signedIn && (showMessages ?? true);
+  const showNotif = signedIn && (showNotifications ?? true);
+  const msgCount = messagesUnreadCount ?? unreadInboxCount;
+  const notifCount = notificationsUnreadCount ?? unreadNotificationCount;
+
+  const itemCount = 3 + (showMsg ? 1 : 0) + (showNotif ? 1 : 0);
   const styles = useMemo(() => createStyles(s, itemCount), [itemCount, s]);
-  const messageIcon =
-    messagesUnreadCount > 0 ? figmaIcons.msgIconBadge : figmaIcons.msgIcon;
+  const messageIcon = msgCount > 0 ? figmaIcons.msgIconBadge : figmaIcons.msgIcon;
+
+  const openMessages = () => {
+    if (onPressMessages) {
+      onPressMessages();
+      return;
+    }
+    router.push(messagesInboxHref());
+  };
+
+  const openNotifications = () => {
+    if (onPressNotifications) {
+      onPressNotifications();
+      return;
+    }
+    router.push(socialNotificationsHref());
+  };
 
   return (
     <View style={styles.utilityBar}>
@@ -34,18 +73,38 @@ export function FigmaUtilityBar({
         <Image source={figmaSharedIcons.utilitySearch} style={styles.utilityIcon} resizeMode="contain" />
       </Pressable>
 
-      {showMessages ? (
+      {showMsg ? (
+        <Pressable
+          style={styles.utilityBtn}
+          accessibilityRole="button"
+          accessibilityLabel={msgCount > 0 ? `Messages, ${msgCount} unread` : 'Messages'}
+          onPress={openMessages}
+        >
+          <Image source={messageIcon} style={styles.utilityIcon} resizeMode="contain" />
+        </Pressable>
+      ) : null}
+
+      {showNotif ? (
         <Pressable
           style={styles.utilityBtn}
           accessibilityRole="button"
           accessibilityLabel={
-            messagesUnreadCount > 0
-              ? `Messages, ${messagesUnreadCount} unread`
-              : 'Messages'
+            notifCount > 0 ? `Notifications, ${notifCount} unread` : 'Notifications'
           }
-          onPress={onPressMessages}
+          onPress={openNotifications}
         >
-          <Image source={messageIcon} style={styles.utilityIcon} resizeMode="contain" />
+          <View>
+            <Image
+              source={figmaIcons.utilityNotifications}
+              style={styles.utilityIcon}
+              resizeMode="contain"
+            />
+            {notifCount > 0 ? (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{formatBadgeCount(notifCount)}</Text>
+              </View>
+            ) : null}
+          </View>
         </Pressable>
       ) : null}
 
@@ -70,7 +129,7 @@ export function FigmaUtilityBar({
 }
 
 function createStyles(s: (n: number) => number, itemCount: number) {
-  const barHeight = s(itemCount === 4 ? 328 : 263);
+  const barHeight = s(263 + Math.max(0, itemCount - 3) * 65);
 
   return StyleSheet.create({
     utilityBar: {
@@ -92,6 +151,27 @@ function createStyles(s: (n: number) => number, itemCount: number) {
     utilityIcon: {
       width: s(40),
       height: s(40)
+    },
+    badge: {
+      position: 'absolute',
+      top: s(-2),
+      right: s(-4),
+      minWidth: s(18),
+      height: s(18),
+      borderRadius: s(9),
+      paddingHorizontal: s(4),
+      backgroundColor: figmaColors.error,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1.5,
+      borderColor: figmaColors.utilityBar
+    },
+    badgeText: {
+      fontFamily: appFonts.bodyBold,
+      fontSize: s(10),
+      lineHeight: s(12),
+      color: '#FFFFFF',
+      textAlign: 'center'
     }
   });
 }

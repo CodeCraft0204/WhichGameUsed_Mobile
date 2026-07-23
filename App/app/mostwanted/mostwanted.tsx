@@ -25,7 +25,6 @@ import {
   type MostWantedSortKey
 } from '@/constants/mostWantedCopy';
 import {
-  messagesInboxHref,
   mostWantedContributionsHref,
   mostWantedDetailHref,
   mostWantedRankingsHref,
@@ -59,7 +58,7 @@ export default function MostWantedScreen() {
 
 function MostWantedScreenBody() {
   const router = useRouter();
-  const { unreadInboxCount, refreshCounts } = useSocialNotifications();
+  const { refreshCounts } = useSocialNotifications();
   const { s, t } = useFigmaLayout();
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
@@ -207,9 +206,6 @@ function MostWantedScreenBody() {
         description={mostWantedCopy.pageDescription}
         heroSource={mostWantedIcons.hero}
         guidanceKey="mostwanted"
-        showUtilityMessages
-        utilityMessagesUnreadCount={unreadInboxCount}
-        onPressUtilityMessages={() => router.push(messagesInboxHref())}
         s={s}
         page={page}
       />

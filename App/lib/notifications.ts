@@ -10,18 +10,23 @@ export type UserNotification = {
   created_at: string;
 };
 
-export async function listMyNotifications(limit = 30): Promise<{
+export async function listMyNotifications(
+  limit = 30,
+  offset = 0
+): Promise<{
   items: UserNotification[];
+  hasMore: boolean;
   error: string | null;
 }> {
   const { data, error } = await supabase
     .from('user_notifications')
     .select('id, kind, title, body, link_path, read_at, created_at')
     .order('created_at', { ascending: false })
-    .limit(limit);
+    .range(offset, offset + limit - 1);
 
-  if (error) return { items: [], error: error.message };
-  return { items: (data ?? []) as UserNotification[], error: null };
+  if (error) return { items: [], hasMore: false, error: error.message };
+  const items = (data ?? []) as UserNotification[];
+  return { items, hasMore: items.length === limit, error: null };
 }
 
 export async function countUnreadNotifications(): Promise<number> {
