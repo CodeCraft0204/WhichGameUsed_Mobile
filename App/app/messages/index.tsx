@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View
 } from 'react-native';
 import { AuthPrimaryButton } from '@/components/auth/AuthPrimaryButton';
@@ -22,6 +23,7 @@ import { InboxSegmentTabs, type InboxSegment } from '@/components/social/InboxSe
 import { MessageSearchField } from '@/components/social/MessageSearchField';
 import { MessagesHubHeader } from '@/components/social/MessagesHubHeader';
 import { PresenceStatusPicker } from '@/components/messages/PresenceStatusPicker';
+import { SwipeMarkReadRow } from '@/components/ui/SwipeMarkReadRow';
 import { appFonts } from '@/constants/appFonts';
 import { bodyText } from '@/constants/appTypography';
 import { figmaColors } from '@/constants/figmaColors';
@@ -29,9 +31,15 @@ import { messageConversationHref, publicProfileHref, safeGoBack } from '@/consta
 import { socialCopy } from '@/constants/socialCopy';
 import { useAuth } from '@/context/AuthContext';
 import { useSocialNotifications } from '@/context/SocialNotificationsContext';
+import { useRegisterUtilitySearch } from '@/context/UtilitySearchContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import { subscribeConversationInbox } from '@/lib/message-realtime';
-import { listConversations, searchConversations, type Conversation } from '@/lib/messages';
+import {
+  listConversations,
+  markConversationRead,
+  searchConversations,
+  type Conversation
+} from '@/lib/messages';
 
 export default function MessagesIndexScreen() {
   const router = useRouter();
@@ -47,6 +55,25 @@ export default function MessagesIndexScreen() {
   const [error, setError] = useState<string | null>(null);
   const [segment, setSegment] = useState<InboxSegment>('conversations');
   const [query, setQuery] = useState('');
+  const searchInputRef = useRef<TextInput>(null);
+
+  const focusSearch = useCallback(() => {
+    setSegment('conversations');
+    requestAnimationFrame(() => searchInputRef.current?.focus());
+  }, []);
+  useRegisterUtilitySearch(user ? focusSearch : null);
+
+  const markRead = useCallback(
+    async (row: Conversation) => {
+      if (row.unreadCount < 1) return;
+      await markConversationRead(row.id);
+      setItems((prev) =>
+        prev.map((item) => (item.id === row.id ? { ...item, unreadCount: 0 } : item))
+      );
+      await refreshCounts();
+    },
+    [refreshCounts]
+  );
 
   const load = useCallback(async (isRefresh = false) => {
     if (!user) {
@@ -132,7 +159,13 @@ export default function MessagesIndexScreen() {
 
           {segment === 'conversations' ? (
             <>
-              <MessageSearchField value={query} onChangeText={setQuery} s={s} t={t} />
+              <MessageSearchField
+                ref={searchInputRef}
+                value={query}
+                onChangeText={setQuery}
+                s={s}
+                t={t}
+              />
 
               {error ? (
                 <View style={styles.errorCard}>
@@ -155,14 +188,21 @@ export default function MessagesIndexScreen() {
               ) : (
                 <View style={styles.listCard}>
                   {items.map((row) => (
-                    <MessageConversationRow
+                    <SwipeMarkReadRow
                       key={row.id}
-                      conversation={row}
+                      enabled={row.unreadCount > 0}
                       s={s}
-                      t={t}
-                      onPress={() => router.push(messageConversationHref(row.id))}
-                      onPressAvatar={() => router.push(publicProfileHref(row.peerId))}
-                    />
+                      foregroundColor={figmaColors.cream}
+                      onMarkRead={() => void markRead(row)}
+                    >
+                      <MessageConversationRow
+                        conversation={row}
+                        s={s}
+                        t={t}
+                        onPress={() => router.push(messageConversationHref(row.id))}
+                        onPressAvatar={() => router.push(publicProfileHref(row.peerId))}
+                      />
+                    </SwipeMarkReadRow>
                   ))}
                 </View>
               )}

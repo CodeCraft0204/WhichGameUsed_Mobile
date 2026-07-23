@@ -3,7 +3,6 @@ import { appFonts } from '@/constants/appFonts';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Image,
-  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
@@ -23,9 +22,8 @@ import { authenticateIcons, authenticateTabs } from '@/constants/authenticateCon
 import { databaseCopy } from '@/constants/databaseCopy';
 import { databaseIcons } from '@/constants/databaseContent';
 import { figmaColors } from '@/constants/figmaColors';
-import { submissionDetailHref, databaseNotificationsHref } from '@/constants/navigation';
+import { submissionDetailHref } from '@/constants/navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
-import { countUnreadNotifications } from '@/lib/notifications';
 import {
   linkedCardTitleFromItems,
   listMySubmissionsWithItems,
@@ -42,7 +40,6 @@ export default function AuthenticateScreen() {
   const [liveSubmissions, setLiveSubmissions] = useState<SubmissionWithItems[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const loadedOnceRef = useRef(false);
 
@@ -51,17 +48,13 @@ export default function AuthenticateScreen() {
     else if (!loadedOnceRef.current && liveSubmissions.length === 0) setLoading(true);
     setError(null);
 
-    const [{ items, error: listError }, count] = await Promise.all([
-      listMySubmissionsWithItems(),
-      countUnreadNotifications()
-    ]);
+    const { items, error: listError } = await listMySubmissionsWithItems();
 
     if (listError) setError(listError);
     else {
       setLiveSubmissions(items);
       loadedOnceRef.current = true;
     }
-    setUnreadCount(count);
     setLoading(false);
     setRefreshing(false);
   }, [liveSubmissions.length]);
@@ -138,14 +131,6 @@ export default function AuthenticateScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={() => void reload(true)} />
           }
         >
-          {unreadCount > 0 ? (
-            <Pressable style={styles.noticeRow} onPress={() => router.push(databaseNotificationsHref())}>
-              <Text style={styles.noticeText}>
-                {unreadCount} new notification{unreadCount === 1 ? '' : 's'}
-              </Text>
-            </Pressable>
-          ) : null}
-
           <View style={page.sectionHeaderRow}>
             <Text style={page.sectionTitle}>{activeSectionTitle}</Text>
             {!loading ? (
@@ -273,20 +258,6 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: 16,
       color: figmaColors.error,
       marginBottom: s(12)
-    },
-    noticeRow: {
-      marginBottom: s(12),
-      paddingVertical: s(10),
-      paddingHorizontal: s(14),
-      borderRadius: s(10),
-      backgroundColor: figmaColors.successBg,
-      borderWidth: 1,
-      borderColor: figmaColors.success
-    },
-    noticeText: {
-      fontFamily: appFonts.body,
-      fontSize: 15,
-      color: figmaColors.charcoal
     }
   });
 }

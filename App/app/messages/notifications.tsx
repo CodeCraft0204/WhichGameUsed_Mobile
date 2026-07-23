@@ -11,6 +11,7 @@ import {
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader';
+import { SwipeMarkReadRow } from '@/components/ui/SwipeMarkReadRow';
 import { appFonts } from '@/constants/appFonts';
 import { bodyText } from '@/constants/appTypography';
 import { figmaColors } from '@/constants/figmaColors';
@@ -72,14 +73,19 @@ export default function NotificationsLogScreen() {
     }, [load])
   );
 
-  const openNotification = async (row: UserNotification) => {
-    if (!row.read_at) await markNotificationRead(row.id);
-    await refreshCounts();
+  const markRead = async (row: UserNotification) => {
+    if (row.read_at) return;
+    await markNotificationRead(row.id);
     setItems((prev) =>
       prev.map((item) =>
         item.id === row.id ? { ...item, read_at: item.read_at ?? new Date().toISOString() } : item
       )
     );
+    await refreshCounts();
+  };
+
+  const openNotification = async (row: UserNotification) => {
+    await markRead(row);
     router.push(defaultHrefForNotification(row));
   };
 
@@ -124,30 +130,37 @@ export default function NotificationsLogScreen() {
           {items.map((row) => {
             const unread = !row.read_at;
             return (
-              <Pressable
+              <SwipeMarkReadRow
                 key={row.id}
-                onPress={() => void openNotification(row)}
-                style={[styles.row, unread && styles.unread]}
-                accessibilityRole="button"
+                enabled={unread}
+                s={s}
+                foregroundColor={unread ? figmaColors.cream : figmaColors.background}
+                onMarkRead={() => void markRead(row)}
               >
-                <View style={styles.rowInner}>
-                  {unread ? <View style={styles.unreadDot} /> : <View style={styles.readSpacer} />}
-                  <View style={styles.textCol}>
-                    <Text style={styles.kind}>{kindLabel(row.kind)}</Text>
-                    <Text style={styles.title}>{row.title}</Text>
-                    {row.body ? <Text style={styles.body}>{row.body}</Text> : null}
-                    <Text style={styles.when}>
-                      {new Date(row.created_at).toLocaleString(undefined, {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit'
-                      })}
-                    </Text>
+                <Pressable
+                  onPress={() => void openNotification(row)}
+                  style={[styles.row, unread && styles.unread]}
+                  accessibilityRole="button"
+                >
+                  <View style={styles.rowInner}>
+                    {unread ? <View style={styles.unreadDot} /> : <View style={styles.readSpacer} />}
+                    <View style={styles.textCol}>
+                      <Text style={styles.kind}>{kindLabel(row.kind)}</Text>
+                      <Text style={styles.title}>{row.title}</Text>
+                      {row.body ? <Text style={styles.body}>{row.body}</Text> : null}
+                      <Text style={styles.when}>
+                        {new Date(row.created_at).toLocaleString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit'
+                        })}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-              </Pressable>
+                </Pressable>
+              </SwipeMarkReadRow>
             );
           })}
 
@@ -193,7 +206,6 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     unread: {
       backgroundColor: figmaColors.cream,
-      marginHorizontal: s(-8),
       paddingHorizontal: s(8),
       borderRadius: s(8)
     },

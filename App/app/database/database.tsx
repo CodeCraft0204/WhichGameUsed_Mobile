@@ -1,6 +1,6 @@
 ﻿import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Image,
   Pressable,
@@ -21,6 +21,7 @@ import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { AppAnnouncementBanner } from '@/components/AppAnnouncementBanner';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import { ContextHeaderScrollProvider } from '@/context/ContextHeaderScrollContext';
+import { useRegisterUtilitySearch } from '@/context/UtilitySearchContext';
 import { databaseIcons, type DatabaseMetaItem, type DatabaseRecord } from '@/constants/databaseContent';
 import { appFonts } from '@/constants/appFonts';
 import { bodyText } from '@/constants/appTypography';
@@ -83,6 +84,11 @@ export default function DatabaseScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [totalCards, setTotalCards] = useState(0);
   const [authenticatedCards, setAuthenticatedCards] = useState(0);
+  const searchInputRef = useRef<TextInput>(null);
+
+  useRegisterUtilitySearch(() => {
+    searchInputRef.current?.focus();
+  });
 
   const isSearching = debouncedQuery.length > 0;
 
@@ -214,6 +220,7 @@ export default function DatabaseScreen() {
             <View style={styles.searchRow}>
               <Ionicons name="search" size={s(20)} color={figmaColors.gray} />
               <TextInput
+                ref={searchInputRef}
                 style={styles.searchInput}
                 value={query}
                 onChangeText={setQuery}

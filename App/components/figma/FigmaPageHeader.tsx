@@ -34,6 +34,7 @@ type FigmaPageHeaderProps = {
   utilityNotificationsUnreadCount?: number;
   onPressUtilityMessages?: () => void;
   onPressUtilityNotifications?: () => void;
+  onPressUtilitySearch?: () => void;
   guidanceKey?: ContextHeaderPageKey;
   titleStyle?: StyleProp<TextStyle>;
   subtitleStyle?: StyleProp<TextStyle>;
@@ -63,6 +64,7 @@ export function FigmaPageHeader({
   utilityNotificationsUnreadCount,
   onPressUtilityMessages,
   onPressUtilityNotifications,
+  onPressUtilitySearch,
   guidanceKey,
   titleStyle,
   subtitleStyle,
@@ -123,6 +125,7 @@ export function FigmaPageHeader({
           notificationsUnreadCount={utilityNotificationsUnreadCount}
           onPressMessages={onPressUtilityMessages}
           onPressNotifications={onPressUtilityNotifications}
+          onPressSearch={onPressUtilitySearch}
         />
       ) : null}
       {children}

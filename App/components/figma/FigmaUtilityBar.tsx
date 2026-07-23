@@ -1,12 +1,17 @@
-import { useRouter } from 'expo-router';
-import React, { useMemo } from 'react';
+import { usePathname, useRouter } from 'expo-router';
+import React, { useContext, useMemo } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { figmaColors } from '@/constants/figmaColors';
 import { figmaIcons } from '@/constants/figmaIcons';
 import { figmaSharedIcons } from '@/constants/figmaShared';
-import { messagesInboxHref, socialNotificationsHref } from '@/constants/navigation';
+import {
+  databaseSearchHref,
+  messagesInboxHref,
+  socialNotificationsHref
+} from '@/constants/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useSocialNotifications } from '@/context/SocialNotificationsContext';
+import { UtilitySearchContext } from '@/context/UtilitySearchContext';
 import { appFonts } from '@/constants/appFonts';
 
 type FigmaUtilityBarProps = {
@@ -17,11 +22,23 @@ type FigmaUtilityBarProps = {
   notificationsUnreadCount?: number;
   onPressMessages?: () => void;
   onPressNotifications?: () => void;
+  onPressSearch?: () => void;
 };
 
 function formatBadgeCount(count: number): string {
   if (count > 99) return '99+';
   return String(count);
+}
+
+function fallbackSearchForPath(pathname: string): ReturnType<typeof databaseSearchHref> | string {
+  if (pathname.includes('/messages')) return messagesInboxHref();
+  if (pathname.includes('/discussion')) return '/discussion/discussion';
+  if (pathname.includes('/mostwanted')) return '/mostwanted/mostwanted';
+  if (pathname.includes('/education')) return '/education/education';
+  if (pathname.includes('/authenticate')) return databaseSearchHref();
+  if (pathname.includes('/leaderboard')) return databaseSearchHref();
+  if (pathname.includes('/advocacy')) return databaseSearchHref();
+  return databaseSearchHref();
 }
 
 export function FigmaUtilityBar({
@@ -31,11 +48,14 @@ export function FigmaUtilityBar({
   messagesUnreadCount,
   notificationsUnreadCount,
   onPressMessages,
-  onPressNotifications
+  onPressNotifications,
+  onPressSearch
 }: FigmaUtilityBarProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { user } = useAuth();
   const { unreadInboxCount, unreadNotificationCount } = useSocialNotifications();
+  const utilitySearch = useContext(UtilitySearchContext);
 
   const signedIn = Boolean(user);
   const showMsg = signedIn && (showMessages ?? true);
@@ -63,12 +83,23 @@ export function FigmaUtilityBar({
     router.push(socialNotificationsHref());
   };
 
+  const openSearch = () => {
+    if (onPressSearch) {
+      onPressSearch();
+      return;
+    }
+    if (utilitySearch?.triggerSearch()) return;
+    const target = fallbackSearchForPath(pathname);
+    router.push(target as never);
+  };
+
   return (
     <View style={styles.utilityBar}>
       <Pressable
         style={styles.utilityBtn}
         accessibilityRole="button"
         accessibilityLabel="Search"
+        onPress={openSearch}
       >
         <Image source={figmaSharedIcons.utilitySearch} style={styles.utilityIcon} resizeMode="contain" />
       </Pressable>

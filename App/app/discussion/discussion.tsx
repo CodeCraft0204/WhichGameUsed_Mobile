@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { appFonts } from '@/constants/appFonts';
 import {
   ActivityIndicator,
@@ -21,6 +21,7 @@ import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import { ContextHeaderScrollProvider } from '@/context/ContextHeaderScrollContext';
+import { useRegisterUtilitySearch } from '@/context/UtilitySearchContext';
 import { DiscussionTopicCard } from '@/components/figma/DiscussionTopicCard';
 import {
   discussionIcons,
@@ -67,6 +68,11 @@ export default function DiscussionScreen() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [hiddenCount, setHiddenCount] = useState(0);
   const [feedFilter, setFeedFilter] = useState<FeedFilter>('ALL');
+  const searchInputRef = useRef<TextInput>(null);
+
+  useRegisterUtilitySearch(() => {
+    searchInputRef.current?.focus();
+  });
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search.trim()), SEARCH_DEBOUNCE_MS);
@@ -179,6 +185,7 @@ export default function DiscussionScreen() {
 
             <View style={styles.searchRow}>
               <TextInput
+                ref={searchInputRef}
                 style={styles.searchInput}
                 value={search}
                 onChangeText={setSearch}

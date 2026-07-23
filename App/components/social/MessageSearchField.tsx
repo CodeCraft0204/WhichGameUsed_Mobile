@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useMemo } from 'react';
+import React, { forwardRef, useMemo } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import { appFonts } from '@/constants/appFonts';
 import { bodyText } from '@/constants/appTypography';
@@ -13,19 +13,17 @@ type Props = {
   t: (n: number) => number;
 };
 
-export function MessageSearchField({
-  value,
-  onChangeText,
-  placeholder = 'Search messages',
-  s,
-  t
-}: Props) {
+export const MessageSearchField = forwardRef<TextInput, Props>(function MessageSearchField(
+  { value, onChangeText, placeholder = 'Search messages', s, t },
+  ref
+) {
   const styles = useMemo(() => createStyles(s, t), [s, t]);
 
   return (
     <View style={styles.wrap}>
       <Ionicons name="search" size={s(18)} color={figmaColors.gray} />
       <TextInput
+        ref={ref}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
@@ -38,7 +36,7 @@ export function MessageSearchField({
       />
     </View>
   );
-}
+});
 
 function createStyles(s: (n: number) => number, t: (n: number) => number) {
   const tb = (n: number) => bodyText(t, n);

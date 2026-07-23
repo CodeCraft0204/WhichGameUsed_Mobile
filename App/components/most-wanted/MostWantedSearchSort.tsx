@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { forwardRef, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { appFonts } from '@/constants/appFonts';
 import { mostWantedCopy, mostWantedSortOptions, type MostWantedSortKey } from '@/constants/mostWantedCopy';
@@ -13,43 +13,45 @@ type MostWantedSearchSortProps = {
   t: (n: number) => number;
 };
 
-export function MostWantedSearchSort({
-  search,
-  sort,
-  onSearchChange,
-  onSortChange,
-  s,
-  t
-}: MostWantedSearchSortProps) {
-  const styles = useMemo(() => createStyles(s, t), [s, t]);
+export const MostWantedSearchSort = forwardRef<TextInput, MostWantedSearchSortProps>(
+  function MostWantedSearchSort(
+    { search, sort, onSearchChange, onSortChange, s, t },
+    ref
+  ) {
+    const styles = useMemo(() => createStyles(s, t), [s, t]);
 
-  return (
-    <View style={styles.wrap}>
-      <TextInput
-        value={search}
-        onChangeText={onSearchChange}
-        placeholder={mostWantedCopy.searchPlaceholder}
-        placeholderTextColor={figmaColors.gray}
-        style={styles.search}
-      />
-      <View style={styles.sortRow}>
-        <Text style={styles.sortLabel}>{mostWantedCopy.sortLabel}:</Text>
-        {mostWantedSortOptions.map((opt) => {
-          const active = opt.key === sort;
-          return (
-            <Pressable
-              key={opt.key}
-              onPress={() => onSortChange(opt.key)}
-              style={[styles.sortChip, active && styles.sortChipActive]}
-            >
-              <Text style={[styles.sortChipText, active && styles.sortChipTextActive]}>{opt.label}</Text>
-            </Pressable>
-          );
-        })}
+    return (
+      <View style={styles.wrap}>
+        <TextInput
+          ref={ref}
+          value={search}
+          onChangeText={onSearchChange}
+          placeholder={mostWantedCopy.searchPlaceholder}
+          placeholderTextColor={figmaColors.gray}
+          style={styles.search}
+          accessibilityLabel="Search Most Wanted hunts"
+        />
+        <View style={styles.sortRow}>
+          <Text style={styles.sortLabel}>{mostWantedCopy.sortLabel}:</Text>
+          {mostWantedSortOptions.map((opt) => {
+            const active = opt.key === sort;
+            return (
+              <Pressable
+                key={opt.key}
+                onPress={() => onSortChange(opt.key)}
+                style={[styles.sortChip, active && styles.sortChipActive]}
+              >
+                <Text style={[styles.sortChipText, active && styles.sortChipTextActive]}>
+                  {opt.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
-    </View>
-  );
-}
+    );
+  }
+);
 
 function createStyles(s: (n: number) => number, t: (n: number) => number) {
   return StyleSheet.create({

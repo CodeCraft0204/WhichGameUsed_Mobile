@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Image, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import { chipOptionsFromLabels, FigmaChipRow } from '@/components/figma/FigmaChipRow';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaContentLoading } from '@/components/figma/FigmaContentLoading';
@@ -35,6 +35,7 @@ import {
 import { figmaColors } from '@/constants/figmaColors';
 import { appFonts } from '@/constants/appFonts';
 import { useSocialNotifications } from '@/context/SocialNotificationsContext';
+import { useRegisterUtilitySearch } from '@/context/UtilitySearchContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import { useMostWantedRealtime } from '@/hooks/useMostWantedRealtime';
 import {
@@ -84,6 +85,11 @@ function MostWantedScreenBody() {
   const [error, setError] = useState<string | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialLoadDone = useRef(false);
+  const searchInputRef = useRef<TextInput>(null);
+
+  useRegisterUtilitySearch(() => {
+    searchInputRef.current?.focus();
+  });
 
   const load = useCallback(
     async (opts?: { silent?: boolean }) => {
@@ -288,6 +294,7 @@ function MostWantedScreenBody() {
           ) : null}
 
           <MostWantedSearchSort
+            ref={searchInputRef}
             search={search}
             sort={sort}
             onSearchChange={handleSearchChange}
