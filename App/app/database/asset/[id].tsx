@@ -1,4 +1,3 @@
-import * as Linking from 'expo-linking';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
@@ -17,9 +16,8 @@ import { databaseIcons } from '@/constants/databaseContent';
 import { appFonts } from '@/constants/appFonts';
 import { databaseCopy } from '@/constants/databaseCopy';
 import { figmaColors } from '@/constants/figmaColors';
-import { databaseCardHref } from '@/constants/navigation';
+import { databaseCardHref, databaseVerificationHref } from '@/constants/navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
-import { absolutePortalUrl } from '@/lib/portal-url';
 import {
   getAuthenticatedAssetById,
   getCardById,
@@ -34,7 +32,6 @@ export default function AuthenticatedAssetScreen() {
   const [card, setCard] = useState<CardDetail | null>(null);
   const [assetId, setAssetId] = useState('');
   const [authenticatedAt, setAuthenticatedAt] = useState<string | null>(null);
-  const [verificationUrl, setVerificationUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,7 +50,6 @@ export default function AuthenticatedAssetScreen() {
       const asset = assetRes.asset;
       setAssetId(asset.asset_id);
       setAuthenticatedAt(asset.authenticated_at);
-      setVerificationUrl(asset.verification_url);
       const cardRes = await getCardById(asset.card_id);
       if (!active) return;
       setCard(cardRes.card);
@@ -99,13 +95,10 @@ export default function AuthenticatedAssetScreen() {
               label={databaseCopy.viewCatalogCard}
               onPress={() => router.push(databaseCardHref(card.id))}
             />
-            {verificationUrl ? (
+            {assetId ? (
               <Pressable
                 style={styles.secondary}
-                onPress={() => {
-                  const url = absolutePortalUrl(verificationUrl);
-                  if (url) void Linking.openURL(url);
-                }}
+                onPress={() => router.push(databaseVerificationHref(assetId))}
               >
                 <Text style={styles.secondaryText}>{databaseCopy.viewVerification}</Text>
               </Pressable>

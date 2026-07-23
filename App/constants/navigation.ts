@@ -74,6 +74,10 @@ export function authenticatedAssetHref(assetId: string): Href {
   return { pathname: '/database/asset/[id]', params: { id: assetId } } as unknown as Href;
 }
 
+export function databaseVerificationHref(code: string): Href {
+  return { pathname: '/database/verification/[code]', params: { code } } as unknown as Href;
+}
+
 export function createWithLinkedCardHref(cardId: string, cardTitle: string): Href {
   return {
     pathname: '/camera/camera',
