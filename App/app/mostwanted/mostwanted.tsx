@@ -101,6 +101,7 @@ function MostWantedScreenBody() {
 
       if (statsRes.stats) setStats(statsRes.stats);
       setFeatured(featuredRes.item);
+      // Featured is optional chrome; list/rankings failures are what block the board.
       if (listRes.error) {
         setError(listRes.error);
         setItems([]);
