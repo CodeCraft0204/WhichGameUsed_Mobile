@@ -1,22 +1,20 @@
-import { figmaIcons } from '@/constants/figmaIcons';
-
-/** Education screen assets (node 1:574). */
+/** Education screen assets — guide/video thumbs + tool icons in assets/figma/education. */
 export const educationIcons = {
   hero: require('@/assets/figma/education/hero_illustration.png'),
   guideFakePatches: require('@/assets/figma/education/guide_fake_patches.png'),
   guideBeckett: require('@/assets/figma/education/guide_beckett.png'),
   guideHobbyHistory: require('@/assets/figma/education/guide_hobby_history.png'),
-  pdfIcon: figmaIcons.guidesBook,
+  pdfIcon: require('@/assets/figma/education/pdf_icon.png'),
   videoEbay: require('@/assets/figma/education/video_thumb_ebay.png'),
   videoBeckett: require('@/assets/figma/education/video_thumb_beckett.png'),
   videoPatch: require('@/assets/figma/education/video_thumb_patch.png'),
   ctaShield: require('@/assets/figma/education/cta_shield.png'),
   ctaArrow: require('@/assets/figma/education/cta_arrow.png'),
-  playButton: figmaIcons.filmReel,
-  toolShield: figmaIcons.metaShield,
-  toolSearch: figmaIcons.utilitySearch,
-  toolSources: figmaIcons.sourcesBooks,
-  toolResearch: figmaIcons.researchBook
+  playButton: require('@/assets/figma/education/play_button.png'),
+  toolPsa: require('@/assets/figma/education/tool_psa.png'),
+  toolMlb: require('@/assets/figma/education/tool_mlb.png'),
+  toolUda: require('@/assets/figma/education/tool_uda.png'),
+  toolHeritage: require('@/assets/figma/education/tool_heritage.png')
 } as const;
 
 export type EducationContentType =
@@ -415,7 +413,7 @@ export const educationVideos: EducationVideo[] = [
 export const educationTools: EducationTool[] = [
   {
     key: 'psa-cert',
-    icon: educationIcons.toolShield,
+    icon: educationIcons.toolPsa,
     title: 'Verify a PSA Certification',
     description: 'Check a PSA certification number and review the associated collectible record.',
     publisher: 'PSA',
@@ -431,7 +429,7 @@ export const educationTools: EducationTool[] = [
   },
   {
     key: 'mlb-hologram',
-    icon: educationIcons.toolShield,
+    icon: educationIcons.toolMlb,
     title: 'Verify an MLB Hologram',
     description: 'Look up officially authenticated MLB game-used and autographed memorabilia.',
     publisher: 'MLB',
@@ -445,7 +443,7 @@ export const educationTools: EducationTool[] = [
   },
   {
     key: 'uda-hologram',
-    icon: educationIcons.toolSearch,
+    icon: educationIcons.toolUda,
     title: 'Verify an Upper Deck Hologram',
     description: 'Match a UDA hologram number with its registered item description and image.',
     publisher: 'Upper Deck',
@@ -459,7 +457,7 @@ export const educationTools: EducationTool[] = [
   },
   {
     key: 'heritage-archive',
-    icon: educationIcons.toolSources,
+    icon: educationIcons.toolHeritage,
     title: 'Search Historical Auction Records',
     description: 'Research previous listings, photographs, descriptions, provenance and sale results.',
     publisher: 'Heritage Auctions',

@@ -68,16 +68,18 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     pressed: { opacity: 0.92 },
     iconWrap: {
-      width: s(40),
-      height: s(40),
-      borderRadius: s(8),
+      width: s(56),
+      height: s(56),
+      borderRadius: s(10),
       backgroundColor: figmaColors.surfaceMuted,
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      overflow: 'hidden',
+      flexShrink: 0
     },
-    icon: { width: s(22), height: s(22) },
+    icon: { width: s(48), height: s(48) },
     body: { flex: 1, gap: s(3) },
     metaRow: {
       flexDirection: 'row',

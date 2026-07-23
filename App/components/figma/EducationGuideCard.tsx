@@ -61,7 +61,7 @@ export function EducationGuideCard({
       </View>
 
       <View style={styles.imageWrap}>
-        <Image source={image} style={styles.guideImage} resizeMode="contain" />
+        <Image source={image} style={styles.guideImage} resizeMode="cover" />
       </View>
 
       <Text style={styles.publisher} numberOfLines={1}>
@@ -119,8 +119,11 @@ function createStyles(s: (n: number) => number, t: (n: number) => number, compac
     },
     imageWrap: {
       width: '100%',
-      height: s(compact ? 110 : 148),
+      height: s(compact ? 120 : 160),
       marginTop: s(6),
+      borderRadius: s(8),
+      overflow: 'hidden',
+      backgroundColor: figmaColors.surfaceHighlight,
       alignItems: 'center',
       justifyContent: 'center'
     },

@@ -1,7 +1,7 @@
 import React from 'react';
 import { appFonts } from '@/constants/appFonts';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { educationIcons, type EducationVideo } from '@/constants/educationContent';
+import type { EducationVideo } from '@/constants/educationContent';
 import { figmaColors } from '@/constants/figmaColors';
 
 type EducationVideoCardProps = Omit<EducationVideo, 'key'> & {
@@ -35,12 +35,8 @@ export function EducationVideoCard({
       accessibilityRole={onPress ? 'button' : undefined}
     >
       <View style={styles.thumbWrap}>
+        {/* New video thumbs already include play UI — no separate overlay. */}
         <Image source={thumb} style={styles.thumb} resizeMode="cover" />
-        {contentType === 'video' ? (
-          <View style={styles.playOverlay}>
-            <Image source={educationIcons.playButton} style={styles.playButton} resizeMode="contain" />
-          </View>
-        ) : null}
       </View>
 
       <View style={styles.body}>
@@ -96,15 +92,6 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     thumb: {
       width: '100%',
       height: '100%'
-    },
-    playOverlay: {
-      ...StyleSheet.absoluteFillObject,
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
-    playButton: {
-      width: s(36),
-      height: s(36)
     },
     body: {
       flex: 1,
