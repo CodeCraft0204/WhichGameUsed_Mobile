@@ -25,15 +25,132 @@ export type EducationContentType =
   | 'video'
   | 'tool'
   | 'case_study'
-  | 'web_guide';
+  | 'web_guide'
+  | 'research_report'
+  | 'jersey_archive'
+  | 'external_tool';
 
 export type EducationDifficulty = 'beginner' | 'intermediate' | 'all';
 
 export type EducationTopic = 'beginner' | 'intermediate' | 'fraud' | 'verify' | 'research';
 
+export type EducationSourceType =
+  | 'which_game_used'
+  | 'trusted_external'
+  | 'community_contribution'
+  | 'licensed_archive';
+
+export type EducationRightsStatus =
+  | 'owned'
+  | 'licensed'
+  | 'permission_received'
+  | 'external_link_only'
+  | 'pending_review';
+
+/** Quick filter chips on the Education hub (scroll / filter targets). */
+export type EducationQuickFilter =
+  | 'ALL'
+  | 'PDFS'
+  | 'VIDEOS'
+  | 'JERSEY'
+  | 'CASES'
+  | 'TOOLS';
+
+export const educationQuickFilters: EducationQuickFilter[] = [
+  'ALL',
+  'PDFS',
+  'VIDEOS',
+  'JERSEY',
+  'CASES',
+  'TOOLS'
+];
+
+export const educationQuickFilterLabels: Record<EducationQuickFilter, string> = {
+  ALL: 'ALL',
+  PDFS: 'PDFS',
+  VIDEOS: 'VIDEOS',
+  JERSEY: 'JERSEY ARCHIVE',
+  CASES: 'CASE STUDIES',
+  TOOLS: 'RESEARCH TOOLS'
+};
+
+export type EducationBrowseTypeKey =
+  | 'pdfs'
+  | 'videos'
+  | 'reports'
+  | 'cases'
+  | 'jersey'
+  | 'tools';
+
+export type EducationBrowseType = {
+  key: EducationBrowseTypeKey;
+  title: string;
+  subtitle: string;
+  sectionId: string;
+  filter: EducationQuickFilter;
+};
+
+export const educationBrowseTypes: EducationBrowseType[] = [
+  {
+    key: 'pdfs',
+    title: 'PDF Guides',
+    subtitle: 'Guides & reports',
+    sectionId: 'pdfs',
+    filter: 'PDFS'
+  },
+  {
+    key: 'videos',
+    title: 'Videos',
+    subtitle: 'Walkthroughs',
+    sectionId: 'videos',
+    filter: 'VIDEOS'
+  },
+  {
+    key: 'reports',
+    title: 'Research Reports',
+    subtitle: 'Coming with CMS',
+    sectionId: 'pdfs',
+    filter: 'PDFS'
+  },
+  {
+    key: 'cases',
+    title: 'Case Studies',
+    subtitle: 'Investigations',
+    sectionId: 'cases',
+    filter: 'CASES'
+  },
+  {
+    key: 'jersey',
+    title: 'Jersey Archive',
+    subtitle: 'Sport → Team → Year',
+    sectionId: 'jersey',
+    filter: 'JERSEY'
+  },
+  {
+    key: 'tools',
+    title: 'Research Tools',
+    subtitle: 'Lookups & archives',
+    sectionId: 'tools',
+    filter: 'TOOLS'
+  }
+];
+
+/** Placeholder cascade options for jersey archive shell (no inventory yet). */
+export const educationJerseySports = ['Baseball', 'Basketball', 'Football', 'Hockey'] as const;
+
 export type EducationJourneyStep = 'LEARN' | 'VERIFY' | 'RESEARCH' | 'APPLY';
 
-export type EducationGuide = {
+type EducationLibraryFields = {
+  sourceType?: EducationSourceType;
+  rightsStatus?: EducationRightsStatus;
+  sport?: string;
+  team?: string;
+  yearStart?: number;
+  yearEnd?: number;
+  tags?: string[];
+};
+
+export type EducationGuide = EducationLibraryFields & {
   key: string;
   image: number;
   title: string;
@@ -52,7 +169,7 @@ export type EducationGuide = {
   chapters?: string[];
 };
 
-export type EducationVideo = {
+export type EducationVideo = EducationLibraryFields & {
   key: string;
   thumb: number;
   title: string;
@@ -68,13 +185,13 @@ export type EducationVideo = {
   topics: EducationTopic[];
 };
 
-export type EducationTool = {
+export type EducationTool = EducationLibraryFields & {
   key: string;
   icon: number;
   title: string;
   description: string;
   publisher: string;
-  contentType: 'tool';
+  contentType: 'tool' | 'external_tool';
   lastReviewed: string;
   isExternal: true;
   href: string;
@@ -89,7 +206,7 @@ export type EducationCaseStudyCta =
   | 'authenticate'
   | 'database';
 
-export type EducationCaseStudy = {
+export type EducationCaseStudy = EducationLibraryFields & {
   key: string;
   title: string;
   body: string;
@@ -101,6 +218,65 @@ export type EducationCaseStudy = {
   ctaTarget: EducationCaseStudyCta;
   topics: EducationTopic[];
 };
+
+export type EducationFeaturedItem =
+  | { kind: 'guide'; item: EducationGuide }
+  | { kind: 'video'; item: EducationVideo }
+  | { kind: 'case'; item: EducationCaseStudy };
+
+/** Mixed featured strip: all guides + first video + first case study. */
+export function featuredPublications(): EducationFeaturedItem[] {
+  const items: EducationFeaturedItem[] = educationGuides.map((item) => ({
+    kind: 'guide' as const,
+    item
+  }));
+  if (educationVideos[0]) items.push({ kind: 'video', item: educationVideos[0] });
+  if (educationCaseStudies[0]) items.push({ kind: 'case', item: educationCaseStudies[0] });
+  return items;
+}
+
+function matchesQuery(haystack: string, query: string): boolean {
+  return haystack.toLowerCase().includes(query.toLowerCase());
+}
+
+export function searchEducationLibrary(query: string): {
+  guides: EducationGuide[];
+  videos: EducationVideo[];
+  tools: EducationTool[];
+  cases: EducationCaseStudy[];
+} {
+  const q = query.trim();
+  if (!q) {
+    return {
+      guides: educationGuides,
+      videos: educationVideos,
+      tools: educationTools,
+      cases: educationCaseStudies
+    };
+  }
+
+  const guideHit = (g: EducationGuide) =>
+    matchesQuery(
+      [g.title, g.description, g.publisher, g.topics.join(' '), ...(g.tags ?? [])].join(' '),
+      q
+    );
+  const videoHit = (v: EducationVideo) =>
+    matchesQuery(
+      [v.title, v.channel, v.publisher, v.platform, v.topics.join(' '), ...(v.tags ?? [])].join(' '),
+      q
+    );
+  const toolHit = (t: EducationTool) =>
+    matchesQuery([t.title, t.description, t.publisher, ...(t.tags ?? [])].join(' '), q);
+  const caseHit = (c: EducationCaseStudy) =>
+    matchesQuery([c.title, c.body, c.publisher, c.topics.join(' '), ...(c.tags ?? [])].join(' '), q);
+
+  return {
+    guides: educationGuides.filter(guideHit),
+    videos: educationVideos.filter(videoHit),
+    tools: educationTools.filter(toolHit),
+    cases: educationCaseStudies.filter(caseHit)
+  };
+}
 
 export const educationJourneyChips: EducationJourneyStep[] = [
   'LEARN',
@@ -121,8 +297,11 @@ export const educationGuides: EducationGuide[] = [
     difficulty: 'beginner',
     lengthLabel: '14–18 pages',
     lastReviewed: 'Jul 2026',
+    sourceType: 'which_game_used',
+    rightsStatus: 'owned',
     outlineSlug: 'identifying-altered-patch-cards',
     topics: ['beginner', 'fraud'],
+    tags: ['authentication', 'altered patches'],
     chapters: [
       'Original swatch versus altered patch examples',
       'Patch size and window alignment',
@@ -144,8 +323,11 @@ export const educationGuides: EducationGuide[] = [
     difficulty: 'intermediate',
     lengthLabel: '16–20 pages',
     lastReviewed: 'Jul 2026',
+    sourceType: 'which_game_used',
+    rightsStatus: 'owned',
     outlineSlug: 'researching-game-used-cards',
     topics: ['intermediate', 'research'],
+    tags: ['catalog research', 'provenance'],
     chapters: [
       'Identifying the exact card, year, set and parallel',
       'Reading memorabilia wording on the card back',
@@ -168,8 +350,11 @@ export const educationGuides: EducationGuide[] = [
     lengthLabel: '32 pages',
     lastReviewed: 'Jul 2026',
     isExternal: true,
+    sourceType: 'trusted_external',
+    rightsStatus: 'external_link_only',
     href: 'https://downloads.ctfassets.net/l40e281thfxr/72ZJooe31lk9KGBklfQFOu/4a3bf368f91a364fad3ccc2eca077a17/PSA_Fraud-Report_2025.pdf',
-    topics: ['fraud', 'beginner', 'intermediate']
+    topics: ['fraud', 'beginner', 'intermediate'],
+    tags: ['counterfeits', 'fraud']
   }
 ];
 
@@ -186,6 +371,8 @@ export const educationVideos: EducationVideo[] = [
     difficulty: 'beginner',
     lastReviewed: 'Jul 2026',
     isExternal: true,
+    sourceType: 'trusted_external',
+    rightsStatus: 'external_link_only',
     href: 'https://www.mlb.com/video/business-of-baseball-mlb-authentication',
     topics: ['beginner', 'verify', 'fraud']
   },
@@ -201,6 +388,8 @@ export const educationVideos: EducationVideo[] = [
     difficulty: 'beginner',
     lastReviewed: 'Jul 2026',
     isExternal: true,
+    sourceType: 'trusted_external',
+    rightsStatus: 'external_link_only',
     href: 'https://www.youtube.com/watch?v=ssE1bc7N9Po',
     topics: ['beginner', 'verify']
   },
@@ -216,6 +405,8 @@ export const educationVideos: EducationVideo[] = [
     difficulty: 'all',
     lastReviewed: 'Jul 2026',
     isExternal: true,
+    sourceType: 'trusted_external',
+    rightsStatus: 'external_link_only',
     href: 'https://www.psacard.com/services/psasecurityabuyersguide',
     topics: ['fraud', 'verify', 'intermediate']
   }
@@ -231,6 +422,8 @@ export const educationTools: EducationTool[] = [
     contentType: 'tool',
     lastReviewed: 'Jul 2026',
     isExternal: true,
+    sourceType: 'trusted_external',
+    rightsStatus: 'external_link_only',
     href: 'https://www.psacard.com/cert',
     footnote:
       'A valid certification number alone does not completely eliminate counterfeit risk.',
@@ -245,6 +438,8 @@ export const educationTools: EducationTool[] = [
     contentType: 'tool',
     lastReviewed: 'Jul 2026',
     isExternal: true,
+    sourceType: 'trusted_external',
+    rightsStatus: 'external_link_only',
     href: 'https://www.mlb.com/official-information/authentication',
     topics: ['verify']
   },
@@ -257,6 +452,8 @@ export const educationTools: EducationTool[] = [
     contentType: 'tool',
     lastReviewed: 'Jul 2026',
     isExternal: true,
+    sourceType: 'trusted_external',
+    rightsStatus: 'external_link_only',
     href: 'https://upperdeck.com/hologram/',
     topics: ['verify']
   },
@@ -269,6 +466,8 @@ export const educationTools: EducationTool[] = [
     contentType: 'tool',
     lastReviewed: 'Jul 2026',
     isExternal: true,
+    sourceType: 'trusted_external',
+    rightsStatus: 'external_link_only',
     href: 'https://www.ha.com/c/ref/information-archive.zx',
     topics: ['research']
   }
@@ -283,6 +482,8 @@ export const educationCaseStudies: EducationCaseStudy[] = [
     contentType: 'case_study',
     lastReviewed: 'Jul 2026',
     isExternal: false,
+    sourceType: 'which_game_used',
+    rightsStatus: 'owned',
     ctaLabel: 'OPEN MOST WANTED HUNT',
     ctaTarget: 'mostwanted',
     topics: ['intermediate', 'research']
@@ -295,6 +496,8 @@ export const educationCaseStudies: EducationCaseStudy[] = [
     contentType: 'case_study',
     lastReviewed: 'Jul 2026',
     isExternal: false,
+    sourceType: 'which_game_used',
+    rightsStatus: 'owned',
     ctaLabel: 'JOIN THE DISCUSSION',
     ctaTarget: 'discussion',
     topics: ['beginner', 'fraud']
@@ -307,6 +510,8 @@ export const educationCaseStudies: EducationCaseStudy[] = [
     contentType: 'case_study',
     lastReviewed: 'Jul 2026',
     isExternal: false,
+    sourceType: 'which_game_used',
+    rightsStatus: 'owned',
     ctaLabel: 'JOIN THE DISCUSSION',
     ctaTarget: 'discussion',
     topics: ['intermediate', 'research']
@@ -319,6 +524,8 @@ export const educationCaseStudies: EducationCaseStudy[] = [
     contentType: 'case_study',
     lastReviewed: 'Jul 2026',
     isExternal: false,
+    sourceType: 'which_game_used',
+    rightsStatus: 'owned',
     ctaLabel: 'VIEW THE CARD',
     ctaTarget: 'wishlist',
     topics: ['intermediate']
@@ -331,6 +538,8 @@ export const educationCaseStudies: EducationCaseStudy[] = [
     contentType: 'case_study',
     lastReviewed: 'Jul 2026',
     isExternal: false,
+    sourceType: 'which_game_used',
+    rightsStatus: 'owned',
     ctaLabel: 'AUTHENTICATE A SIMILAR CARD',
     ctaTarget: 'authenticate',
     topics: ['beginner', 'fraud']

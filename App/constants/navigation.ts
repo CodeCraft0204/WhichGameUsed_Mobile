@@ -1,4 +1,4 @@
-﻿import type { Href } from 'expo-router';
+import type { Href } from 'expo-router';
 import { router } from 'expo-router';
 import type { LeaderboardPeriod } from '@/lib/leaderboard';
 

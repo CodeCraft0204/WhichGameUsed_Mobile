@@ -1,4 +1,4 @@
-﻿import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { appFonts } from '@/constants/appFonts';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
