@@ -53,7 +53,7 @@ export function AppSplashScreen({
 
   const fillWidth = animated.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, barWidth - 4]
+    outputRange: [0, barWidth - 8]
   });
 
   const dimOverlayOpacity = animated.interpolate({
