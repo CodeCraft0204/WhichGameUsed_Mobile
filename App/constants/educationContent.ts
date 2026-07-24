@@ -14,7 +14,8 @@ export const educationIcons = {
   toolPsa: require('@/assets/figma/education/tool_psa.png'),
   toolMlb: require('@/assets/figma/education/tool_mlb.png'),
   toolUda: require('@/assets/figma/education/tool_uda.png'),
-  toolHeritage: require('@/assets/figma/education/tool_heritage.png')
+  toolHeritage: require('@/assets/figma/education/tool_heritage.png'),
+  timelineHistory: require('@/assets/figma/education/timeline_game_used_history.png')
 } as const;
 
 export type EducationContentType =
@@ -25,6 +26,7 @@ export type EducationContentType =
   | 'case_study'
   | 'web_guide'
   | 'research_report'
+  | 'research_timeline'
   | 'jersey_archive'
   | 'external_tool';
 
@@ -76,6 +78,7 @@ export type EducationBrowseTypeKey =
   | 'pdfs'
   | 'videos'
   | 'reports'
+  | 'timeline'
   | 'cases'
   | 'jersey'
   | 'tools';
@@ -85,7 +88,9 @@ export type EducationBrowseType = {
   title: string;
   subtitle: string;
   sectionId: string;
-  filter: EducationQuickFilter;
+  filter: EducationQuickFilter | null;
+  /** When set, browse tile navigates to a dedicated route instead of scrolling. */
+  timelineSlug?: string;
 };
 
 export const educationBrowseTypes: EducationBrowseType[] = [
@@ -111,6 +116,14 @@ export const educationBrowseTypes: EducationBrowseType[] = [
     filter: 'PDFS'
   },
   {
+    key: 'timeline',
+    title: 'Hobby Timeline',
+    subtitle: '1996–2025 milestones',
+    sectionId: 'featured',
+    filter: null,
+    timelineSlug: 'a-history-of-game-used-cards'
+  },
+  {
     key: 'cases',
     title: 'Case Studies',
     subtitle: 'Investigations',
@@ -132,6 +145,42 @@ export const educationBrowseTypes: EducationBrowseType[] = [
     filter: 'TOOLS'
   }
 ];
+
+export type EducationTimelineCard = {
+  key: string;
+  slug: string;
+  title: string;
+  description: string;
+  publisher: string;
+  contentType: 'research_timeline';
+  difficulty: EducationDifficulty;
+  lengthLabel: string;
+  yearRange: string;
+  lastReviewed: string;
+  image: number;
+  sourceType: EducationSourceType;
+  rightsStatus: EducationRightsStatus;
+  topics: EducationTopic[];
+};
+
+/** Featured Hobby Timeline card on the Education hub. */
+export const educationHobbyTimeline: EducationTimelineCard = {
+  key: 'history-game-used',
+  slug: 'a-history-of-game-used-cards',
+  title: 'A History of Game-Used Cards',
+  description:
+    'Explore the releases, manufacturers, licensing changes, and hobby milestones that shaped modern game-used sports cards.',
+  publisher: 'Which Game Used',
+  contentType: 'research_timeline',
+  difficulty: 'intermediate',
+  lengthLabel: '~12 min read',
+  yearRange: '1996–2025',
+  lastReviewed: 'Jul 2026',
+  image: educationIcons.timelineHistory,
+  sourceType: 'which_game_used',
+  rightsStatus: 'owned',
+  topics: ['intermediate', 'research']
+};
 
 /** Placeholder cascade options for jersey archive shell (no inventory yet). */
 export const educationJerseySports = ['Baseball', 'Basketball', 'Football', 'Hockey'] as const;
@@ -220,14 +269,18 @@ export type EducationCaseStudy = EducationLibraryFields & {
 export type EducationFeaturedItem =
   | { kind: 'guide'; item: EducationGuide }
   | { kind: 'video'; item: EducationVideo }
-  | { kind: 'case'; item: EducationCaseStudy };
+  | { kind: 'case'; item: EducationCaseStudy }
+  | { kind: 'timeline'; item: EducationTimelineCard };
 
-/** Mixed featured strip: all guides + first video + first case study. */
+/** Mixed featured strip: Hobby Timeline + guides + first video + first case study. */
 export function featuredPublications(): EducationFeaturedItem[] {
-  const items: EducationFeaturedItem[] = educationGuides.map((item) => ({
-    kind: 'guide' as const,
-    item
-  }));
+  const items: EducationFeaturedItem[] = [
+    { kind: 'timeline', item: educationHobbyTimeline },
+    ...educationGuides.map((item) => ({
+      kind: 'guide' as const,
+      item
+    }))
+  ];
   if (educationVideos[0]) items.push({ kind: 'video', item: educationVideos[0] });
   if (educationCaseStudies[0]) items.push({ kind: 'case', item: educationCaseStudies[0] });
   return items;
@@ -242,6 +295,7 @@ export function searchEducationLibrary(query: string): {
   videos: EducationVideo[];
   tools: EducationTool[];
   cases: EducationCaseStudy[];
+  timelines: EducationTimelineCard[];
 } {
   const q = query.trim();
   if (!q) {
@@ -249,7 +303,8 @@ export function searchEducationLibrary(query: string): {
       guides: educationGuides,
       videos: educationVideos,
       tools: educationTools,
-      cases: educationCaseStudies
+      cases: educationCaseStudies,
+      timelines: [educationHobbyTimeline]
     };
   }
 
@@ -267,12 +322,18 @@ export function searchEducationLibrary(query: string): {
     matchesQuery([t.title, t.description, t.publisher, ...(t.tags ?? [])].join(' '), q);
   const caseHit = (c: EducationCaseStudy) =>
     matchesQuery([c.title, c.body, c.publisher, c.topics.join(' '), ...(c.tags ?? [])].join(' '), q);
+  const timelineHit = (item: EducationTimelineCard) =>
+    matchesQuery(
+      [item.title, item.description, item.publisher, item.yearRange, item.topics.join(' ')].join(' '),
+      q
+    );
 
   return {
     guides: educationGuides.filter(guideHit),
     videos: educationVideos.filter(videoHit),
     tools: educationTools.filter(toolHit),
-    cases: educationCaseStudies.filter(caseHit)
+    cases: educationCaseStudies.filter(caseHit),
+    timelines: [educationHobbyTimeline].filter(timelineHit)
   };
 }
 

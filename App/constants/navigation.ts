@@ -259,3 +259,7 @@ export function educationHref(): Href {
 export function educationGuideOutlineHref(slug: string): Href {
   return { pathname: '/education/guides/[slug]', params: { slug } } as unknown as Href;
 }
+
+export function educationTimelineHref(slug: string): Href {
+  return { pathname: '/education/timeline/[slug]', params: { slug } } as unknown as Href;
+}

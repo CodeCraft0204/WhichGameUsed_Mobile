@@ -18,6 +18,7 @@ import { useRouter } from 'expo-router';
 import { ContextScrollView } from '@/components/context-header/ContextScrollView';
 import { EducationCaseStudyCard } from '@/components/figma/EducationCaseStudyCard';
 import { EducationGuideCard } from '@/components/figma/EducationGuideCard';
+import { EducationTimelineHubCard } from '@/components/figma/EducationTimelineHubCard';
 import { EducationToolCard } from '@/components/figma/EducationToolCard';
 import { EducationVideoCard } from '@/components/figma/EducationVideoCard';
 import { FigmaChipRow } from '@/components/figma/FigmaChipRow';
@@ -31,6 +32,7 @@ import {
   educationBrowseTypes,
   educationCaseStudies,
   educationGuides,
+  educationHobbyTimeline,
   educationIcons,
   educationJerseySports,
   educationQuickFilterLabels,
@@ -54,6 +56,7 @@ import {
   databaseWishlistHref,
   discussionHref,
   educationGuideOutlineHref,
+  educationTimelineHref,
   mostWantedHref
 } from '@/constants/navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
@@ -157,12 +160,20 @@ function EducationScreenBody() {
 
   const onBrowseType = useCallback(
     (browse: EducationBrowseType) => {
-      setActiveFilter(browse.filter);
+      if (browse.timelineSlug) {
+        router.push(educationTimelineHref(browse.timelineSlug));
+        return;
+      }
+      if (browse.filter) setActiveFilter(browse.filter);
       setQuery('');
       requestAnimationFrame(() => scrollToSection(browse.sectionId));
     },
-    [scrollToSection]
+    [router, scrollToSection]
   );
+
+  const openTimeline = useCallback(() => {
+    router.push(educationTimelineHref(educationHobbyTimeline.slug));
+  }, [router]);
 
   const openGuide = useCallback(
     (guide: EducationGuide) => {
@@ -227,6 +238,7 @@ function EducationScreenBody() {
     []
   );
 
+  const featuredTimelineItem = featured.find((entry) => entry.kind === 'timeline')?.item;
   const featuredGuides = featured.filter(
     (entry): entry is Extract<EducationFeaturedItem, { kind: 'guide' }> => entry.kind === 'guide'
   );
@@ -306,8 +318,30 @@ function EducationScreenBody() {
           {library.guides.length === 0 &&
           library.videos.length === 0 &&
           library.cases.length === 0 &&
-          library.tools.length === 0 ? (
+          library.tools.length === 0 &&
+          library.timelines.length === 0 ? (
             <Text style={styles.emptyHint}>No matches in the library yet. Try another term.</Text>
+          ) : null}
+
+          {library.timelines.length > 0 ? (
+            <>
+              <Text style={styles.subSectionLabel}>Hobby Timeline</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.guideRow}
+              >
+                {library.timelines.map(({ key, ...item }) => (
+                  <EducationTimelineHubCard
+                    key={`q-t-${key}`}
+                    {...item}
+                    s={s}
+                    t={t}
+                    onPress={openTimeline}
+                  />
+                ))}
+              </ScrollView>
+            </>
           ) : null}
 
           {library.guides.length > 0 ? (
@@ -371,6 +405,20 @@ function EducationScreenBody() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.guideRow}
           >
+            {featuredTimelineItem
+              ? (() => {
+                  const { key, ...item } = featuredTimelineItem;
+                  return (
+                    <EducationTimelineHubCard
+                      key={`feat-tl-${key}`}
+                      {...item}
+                      s={s}
+                      t={t}
+                      onPress={openTimeline}
+                    />
+                  );
+                })()
+              : null}
             {featuredGuides.map(({ item }) => {
               const { key, ...guide } = item;
               return (
