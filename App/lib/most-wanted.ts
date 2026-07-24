@@ -69,6 +69,14 @@ export type MostWantedContributorBadgeRow = {
   created_at: string;
 };
 
+/** Distinct admin-confirmed badge types earned by a collector (profile display). */
+export type UserConfirmedContributorBadge = {
+  badge_key: string;
+  badge_label: string;
+  award_count: number;
+  latest_confirmed_at: string;
+};
+
 export type MostWantedRequirement = {
   id: string;
   requirement_key: string;
@@ -371,6 +379,66 @@ export async function listHuntContributorBadges(
   const { data, error } = await supabase.rpc('list_most_wanted_hunt_badges', { p_hunt_id: huntId });
   if (error) return { items: [], error: error.message };
   return { items: (data ?? []) as MostWantedContributorBadgeRow[], error: null };
+}
+
+export async function listUserConfirmedContributorBadges(
+  userId: string
+): Promise<{ items: UserConfirmedContributorBadge[]; error: string | null }> {
+  const { data, error } = await supabase.rpc('list_user_confirmed_most_wanted_badges', {
+    p_user_id: userId
+  });
+
+  if (!error) {
+    return {
+      items: ((data ?? []) as Array<{
+        badge_key: string;
+        badge_label: string;
+        award_count: number;
+        latest_confirmed_at: string;
+      }>).map((row) => ({
+        badge_key: row.badge_key,
+        badge_label: row.badge_label,
+        award_count: row.award_count,
+        latest_confirmed_at: row.latest_confirmed_at
+      })),
+      error: null
+    };
+  }
+
+  // Fallback when RPC migration is not applied yet — table SELECT is allowed for authenticated.
+  const { data: rows, error: tableError } = await supabase
+    .from('most_wanted_contributor_badges')
+    .select('badge_key, badge_label, confirmed_at')
+    .eq('user_id', userId)
+    .not('confirmed_at', 'is', null)
+    .order('confirmed_at', { ascending: false });
+
+  if (tableError) return { items: [], error: tableError.message };
+
+  const byKey = new Map<string, UserConfirmedContributorBadge>();
+  for (const row of (rows ?? []) as Array<{
+    badge_key: string;
+    badge_label: string;
+    confirmed_at: string;
+  }>) {
+    const existing = byKey.get(row.badge_key);
+    if (existing) {
+      existing.award_count += 1;
+      if (row.confirmed_at > existing.latest_confirmed_at) {
+        existing.latest_confirmed_at = row.confirmed_at;
+        existing.badge_label = row.badge_label;
+      }
+    } else {
+      byKey.set(row.badge_key, {
+        badge_key: row.badge_key,
+        badge_label: row.badge_label,
+        award_count: 1,
+        latest_confirmed_at: row.confirmed_at
+      });
+    }
+  }
+
+  return { items: Array.from(byKey.values()), error: null };
 }
 
 export async function listMostWantedHunts(opts?: {

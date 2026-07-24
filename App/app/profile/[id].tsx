@@ -14,6 +14,7 @@ import {
   View
 } from 'react-native';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
+import { ProfileContributorBadges } from '@/components/profile/ProfileContributorBadges';
 import { ProfilePointHistory } from '@/components/profile/ProfilePointHistory';
 import { ProfilePointsBreakdown } from '@/components/profile/ProfilePointsBreakdown';
 import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader';
@@ -63,6 +64,10 @@ import {
   toggleFollow,
   type FollowCounts
 } from '@/lib/social';
+import {
+  listUserConfirmedContributorBadges,
+  type UserConfirmedContributorBadge
+} from '@/lib/most-wanted';
 
 function parsePeriod(raw: string | string[] | undefined): LeaderboardPeriod {
   if (raw === 'all_time' || raw === 'month') return raw;
@@ -106,6 +111,7 @@ export default function PublicProfileScreen() {
   const [forumThreads, setForumThreads] = useState<
     Awaited<ReturnType<typeof listUserForumThreads>>['items']
   >([]);
+  const [confirmedBadges, setConfirmedBadges] = useState<UserConfirmedContributorBadge[]>([]);
 
   const isSelf = Boolean(user?.id && id && user.id === id);
 
@@ -124,19 +130,22 @@ export default function PublicProfileScreen() {
           { allowed: false, error: null }
         ] as const);
 
-    const [profileRes, standingRes, eventsRes, countsRes, threadsRes, socialRes] = await Promise.all([
-      fetchPublicProfile(id),
-      getUserStanding(id, period),
-      listUserPointEvents(id, { period, limit: 200 }),
-      fetchFollowCounts(id),
-      listUserForumThreads(id, 5),
-      socialPromises
-    ]);
+    const [profileRes, standingRes, eventsRes, countsRes, threadsRes, socialRes, badgesRes] =
+      await Promise.all([
+        fetchPublicProfile(id),
+        getUserStanding(id, period),
+        listUserPointEvents(id, { period, limit: 200 }),
+        fetchFollowCounts(id),
+        listUserForumThreads(id, 5),
+        socialPromises,
+        listUserConfirmedContributorBadges(id)
+      ]);
 
     setProfile(profileRes.profile);
     setError(profileRes.error);
     setFollowCounts(countsRes.counts);
     setForumThreads(threadsRes.items);
+    setConfirmedBadges(badgesRes.items);
 
     if (!isSelf && user) {
       const [followRes, messageRes] = socialRes;
@@ -334,6 +343,8 @@ export default function PublicProfileScreen() {
           </View>
         ))}
       </View>
+
+      <ProfileContributorBadges badges={confirmedBadges} s={s} t={t} />
 
       {/* Stats bar */}
       <View style={styles.statsBar}>

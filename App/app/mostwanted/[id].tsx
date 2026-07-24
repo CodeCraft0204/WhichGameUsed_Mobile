@@ -27,7 +27,7 @@ import {
   mostWantedCopy,
   mostWantedEvidenceTypes
 } from '@/constants/mostWantedCopy';
-import { mostWantedIcons } from '@/constants/mostWantedContent';
+import { mostWantedIcons, contributorBadgeImage } from '@/constants/mostWantedContent';
 import { contributionStatusColors, type MwContributionStatus } from '@/constants/mostWantedStyles';
 import {
   databaseCardHref,
@@ -206,7 +206,8 @@ export default function MostWantedDetailScreen() {
   }
 
   const myBadges = user ? badges.filter((b) => b.user_id === user.id) : [];
-  const uniqueContributors = [...new Set(badges.map((b) => b.display_name))];
+  const confirmedBadges = badges.filter((b) => Boolean(b.confirmed_at));
+  const uniqueContributors = [...new Set(confirmedBadges.map((b) => b.display_name))];
   const engagement = detail
     ? huntEngagementMetrics({
         watcher_count: detail.watcher_count,
@@ -405,6 +406,7 @@ export default function MostWantedDetailScreen() {
                           icon={badge.icon}
                           s={s}
                           t={t}
+                          imageSource={contributorBadgeImage(badge.key)}
                         />
                       ))}
                     </View>
@@ -417,10 +419,19 @@ export default function MostWantedDetailScreen() {
                       {myBadges.map((badge) => (
                         <MostWantedContributorBadge
                           key={badge.id}
-                          label={badge.badge_label}
+                          label={
+                            badge.confirmed_at
+                              ? badge.badge_label
+                              : `${badge.badge_label} (pending)`
+                          }
                           s={s}
                           t={t}
                           icon="checkmark-circle"
+                          imageSource={
+                            badge.confirmed_at
+                              ? contributorBadgeImage(badge.badge_key)
+                              : null
+                          }
                         />
                       ))}
                     </View>
@@ -436,15 +447,16 @@ export default function MostWantedDetailScreen() {
                     ) : (
                       <Text style={styles.badgePanelBody}>{mostWantedCopy.emptyBadges}</Text>
                     )}
-                    {badges.length > 0 ? (
+                    {confirmedBadges.length > 0 ? (
                       <View style={styles.badgeWrap}>
-                        {badges.slice(0, 8).map((badge) => (
+                        {confirmedBadges.slice(0, 8).map((badge) => (
                           <MostWantedContributorBadge
                             key={badge.id}
                             label={`${badge.display_name}: ${badge.badge_label}`}
                             s={s}
                             t={t}
                             icon="ribbon"
+                            imageSource={contributorBadgeImage(badge.badge_key)}
                           />
                         ))}
                       </View>

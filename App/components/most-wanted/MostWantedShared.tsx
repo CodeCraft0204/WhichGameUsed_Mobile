@@ -1,6 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  type ImageSourcePropType,
+  Pressable,
+  StyleSheet,
+  Text,
+  View
+} from 'react-native';
 import { appFonts } from '@/constants/appFonts';
 import { contributionStatusColors, type MwContributionStatus } from '@/constants/mostWantedStyles';
 import { figmaColors } from '@/constants/figmaColors';
@@ -30,15 +38,27 @@ export function MostWantedContributorBadge({
   s,
   t,
   large,
-  icon = 'ribbon'
+  icon = 'ribbon',
+  imageSource
 }: {
   label: string;
   s: (n: number) => number;
   t: (n: number) => number;
   large?: boolean;
   icon?: keyof typeof Ionicons.glyphMap;
+  imageSource?: ImageSourcePropType | null;
 }) {
   const styles = useMemo(() => createRewardStyles(s, t, large), [s, t, large]);
+  if (imageSource) {
+    return (
+      <View style={styles.imageBadge}>
+        <Image source={imageSource} style={styles.image} resizeMode="contain" />
+        <Text style={styles.imageLabel} numberOfLines={2}>
+          {label}
+        </Text>
+      </View>
+    );
+  }
   return (
     <View style={styles.badge}>
       <Ionicons name={icon} size={large ? s(16) : s(12)} color={figmaColors.accentStrong} />
@@ -176,6 +196,21 @@ function createRewardStyles(s: (n: number) => number, t: (n: number) => number, 
       fontFamily: appFonts.bodyBold,
       fontSize: t(large ? 14 : 11),
       color: figmaColors.charcoal
+    },
+    imageBadge: {
+      width: s(large ? 88 : 72),
+      alignItems: 'center',
+      gap: s(4)
+    },
+    image: {
+      width: s(large ? 80 : 64),
+      height: s(large ? 96 : 76)
+    },
+    imageLabel: {
+      fontFamily: appFonts.bodyBold,
+      fontSize: t(10),
+      color: figmaColors.charcoal,
+      textAlign: 'center'
     }
   });
 }

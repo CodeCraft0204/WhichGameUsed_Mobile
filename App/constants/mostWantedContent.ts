@@ -1,4 +1,23 @@
+import type { ImageSourcePropType } from 'react-native';
 import { figmaIcons } from '@/constants/figmaIcons';
+
+/** Ornate contributor badge art — shown on profile after admin confirm. */
+export const contributorBadgeImages = {
+  evidence_finder: require('@/assets/figma/mostwanted/new_assets (15).png'),
+  source_hunter: require('@/assets/figma/mostwanted/new_assets (16).png'),
+  research_helper: require('@/assets/figma/mostwanted/new_assets (17).png'),
+  card_solver: require('@/assets/figma/mostwanted/new_assets (18).png'),
+  most_wanted_contributor: require('@/assets/figma/mostwanted/new_assets (19).png')
+} as const satisfies Record<string, ImageSourcePropType>;
+
+export type ContributorBadgeImageKey = keyof typeof contributorBadgeImages;
+
+export function contributorBadgeImage(badgeKey: string): ImageSourcePropType | null {
+  if (badgeKey in contributorBadgeImages) {
+    return contributorBadgeImages[badgeKey as ContributorBadgeImageKey];
+  }
+  return null;
+}
 
 /** Most Wanted screen decorative assets (header hero, etc.). */
 export const mostWantedIcons = {
@@ -34,5 +53,6 @@ export const mostWantedIcons = {
   eyeDark: require('@/assets/figma/mostwanted/new_assets (29).png'),
   like: require('@/assets/figma/mostwanted/icon_like.png'),
   dislike: require('@/assets/figma/mostwanted/icon_dislike.png'),
-  comment: require('@/assets/figma/mostwanted/icon_comment.png')
+  comment: require('@/assets/figma/mostwanted/icon_comment.png'),
+  ...contributorBadgeImages
 } as const;

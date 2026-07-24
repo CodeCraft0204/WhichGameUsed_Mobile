@@ -10,6 +10,7 @@ import {
   View
 } from 'react-native';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
+import { ProfileContributorBadges } from '@/components/profile/ProfileContributorBadges';
 import { ProfileField } from '@/components/profile/ProfileField';
 import { ProfileSection } from '@/components/profile/ProfileSection';
 import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader';
@@ -27,6 +28,10 @@ import {
   updateMyProfile,
   uploadAvatarFromUri
 } from '@/lib/profile';
+import {
+  listUserConfirmedContributorBadges,
+  type UserConfirmedContributorBadge
+} from '@/lib/most-wanted';
 import type { MyProfile } from '@/types/profile';
 
 function isValidUsername(value: string): boolean {
@@ -53,6 +58,7 @@ export default function ProfileScreen() {
   const [about, setAbout] = useState('');
   const [locationText, setLocationText] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [confirmedBadges, setConfirmedBadges] = useState<UserConfirmedContributorBadge[]>([]);
 
   const applyProfile = useCallback((row: MyProfile) => {
     setSavedProfile(row);
@@ -67,9 +73,13 @@ export default function ProfileScreen() {
     if (!user) return;
     setLoading(true);
     setError(null);
-    const { profile, error: loadError } = await fetchMyProfile(user.id);
+    const [{ profile, error: loadError }, badgesRes] = await Promise.all([
+      fetchMyProfile(user.id),
+      listUserConfirmedContributorBadges(user.id)
+    ]);
     if (loadError) setError(loadError);
     if (profile) applyProfile(profile);
+    setConfirmedBadges(badgesRes.items);
     setLoading(false);
   }, [applyProfile, user]);
 
@@ -251,6 +261,8 @@ export default function ProfileScreen() {
           <Text style={styles.settingsLinkText}>{profileCopy.links.openSettings}</Text>
         </Pressable>
       </View>
+
+      <ProfileContributorBadges badges={confirmedBadges} s={s} t={t} />
 
       {error ? (
         <View style={styles.bannerError}>

@@ -56,6 +56,14 @@ export const leaderboardCopy = {
     joined: 'Joined',
     pointsBreakdown: 'POINTS BREAKDOWN',
     recentActivity: 'RECENT ACTIVITY',
+    mostWantedBadges: 'MOST WANTED BADGES',
+    mostWantedBadgesHint: 'Admin-confirmed contributor recognition.',
+    mostWantedBadgesSummary: (totalAwards: number, types: number) =>
+      totalAwards === 1
+        ? '1 confirmed contribution badge.'
+        : `${totalAwards} confirmed contribution badges across ${types} type${types === 1 ? '' : 's'}.`,
+    mostWantedBadgeTimes: (count: number) =>
+      count === 1 ? '1 time earned' : `${count} times earned`,
     viewAll: 'View All',
     message: 'MESSAGE',
     follow: 'FOLLOW',
