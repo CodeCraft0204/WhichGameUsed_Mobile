@@ -5,7 +5,9 @@ const PUBLIC_ROUTE_ROOTS = new Set([
   'password-reset',
   'set-new-password',
   'auth',
-  'community-standards'
+  'community-standards',
+  // Linked from forgot-password (and settings); must stay reachable while signed out.
+  'contact-support'
 ]);
 
 /** Auth screens logged-in users should not stay on. */

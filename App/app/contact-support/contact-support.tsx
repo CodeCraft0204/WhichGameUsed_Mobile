@@ -2,24 +2,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { appFonts } from '@/constants/appFonts';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import {
-  Linking,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View
-} from 'react-native';
+import { Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { AuthErrorBanner } from '@/components/auth/AuthErrorBanner';
 import { AuthPrimaryButton } from '@/components/auth/AuthPrimaryButton';
 import { AuthSubpageShell } from '@/components/auth/AuthSubpageShell';
 import { AuthTextField } from '@/components/auth/AuthTextField';
 import { legalCopy } from '@/constants/authContent';
 import { figmaColors } from '@/constants/figmaColors';
-import { SUPPORT_EMAIL, SUPPORT_RESPONSE_HINT } from '@/constants/support';
+import { SUPPORT_RESPONSE_HINT } from '@/constants/support';
 import { useAuthLayout } from '@/hooks/useAuthLayout';
-
-type SupportTopicId = (typeof legalCopy.contactSupport.topics)[number]['id'];
+import { absolutePortalUrl } from '@/lib/portal-url';
+import { submitSupportTicket, type SupportTopicId } from '@/lib/support-tickets';
 
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
@@ -37,12 +30,17 @@ export default function ContactSupportScreen() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [publicRef, setPublicRef] = useState<string | null>(null);
 
   const canSubmit =
     topic !== null &&
     isValidEmail(email) &&
     message.trim().length >= 10 &&
     !loading;
+
+  const statusUrl = publicRef
+    ? absolutePortalUrl(`/support/status?ref=${encodeURIComponent(publicRef)}`)
+    : null;
 
   const handleSubmit = async () => {
     setError(null);
@@ -60,31 +58,60 @@ export default function ContactSupportScreen() {
       return;
     }
 
-    const topicLabel = copy.topics.find((item) => item.id === topic)?.label ?? topic;
-    const subject = encodeURIComponent(`Which Game Used — ${topicLabel}`);
-    const body = encodeURIComponent(
-      `Topic: ${topicLabel}\nEmail: ${email.trim()}\n\n${message.trim()}`
-    );
-    const mailto = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
-
     setLoading(true);
-    try {
-      const supported = await Linking.canOpenURL(mailto);
-      if (!supported) {
-        setError(copy.mailUnavailable);
-        return;
-      }
-      await Linking.openURL(mailto);
-    } catch {
-      setError(copy.mailUnavailable);
-    } finally {
-      setLoading(false);
+    const result = await submitSupportTicket({
+      email,
+      topic,
+      message,
+      source: 'mobile'
+    });
+    setLoading(false);
+
+    if (result.error) {
+      setError(result.error);
+      return;
     }
+
+    setPublicRef(result.publicRef);
   };
 
-  const handleDirectEmail = () => {
-    void Linking.openURL(`mailto:${SUPPORT_EMAIL}`);
+  const handleSendAnother = () => {
+    setPublicRef(null);
+    setTopic(null);
+    setMessage('');
+    setError(null);
   };
+
+  if (publicRef) {
+    return (
+      <AuthSubpageShell title={copy.successTitle} subtitle={copy.successBody}>
+        <View style={styles.successCard}>
+          <Ionicons name="checkmark-circle" size={s(36)} color={figmaColors.accent} />
+          <Text style={styles.successHint}>{SUPPORT_RESPONSE_HINT}</Text>
+          <Text style={styles.referenceLabel}>{copy.successReference}</Text>
+          <Text style={styles.referenceValue} selectable>
+            {publicRef}
+          </Text>
+          <Text style={styles.statusHint}>{copy.successStatusHint}</Text>
+        </View>
+        {statusUrl ? (
+          <AuthPrimaryButton
+            label={copy.viewStatus}
+            onPress={() => {
+              void Linking.openURL(statusUrl);
+            }}
+          />
+        ) : null}
+        <Pressable
+          style={styles.secondaryAction}
+          onPress={handleSendAnother}
+          accessibilityRole="button"
+        >
+          <Text style={styles.secondaryActionText}>{copy.sendAnother}</Text>
+        </Pressable>
+      </AuthSubpageShell>
+    );
+  }
 
   return (
     <AuthSubpageShell title={copy.title} subtitle={copy.subtitle}>
@@ -138,6 +165,7 @@ export default function ContactSupportScreen() {
         multiline
         textAlignVertical="top"
         editable={!loading}
+        maxLength={5000}
       />
 
       <AuthPrimaryButton
@@ -146,18 +174,6 @@ export default function ContactSupportScreen() {
         loading={loading}
         onPress={handleSubmit}
       />
-
-      {/* <Pressable
-        style={styles.directEmailRow}
-        onPress={handleDirectEmail}
-        accessibilityRole="button"
-      >
-        <Ionicons name="mail-outline" size={s(18)} color={figmaColors.accent} />
-        <View style={styles.directEmailText}>
-          <Text style={styles.directEmailLabel}>{copy.emailUs}</Text>
-          <Text style={styles.directEmailValue}>{SUPPORT_EMAIL}</Text>
-        </View>
-      </Pressable> */}
     </AuthSubpageShell>
   );
 }
@@ -227,25 +243,48 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       lineHeight: t(22),
       color: figmaColors.charcoal
     },
-    directEmailRow: {
-      flexDirection: 'row',
+    successCard: {
       alignItems: 'center',
       gap: s(10),
-      marginTop: s(8),
-      paddingVertical: s(12)
+      padding: s(20),
+      borderRadius: s(12),
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      backgroundColor: figmaColors.inputBg
     },
-    directEmailText: {
-      flex: 1,
-      gap: s(2)
-    },
-    directEmailLabel: {
-      fontFamily: appFonts.body,
-      fontSize: t(16),
-      color: figmaColors.charcoal
-    },
-    directEmailValue: {
+    successHint: {
       fontFamily: appFonts.body,
       fontSize: t(15),
+      lineHeight: t(22),
+      color: figmaColors.gray,
+      textAlign: 'center'
+    },
+    referenceLabel: {
+      marginTop: s(8),
+      fontFamily: appFonts.body,
+      fontSize: t(13),
+      color: figmaColors.gray
+    },
+    referenceValue: {
+      fontFamily: appFonts.body,
+      fontSize: t(22),
+      letterSpacing: 1,
+      color: figmaColors.charcoal
+    },
+    statusHint: {
+      fontFamily: appFonts.body,
+      fontSize: t(14),
+      lineHeight: t(20),
+      color: figmaColors.gray,
+      textAlign: 'center'
+    },
+    secondaryAction: {
+      alignItems: 'center',
+      paddingVertical: s(14)
+    },
+    secondaryActionText: {
+      fontFamily: appFonts.body,
+      fontSize: t(16),
       color: figmaColors.accent,
       textDecorationLine: 'underline'
     }

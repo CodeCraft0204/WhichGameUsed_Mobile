@@ -129,7 +129,14 @@ export const legalCopy = {
     validationTopic: 'Please choose a topic.',
     validationEmail: 'Enter a valid email address.',
     validationMessage: 'Please enter a message (at least 10 characters).',
-    mailUnavailable: 'Could not open your email app. Copy our address below and reach out manually.'
+    mailUnavailable: 'Could not open your email app. Copy our address below and reach out manually.',
+    successTitle: 'Message received',
+    successBody:
+      'Thanks for reaching out. Our team will review your message and follow up by email within 1–2 business days.',
+    successReference: 'Your reference',
+    successStatusHint: 'Save this code. You can check ticket status anytime — no sign-in needed.',
+    viewStatus: 'CHECK STATUS',
+    sendAnother: 'Send another message'
   }
 } as const;
 
