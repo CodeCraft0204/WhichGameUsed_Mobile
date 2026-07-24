@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -35,7 +35,7 @@ function kindLabel(kind: string): string {
 
 export default function NotificationsLogScreen() {
   const router = useRouter();
-  const { refreshCounts } = useSocialNotifications();
+  const { refreshCounts, applyUnreadNotificationDelta } = useSocialNotifications();
   const { s, t } = useFigmaLayout(1);
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
@@ -44,6 +44,7 @@ export default function NotificationsLogScreen() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const markingIdsRef = useRef(new Set<string>());
 
   const load = useCallback(
     async (opts?: { refresh?: boolean; append?: boolean; offset?: number }) => {
@@ -74,13 +75,42 @@ export default function NotificationsLogScreen() {
   );
 
   const markRead = async (row: UserNotification) => {
-    if (row.read_at) return;
-    await markNotificationRead(row.id);
+    if (row.read_at || markingIdsRef.current.has(row.id)) return;
+
+    const readAt = new Date().toISOString();
+    markingIdsRef.current.add(row.id);
     setItems((prev) =>
-      prev.map((item) =>
-        item.id === row.id ? { ...item, read_at: item.read_at ?? new Date().toISOString() } : item
-      )
+      prev.map((item) => (item.id === row.id ? { ...item, read_at: item.read_at ?? readAt } : item))
     );
+    applyUnreadNotificationDelta(-1);
+
+    const { error } = await markNotificationRead(row.id);
+    markingIdsRef.current.delete(row.id);
+
+    if (error) {
+      setItems((prev) =>
+        prev.map((item) => (item.id === row.id ? { ...item, read_at: null } : item))
+      );
+      applyUnreadNotificationDelta(1);
+      return;
+    }
+
+    await refreshCounts();
+  };
+
+  const markAllRead = async () => {
+    const unreadCount = items.reduce((sum, n) => sum + (n.read_at ? 0 : 1), 0);
+    if (unreadCount === 0) return;
+
+    const readAt = new Date().toISOString();
+    setItems((prev) => prev.map((item) => ({ ...item, read_at: item.read_at ?? readAt })));
+    applyUnreadNotificationDelta(-unreadCount);
+
+    const { error } = await markAllNotificationsRead();
+    if (error) {
+      await load({ refresh: true });
+      return;
+    }
     await refreshCounts();
   };
 
@@ -95,6 +125,8 @@ export default function NotificationsLogScreen() {
     <FigmaScreen
       scrollProps={{
         contentContainerStyle: page.scrollContent,
+        directionalLockEnabled: true,
+        canCancelContentTouches: false,
         refreshControl: (
           <RefreshControl refreshing={refreshing} onRefresh={() => void load({ refresh: true })} />
         )
@@ -111,9 +143,7 @@ export default function NotificationsLogScreen() {
 
       {hasUnread ? (
         <Pressable
-          onPress={() =>
-            void markAllNotificationsRead().then(() => load({ refresh: true }))
-          }
+          onPress={() => void markAllRead()}
           style={styles.markAll}
           accessibilityRole="button"
         >

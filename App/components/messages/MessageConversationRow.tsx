@@ -39,24 +39,21 @@ export function MessageConversationRow({
   const subtitle = peerSubtitle(conversation);
 
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
+    // Sibling pressables (not nested): on web, accessibilityRole="button" becomes <button>,
+    // and nested <button> elements trigger hydration / DOM nesting errors.
+    <View
+      style={[
         styles.row,
         active && styles.rowActive,
-        unread && !active && styles.rowUnread,
-        pressed && styles.pressed
+        unread && !active && styles.rowUnread
       ]}
-      accessibilityRole="button"
     >
       {active ? <View style={styles.activeBar} /> : null}
 
       <Pressable
-        onPress={(event) => {
-          event.stopPropagation();
-          onPressAvatar?.();
-        }}
+        onPress={onPressAvatar}
         disabled={!onPressAvatar}
+        style={({ pressed }) => [pressed && styles.pressed]}
         accessibilityRole="button"
         accessibilityLabel={`Open ${conversation.peerDisplayName} profile`}
       >
@@ -76,33 +73,40 @@ export function MessageConversationRow({
         </View>
       </Pressable>
 
-      <View style={styles.content}>
-        <View style={styles.topRow}>
-          <Text style={[styles.name, (unread || active) && styles.nameStrong]} numberOfLines={1}>
-            {conversation.peerDisplayName}
-          </Text>
-          <Text style={[styles.when, unread && styles.whenUnread]}>
-            {formatInboxWhen(conversation.lastMessageAt)}
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [styles.mainPress, pressed && styles.pressed]}
+        accessibilityRole="button"
+        accessibilityLabel={`Open conversation with ${conversation.peerDisplayName}`}
+      >
+        <View style={styles.content}>
+          <View style={styles.topRow}>
+            <Text style={[styles.name, (unread || active) && styles.nameStrong]} numberOfLines={1}>
+              {conversation.peerDisplayName}
+            </Text>
+            <Text style={[styles.when, unread && styles.whenUnread]}>
+              {formatInboxWhen(conversation.lastMessageAt)}
+            </Text>
+          </View>
+
+          {subtitle ? (
+            <Text style={styles.subtitle} numberOfLines={1}>
+              {subtitle}
+            </Text>
+          ) : null}
+
+          <Text style={[styles.preview, unread && styles.previewUnread]} numberOfLines={2}>
+            {conversation.lastMessagePreview ?? 'No messages yet'}
           </Text>
         </View>
 
-        {subtitle ? (
-          <Text style={styles.subtitle} numberOfLines={1}>
-            {subtitle}
-          </Text>
+        {unread ? (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{conversation.unreadCount}</Text>
+          </View>
         ) : null}
-
-        <Text style={[styles.preview, unread && styles.previewUnread]} numberOfLines={2}>
-          {conversation.lastMessagePreview ?? 'No messages yet'}
-        </Text>
-      </View>
-
-      {unread ? (
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{conversation.unreadCount}</Text>
-        </View>
-      ) : null}
-    </Pressable>
+      </Pressable>
+    </View>
   );
 }
 
@@ -167,6 +171,13 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       width: s(4),
       borderRadius: s(2),
       backgroundColor: figmaColors.navActive
+    },
+    mainPress: {
+      flex: 1,
+      minWidth: 0,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(12)
     },
     content: { flex: 1, minWidth: 0, gap: s(3) },
     topRow: { flexDirection: 'row', alignItems: 'center', gap: s(8) },

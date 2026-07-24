@@ -30,6 +30,8 @@ type SocialNotificationsContextValue = {
   latestAlert: UserNotification | null;
   dismissLatestAlert: () => void;
   refreshCounts: () => Promise<void>;
+  /** Optimistically adjust notification badge after local mark-read actions. */
+  applyUnreadNotificationDelta: (delta: number) => void;
 };
 
 const SocialNotificationsContext = createContext<SocialNotificationsContextValue | null>(null);
@@ -62,6 +64,14 @@ export function SocialNotificationsProvider({ children }: { children: ReactNode 
   const dismissLatestAlert = useCallback(() => {
     setLatestAlert(null);
   }, []);
+
+  const applyUnreadNotificationDelta = useCallback((delta: number) => {
+    setUnreadNotificationCount((prev) => Math.max(0, prev + delta));
+  }, []);
+
+  useEffect(() => {
+    void setAppBadgeCount(unreadInboxCount + unreadNotificationCount);
+  }, [unreadInboxCount, unreadNotificationCount]);
 
   useEffect(() => {
     if (!user) {
@@ -111,9 +121,11 @@ export function SocialNotificationsProvider({ children }: { children: ReactNode 
       totalUnreadCount: unreadInboxCount + unreadNotificationCount,
       latestAlert,
       dismissLatestAlert,
-      refreshCounts
+      refreshCounts,
+      applyUnreadNotificationDelta
     }),
     [
+      applyUnreadNotificationDelta,
       dismissLatestAlert,
       latestAlert,
       refreshCounts,

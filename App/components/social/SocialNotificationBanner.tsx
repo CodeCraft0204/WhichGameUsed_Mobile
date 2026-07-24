@@ -11,7 +11,8 @@ import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 
 export function SocialNotificationBanner() {
   const router = useRouter();
-  const { latestAlert, dismissLatestAlert, refreshCounts } = useSocialNotifications();
+  const { latestAlert, dismissLatestAlert, refreshCounts, applyUnreadNotificationDelta } =
+    useSocialNotifications();
   const { s, t } = useFigmaLayout();
   const styles = useMemo(() => createStyles(s, t), [s, t]);
 
@@ -21,7 +22,9 @@ export function SocialNotificationBanner() {
     const alert = latestAlert;
     dismissLatestAlert();
     if (!alert.read_at) {
-      await markNotificationRead(alert.id);
+      applyUnreadNotificationDelta(-1);
+      const { error } = await markNotificationRead(alert.id);
+      if (error) applyUnreadNotificationDelta(1);
       await refreshCounts();
     }
     router.push(defaultHrefForNotification(alert));
