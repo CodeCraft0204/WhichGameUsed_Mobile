@@ -78,6 +78,14 @@ export function databaseVerificationHref(code: string): Href {
   return { pathname: '/database/verification/[code]', params: { code } } as unknown as Href;
 }
 
+export function databaseVerifyHref(): Href {
+  return '/database/verify' as unknown as Href;
+}
+
+export function databaseVerifyScanHref(): Href {
+  return '/database/verify-scan' as unknown as Href;
+}
+
 export function createWithLinkedCardHref(cardId: string, cardTitle: string): Href {
   return {
     pathname: '/camera/camera',

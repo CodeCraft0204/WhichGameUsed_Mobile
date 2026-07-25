@@ -1,4 +1,11 @@
 /** Top-level route segments reachable without a signed-in session. */
+const PUBLIC_NESTED_PATHS = new Set([
+  'database/verification',
+  'database/verify',
+  'database/verify-scan'
+]);
+
+/** Top-level public roots (in addition to auth screens). */
 const PUBLIC_ROUTE_ROOTS = new Set([
   'sign-in',
   'sign-up',
@@ -7,16 +14,25 @@ const PUBLIC_ROUTE_ROOTS = new Set([
   'auth',
   'community-standards',
   // Linked from forgot-password (and settings); must stay reachable while signed out.
-  'contact-support'
+  'contact-support',
+  // Portal universal-link alias `/v/:code`
+  'v'
 ]);
 
 /** Auth screens logged-in users should not stay on. */
 const SIGNED_IN_AUTH_SCREENS = new Set(['sign-in', 'sign-up']);
 
+function nestedPath(segments: string[]): string | null {
+  if (segments.length < 2) return null;
+  return `${segments[0]}/${segments[1]}`;
+}
+
 export function isPublicAuthRoute(segments: string[]): boolean {
   const root = segments[0];
   if (!root) return true;
-  return PUBLIC_ROUTE_ROOTS.has(root);
+  if (PUBLIC_ROUTE_ROOTS.has(root)) return true;
+  const nested = nestedPath(segments);
+  return nested != null && PUBLIC_NESTED_PATHS.has(nested);
 }
 
 export function shouldRedirectSignedInUser(

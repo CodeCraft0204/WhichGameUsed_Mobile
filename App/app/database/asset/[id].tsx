@@ -23,6 +23,7 @@ import {
   getCardById,
   type CardDetail
 } from '@/lib/cards';
+import { getCurrentStickerStatusForAsset, stickerStatusLabel } from '@/lib/verification';
 
 export default function AuthenticatedAssetScreen() {
   const router = useRouter();
@@ -32,6 +33,7 @@ export default function AuthenticatedAssetScreen() {
   const [card, setCard] = useState<CardDetail | null>(null);
   const [assetId, setAssetId] = useState('');
   const [authenticatedAt, setAuthenticatedAt] = useState<string | null>(null);
+  const [stickerStatus, setStickerStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,10 +52,14 @@ export default function AuthenticatedAssetScreen() {
       const asset = assetRes.asset;
       setAssetId(asset.asset_id);
       setAuthenticatedAt(asset.authenticated_at);
-      const cardRes = await getCardById(asset.card_id);
+      const [cardRes, stickerRes] = await Promise.all([
+        getCardById(asset.card_id),
+        getCurrentStickerStatusForAsset(asset.id)
+      ]);
       if (!active) return;
       setCard(cardRes.card);
-      setError(cardRes.error);
+      setStickerStatus(stickerRes.status);
+      setError(cardRes.error ?? stickerRes.error);
       setLoading(false);
     })();
     return () => {
@@ -90,6 +96,8 @@ export default function AuthenticatedAssetScreen() {
               <Text style={styles.value}>
                 {authenticatedAt ? new Date(authenticatedAt).toLocaleString() : '—'}
               </Text>
+              <Text style={styles.label}>Sticker</Text>
+              <Text style={styles.value}>{stickerStatusLabel(stickerStatus)}</Text>
             </View>
             <AuthPrimaryButton
               label={databaseCopy.viewCatalogCard}

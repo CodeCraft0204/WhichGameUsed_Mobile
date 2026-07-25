@@ -18,7 +18,7 @@ import { databaseCopy } from '@/constants/databaseCopy';
 import { figmaColors } from '@/constants/figmaColors';
 import { databaseCardHref } from '@/constants/navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
-import { lookupAssetByCode, type VerifiedAsset } from '@/lib/verification';
+import { lookupAssetByCode, authStatusLabel, stickerStatusLabel, type VerifiedAsset } from '@/lib/verification';
 
 function fileKindLabel(kind: string): string {
   return kind.replace(/_/g, ' ');
@@ -83,12 +83,9 @@ export default function VerificationScreen() {
               <View style={styles.identityHeader}>
                 <Text style={styles.assetId}>{asset.asset_id}</Text>
                 <View style={styles.statusBadge}>
-                  <Text style={styles.statusText}>{asset.status}</Text>
+                  <Text style={styles.statusText}>{authStatusLabel(asset.status)}</Text>
                 </View>
               </View>
-
-              <Text style={styles.label}>{databaseCopy.verificationOwner}</Text>
-              <Text style={styles.value}>{asset.owner_display_name ?? '—'}</Text>
 
               <Text style={styles.label}>{databaseCopy.authenticatedAt}</Text>
               <Text style={styles.value}>
@@ -96,6 +93,15 @@ export default function VerificationScreen() {
                   ? new Date(asset.authenticated_at).toLocaleString()
                   : '—'}
               </Text>
+
+              {asset.sticker ? (
+                <>
+                  <Text style={styles.label}>Sticker</Text>
+                  <Text style={styles.value}>
+                    {stickerStatusLabel(asset.sticker.sticker_status)}
+                  </Text>
+                </>
+              ) : null}
 
               {asset.public_notes ? (
                 <>

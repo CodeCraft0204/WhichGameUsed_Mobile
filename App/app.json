@@ -46,11 +46,28 @@
       "typedRoutes": true
     },
     "ios": {
-      "bundleIdentifier": "com.whichgameused.mobile"
+      "bundleIdentifier": "com.whichgameused.mobile",
+      "associatedDomains": [
+        "applinks:which-game-used.vercel.app"
+      ]
     },
     "android": {
       "package": "com.whichgameused.mobile",
-      "softwareKeyboardLayoutMode": "resize"
+      "softwareKeyboardLayoutMode": "resize",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "which-game-used.vercel.app",
+              "pathPrefix": "/v"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "extra": {
       "router": {},
