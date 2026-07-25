@@ -1,23 +1,37 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthPrimaryButton } from '@/components/auth/AuthPrimaryButton';
-import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader';
+import { CameraFrameOverlay } from '@/components/camera/CameraFrameOverlay';
 import { appFonts } from '@/constants/appFonts';
+import { cameraCopy } from '@/constants/cameraCopy';
+import { cameraIcons } from '@/constants/cameraContent';
 import { figmaColors } from '@/constants/figmaColors';
-import { databaseVerificationHref } from '@/constants/navigation';
-import { useFigmaLayout } from '@/hooks/useFigmaLayout';
+import { databaseVerificationHref, databaseVerifyHref, safeGoBack } from '@/constants/navigation';
+import { useCameraLayout } from '@/hooks/useCameraLayout';
+import {
+  CAMERA_ZOOM_STOPS,
+  defaultZoomStopIndex,
+  formatZoomLabel,
+  nextZoomStopIndex,
+  zoomStopToNormalized
+} from '@/lib/camera-zoom';
 import { assetCodeFromScanPayload } from '@/lib/verification';
 
 export default function VerifyScanScreen() {
   const router = useRouter();
-  const { s, t } = useFigmaLayout();
-  const styles = useMemo(() => createStyles(s, t), [s, t]);
+  const layout = useCameraLayout();
+  const styles = useMemo(() => createStyles(layout), [layout]);
   const [permission, requestPermission] = useCameraPermissions();
+  const [flashOn, setFlashOn] = useState(false);
+  const [zoomStopIndex, setZoomStopIndex] = useState(defaultZoomStopIndex);
   const [error, setError] = useState<string | null>(null);
   const locked = useRef(false);
+
+  const zoomStop = CAMERA_ZOOM_STOPS[zoomStopIndex];
+  const cameraZoom = zoomStopToNormalized(zoomStop);
 
   function onBarcode({ data }: { data: string }) {
     if (locked.current) return;
@@ -30,94 +44,303 @@ export default function VerifyScanScreen() {
     router.replace(databaseVerificationHref(code));
   }
 
-  return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <ProfileSubpageHeader
-        title="Scan sticker"
-        subtitle="Point at the Which Game Used QR"
-        s={s}
-        t={t}
-        onBack={() => router.back()}
-      />
+  function resetScanner() {
+    locked.current = false;
+    setError(null);
+  }
 
-      {!permission?.granted ? (
-        <View style={styles.center}>
-          <Text style={styles.message}>Camera access is required to scan stickers.</Text>
-          <AuthPrimaryButton label="Allow camera" onPress={() => void requestPermission()} />
-        </View>
-      ) : (
-        <View style={styles.cameraWrap}>
-          <CameraView
-            style={StyleSheet.absoluteFill}
-            facing="back"
-            barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-            onBarcodeScanned={onBarcode}
+  if (!permission) {
+    return <View style={styles.permissionRoot} />;
+  }
+
+  if (!permission.granted) {
+    return (
+      <SafeAreaView style={styles.permissionRoot} edges={['top', 'bottom']}>
+        <View style={styles.permissionCard}>
+          <Text style={styles.permissionTitle}>{cameraCopy.permissionTitle}</Text>
+          <Text style={styles.permissionBody}>
+            Allow camera access to scan your Which Game Used sticker QR.
+          </Text>
+          <AuthPrimaryButton
+            label={cameraCopy.grantPermission}
+            onPress={() => void requestPermission()}
           />
-          <View style={styles.frame} />
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom', 'left', 'right']}>
+      <View style={styles.root}>
+        <View style={styles.header}>
           <Pressable
-            style={styles.cancel}
-            onPress={() => {
-              locked.current = false;
-              setError(null);
-            }}
+            style={styles.headerSide}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Exit scanner"
+            onPress={() => safeGoBack(databaseVerifyHref())}
           >
-            <Text style={styles.cancelText}>Reset scanner</Text>
+            <Image source={cameraIcons.exit} style={styles.headerIcon} resizeMode="contain" />
+          </Pressable>
+
+          <View style={styles.logoWrap}>
+            <Image source={cameraIcons.logo} style={styles.logo} resizeMode="contain" />
+          </View>
+
+          <Pressable
+            style={styles.headerSide}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={flashOn ? 'Turn flash off' : 'Turn flash on'}
+            onPress={() => setFlashOn((value) => !value)}
+          >
+            <Image
+              source={flashOn ? cameraIcons.flash : cameraIcons.flashOff}
+              style={styles.headerIcon}
+              resizeMode="contain"
+            />
           </Pressable>
         </View>
-      )}
+
+        <View style={styles.hintBanner}>
+          <Text style={styles.hintBannerText}>Point at the Which Game Used QR on your sticker</Text>
+        </View>
+
+        <View style={styles.previewArea}>
+          <View style={styles.cameraClip}>
+            <CameraView
+              style={styles.cameraPreview}
+              facing="back"
+              zoom={cameraZoom}
+              enableTorch={flashOn}
+              barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+              onBarcodeScanned={onBarcode}
+            />
+          </View>
+
+          {error ? (
+            <View style={styles.captureNotice} pointerEvents="none">
+              <Text style={styles.captureNoticeTitle}>Couldn’t read QR</Text>
+              <Text style={styles.captureNoticeBody}>{error}</Text>
+            </View>
+          ) : null}
+
+          <View style={styles.previewCenter} pointerEvents="box-none">
+            <View style={styles.frameStage} pointerEvents="box-none">
+              <View style={styles.frameBox} pointerEvents="none">
+                <CameraFrameOverlay width={layout.frameWidth} height={layout.frameHeight} />
+              </View>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.footer}>
+          <View style={styles.footerSide}>
+            <Pressable
+              style={[styles.zoomButton, zoomStop !== 1 && styles.zoomButtonActive]}
+              accessibilityRole="button"
+              accessibilityLabel={`Zoom ${formatZoomLabel(zoomStop)}`}
+              onPress={() => setZoomStopIndex((index) => nextZoomStopIndex(index))}
+            >
+              <Text style={styles.zoomText}>{formatZoomLabel(zoomStop)}</Text>
+            </Pressable>
+          </View>
+
+          <Pressable
+            style={styles.resetButton}
+            accessibilityRole="button"
+            accessibilityLabel="Reset scanner"
+            onPress={resetScanner}
+          >
+            <Text style={styles.resetText}>Reset</Text>
+          </Pressable>
+
+          <View style={[styles.footerSide, styles.footerSideEnd]} />
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
 
-function createStyles(s: (n: number) => number, t: (n: number) => number) {
+function createStyles(layout: ReturnType<typeof useCameraLayout>) {
+  const { t } = layout;
+
   return StyleSheet.create({
-    safe: { flex: 1, backgroundColor: figmaColors.parchment },
-    center: { flex: 1, padding: s(20), justifyContent: 'center', gap: s(16) },
-    message: {
+    safe: {
+      flex: 1,
+      backgroundColor: figmaColors.background
+    },
+    root: {
+      flex: 1,
+      backgroundColor: figmaColors.background
+    },
+    permissionRoot: {
+      flex: 1,
+      backgroundColor: figmaColors.background,
+      padding: layout.s(24),
+      justifyContent: 'center'
+    },
+    permissionCard: { gap: layout.s(16) },
+    permissionTitle: {
       fontFamily: appFonts.body,
-      fontSize: t(16),
+      fontSize: layout.t(22),
       color: figmaColors.charcoal,
       textAlign: 'center'
     },
-    cameraWrap: {
+    permissionBody: {
+      fontFamily: appFonts.body,
+      fontSize: layout.t(17),
+      lineHeight: layout.t(24),
+      color: figmaColors.gray,
+      textAlign: 'center'
+    },
+    header: {
+      minHeight: layout.headerMinH,
+      paddingHorizontal: layout.headerPadH,
+      paddingVertical: layout.headerPadV,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: figmaColors.background
+    },
+    headerSide: {
+      width: layout.headerIcon,
+      height: layout.headerIcon,
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    headerIcon: {
+      width: layout.headerIcon,
+      height: layout.headerIcon
+    },
+    logoWrap: {
       flex: 1,
-      margin: s(16),
-      borderRadius: s(16),
-      overflow: 'hidden',
-      backgroundColor: '#000'
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: layout.headerPadH * 0.5
     },
-    frame: {
-      position: 'absolute',
-      top: '25%',
-      left: '15%',
-      right: '15%',
-      bottom: '35%',
-      borderWidth: 2,
-      borderColor: '#fff',
-      borderRadius: s(12)
+    logo: {
+      width: layout.logoW,
+      height: layout.logoH
     },
-    error: {
+    hintBanner: {
+      marginHorizontal: layout.headerPadH,
+      marginBottom: layout.s(6),
+      paddingVertical: layout.s(8),
+      paddingHorizontal: layout.s(12),
+      borderRadius: layout.s(8),
+      backgroundColor: figmaColors.ctaBackground,
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight
+    },
+    hintBannerText: {
+      fontFamily: appFonts.body,
+      fontSize: layout.t(14),
+      color: figmaColors.charcoal,
+      textAlign: 'center'
+    },
+    previewArea: {
+      flex: 1,
+      backgroundColor: figmaColors.cameraChrome
+    },
+    cameraClip: {
+      ...StyleSheet.absoluteFillObject,
+      overflow: 'hidden'
+    },
+    cameraPreview: {
+      ...StyleSheet.absoluteFillObject
+    },
+    captureNotice: {
       position: 'absolute',
-      bottom: s(72),
-      left: s(16),
-      right: s(16),
+      top: layout.modeBottom,
+      left: layout.previewPadH,
+      right: layout.previewPadH,
+      zIndex: 2,
+      backgroundColor: 'rgba(59, 59, 59, 0.92)',
+      borderRadius: layout.s(10),
+      paddingVertical: layout.s(12),
+      paddingHorizontal: layout.s(16),
+      gap: layout.s(4)
+    },
+    captureNoticeTitle: {
+      fontFamily: appFonts.body,
+      fontSize: layout.t(18),
+      color: figmaColors.cream,
+      textAlign: 'center'
+    },
+    captureNoticeBody: {
+      fontFamily: appFonts.body,
+      fontSize: layout.t(15),
+      lineHeight: layout.t(20),
+      color: figmaColors.cream,
       textAlign: 'center',
-      color: '#fff',
-      fontFamily: appFonts.bodyBold,
-      fontSize: t(14)
+      opacity: 0.9
     },
-    cancel: {
-      position: 'absolute',
-      bottom: s(24),
-      alignSelf: 'center',
-      padding: s(10)
+    previewCenter: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: '100%'
     },
-    cancelText: {
-      color: '#fff',
-      fontFamily: appFonts.bodyBold,
-      fontSize: t(14),
-      textDecorationLine: 'underline'
+    frameStage: {
+      width: '100%',
+      alignItems: 'center',
+      position: 'relative'
+    },
+    frameBox: {
+      width: layout.frameWidth,
+      height: layout.frameHeight
+    },
+    footer: {
+      minHeight: layout.footerH,
+      paddingHorizontal: layout.footerPadH,
+      paddingVertical: layout.footerPadV,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: figmaColors.background
+    },
+    footerSide: {
+      flex: 1,
+      alignItems: 'flex-start',
+      justifyContent: 'center'
+    },
+    footerSideEnd: {
+      alignItems: 'flex-end'
+    },
+    zoomButton: {
+      width: layout.zoomSize,
+      height: layout.zoomSize,
+      borderRadius: layout.zoomSize / 2,
+      backgroundColor: figmaColors.cameraControlBg,
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    zoomButtonActive: {
+      backgroundColor: figmaColors.charcoal
+    },
+    zoomText: {
+      fontFamily: appFonts.display,
+      fontSize: t(20),
+      lineHeight: t(22),
+      color: figmaColors.cream
+    },
+    resetButton: {
+      minWidth: layout.captureSize,
+      height: layout.s(44),
+      paddingHorizontal: layout.s(18),
+      borderRadius: layout.s(22),
+      backgroundColor: figmaColors.buttonPrimaryBg,
+      borderWidth: layout.s(2),
+      borderColor: figmaColors.buttonPrimaryBorder,
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    resetText: {
+      fontFamily: appFonts.display,
+      fontSize: layout.t(18),
+      color: figmaColors.buttonPrimaryText
     }
   });
 }

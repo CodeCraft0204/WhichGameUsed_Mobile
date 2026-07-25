@@ -16,7 +16,7 @@ import { appFonts } from '@/constants/appFonts';
 import { databaseIcons } from '@/constants/databaseContent';
 import { databaseCopy } from '@/constants/databaseCopy';
 import { figmaColors } from '@/constants/figmaColors';
-import { databaseCardHref } from '@/constants/navigation';
+import { databaseCardHref, databaseVerifyHref, safeGoBack } from '@/constants/navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import { lookupAssetByCode, authStatusLabel, stickerStatusLabel, type VerifiedAsset } from '@/lib/verification';
 
@@ -71,7 +71,7 @@ export default function VerificationScreen() {
           subtitle={asset?.asset_id}
           s={s}
           t={t}
-          onBack={() => router.back()}
+          onBack={() => safeGoBack(databaseVerifyHref())}
         />
 
         {loading ? <ActivityIndicator color={figmaColors.charcoal} /> : null}

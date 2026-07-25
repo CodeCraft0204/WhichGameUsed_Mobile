@@ -49,7 +49,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       alignItems: 'center',
       justifyContent: 'center',
       paddingHorizontal: s(20),
-      marginVertical: s(12)
+      marginVertical: s(5)
     },
     buttonPressed: {
       opacity: 0.9
@@ -57,7 +57,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     label: {
       fontFamily: appFonts.display,
       fontSize: t(20),
-      lineHeight: t(26),
+      lineHeight: t(20),
       color: figmaColors.buttonPrimaryText,
       letterSpacing: -0.2,
       textAlign: 'center'

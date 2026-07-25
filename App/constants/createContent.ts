@@ -6,7 +6,7 @@ export const createCopy = {
   step3: '3. Submit for review — post to discussion or link to a card',
   openCamera: 'OPEN CAMERA',
   openEditor: 'OPEN CONTENT EDITOR',
-  chooseLibrary: 'Choose from photo library (authenticate)',
+  chooseLibrary: 'CHOOSE FROM PHOTO LIBRARY',
   signInRequired: 'Sign in to submit card photos or create content.'
 } as const;
 

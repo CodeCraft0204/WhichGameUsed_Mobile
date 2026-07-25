@@ -3,7 +3,6 @@ import { appFonts } from '@/constants/appFonts';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Image,
-  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
@@ -179,9 +178,12 @@ export default function AuthenticateScreen() {
 
           <View style={styles.ctaAnchor}>
             <ScanSubmitButton s={s} t={t} onPress={() => router.push('/create/create')} />
-            <Pressable onPress={() => router.push(databaseVerifyHref())} style={styles.verifyLink}>
-              <Text style={styles.verifyLinkText}>Verify a sticker</Text>
-            </Pressable>
+            <ScanSubmitButton
+              label="VERIFY A STICKER"
+              s={s}
+              t={t}
+              onPress={() => router.push(databaseVerifyHref())}
+            />
 
             <View style={styles.ctaCard}>
               <Image source={authenticateIcons.ctaIcon} style={page.ctaIcon} resizeMode="contain" />
@@ -228,16 +230,6 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
     ctaAnchor: {
       marginTop: 'auto' as const,
       gap: s(12)
-    },
-    verifyLink: {
-      alignItems: 'center',
-      paddingVertical: s(8)
-    },
-    verifyLinkText: {
-      fontFamily: appFonts.bodyBold,
-      fontSize: t(15),
-      color: figmaColors.charcoal,
-      textDecorationLine: 'underline'
     },
     ctaCard: {
       minHeight: s(108),

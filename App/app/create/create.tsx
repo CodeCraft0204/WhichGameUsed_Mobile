@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { appFonts } from '@/constants/appFonts';
 import React, { useMemo } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { ContextGuidanceStrip } from '@/components/context-header/ContextGuidanceStrip';
 import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
@@ -82,9 +82,12 @@ function CreateScreenBody() {
             t={t}
           />
           <ScanSubmitButton onPress={openCamera} s={s} t={t} />
-          <Pressable onPress={() => void openLibraryThenEdit()} style={styles.libraryLink}>
-            <Text style={styles.libraryText}>{createCopy.chooseLibrary}</Text>
-          </Pressable>
+          <ScanSubmitButton
+            label={createCopy.chooseLibrary}
+            onPress={() => void openLibraryThenEdit()}
+            s={s}
+            t={t}
+          />
         </>
       ) : (
         <View style={styles.signInCard}>
@@ -142,16 +145,6 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: t(17),
       lineHeight: t(24),
       color: figmaColors.gray
-    },
-    libraryLink: {
-      alignItems: 'center',
-      paddingVertical: s(12)
-    },
-    libraryText: {
-      fontFamily: appFonts.body,
-      fontSize: t(16),
-      color: figmaColors.accent,
-      textDecorationLine: 'underline'
     },
     signInCard: {
       gap: s(14),

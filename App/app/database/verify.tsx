@@ -7,7 +7,12 @@ import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader'
 import { appFonts } from '@/constants/appFonts';
 import { databaseCopy } from '@/constants/databaseCopy';
 import { figmaColors } from '@/constants/figmaColors';
-import { databaseVerificationHref, databaseVerifyScanHref } from '@/constants/navigation';
+import {
+  authenticateHref,
+  databaseVerificationHref,
+  databaseVerifyScanHref,
+  safeGoBack
+} from '@/constants/navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 
 export default function VerifyStickerEntryScreen() {
@@ -30,7 +35,7 @@ export default function VerifyStickerEntryScreen() {
           subtitle="Enter an asset ID or scan the QR on your label"
           s={s}
           t={t}
-          onBack={() => router.back()}
+          onBack={() => safeGoBack(authenticateHref())}
         />
 
         <Text style={styles.label}>{databaseCopy.assetId}</Text>
