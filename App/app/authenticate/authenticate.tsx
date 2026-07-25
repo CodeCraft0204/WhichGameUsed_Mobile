@@ -3,6 +3,7 @@ import { appFonts } from '@/constants/appFonts';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Image,
+  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
@@ -185,7 +186,12 @@ export default function AuthenticateScreen() {
               onPress={() => router.push(databaseVerifyHref())}
             />
 
-            <View style={styles.ctaCard}>
+            <Pressable
+              style={styles.ctaCard}
+              onPress={() => router.push('/camera/camera')}
+              accessibilityRole="button"
+              accessibilityLabel="Open camera to scan your card"
+            >
               <Image source={authenticateIcons.ctaIcon} style={page.ctaIcon} resizeMode="contain" />
               <View style={page.ctaTextWrap}>
                 <Text style={styles.ctaTitle}>LET THE GAMES BEGIN.</Text>
@@ -198,7 +204,7 @@ export default function AuthenticateScreen() {
                 style={page.ctaArrow}
                 resizeMode="contain"
               />
-            </View>
+            </Pressable>
           </View>
         </ContextScrollView>
         </View>
