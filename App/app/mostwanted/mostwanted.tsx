@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Image, Linking, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import { chipOptionsFromLabels, FigmaChipRow } from '@/components/figma/FigmaChipRow';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaContentLoading } from '@/components/figma/FigmaContentLoading';
@@ -21,12 +21,11 @@ import { mostWantedIcons } from '@/constants/mostWantedContent';
 import {
   mostWantedCopy,
   mostWantedFilterTabs,
-  mostWantedRuthPdfUrl,
   type MostWantedFilterTab,
   type MostWantedSortKey
 } from '@/constants/mostWantedCopy';
 import {
-  educationHref,
+  educationDocumentHref,
   mostWantedContributionsHref,
   mostWantedDetailHref,
   mostWantedRankingsHref,
@@ -36,6 +35,7 @@ import {
 } from '@/constants/navigation';
 import { figmaColors } from '@/constants/figmaColors';
 import { appFonts } from '@/constants/appFonts';
+import { BABE_RUTH_DOCUMENT_ID } from '@/constants/educationDocuments';
 import { useSocialNotifications } from '@/context/SocialNotificationsContext';
 import { useRegisterUtilitySearch } from '@/context/UtilitySearchContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
@@ -348,10 +348,7 @@ function MostWantedScreenBody() {
 
       <Pressable
         style={styles.ctaCard}
-        onPress={() => {
-          if (mostWantedRuthPdfUrl) void Linking.openURL(mostWantedRuthPdfUrl);
-          else router.push(educationHref());
-        }}
+        onPress={() => router.push(educationDocumentHref(BABE_RUTH_DOCUMENT_ID))}
         accessibilityRole="button"
         accessibilityLabel={mostWantedCopy.ctaRuthTitle}
       >

@@ -127,8 +127,8 @@ export const contextHeaderByPage: Record<ContextHeaderPageKey, ContextHeaderConf
       { text: 'Solve cases to capture bounties worth up to $100.' },
       { text: 'One big case is all it takes to change the hobby forever.' },
       {
-        text: 'This platform started with a card, a question, and a search for answers — read the Babe Ruth story in Education.',
-        route: '/education/education'
+        text: 'This platform started with a card, a question, and a search for answers — read the Babe Ruth story.',
+        route: '/education/document/babe-and-the-big-break'
       }
     ]
   },

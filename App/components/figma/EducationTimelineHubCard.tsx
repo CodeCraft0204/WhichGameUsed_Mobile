@@ -1,6 +1,7 @@
 import React from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { EducationTimelineCard } from '@/constants/educationContent';
+import { educationIcons } from '@/constants/educationContent';
 import { appFonts } from '@/constants/appFonts';
 import { figmaColors } from '@/constants/figmaColors';
 
@@ -8,6 +9,7 @@ type Props = Omit<EducationTimelineCard, 'key'> & {
   s: (n: number) => number;
   t: (n: number) => number;
   onPress?: () => void;
+  compact?: boolean;
 };
 
 export function EducationTimelineHubCard({
@@ -20,9 +22,12 @@ export function EducationTimelineHubCard({
   image,
   s,
   t,
-  onPress
+  onPress,
+  compact
 }: Props) {
-  const styles = createStyles(s, t);
+  const styles = createStyles(s, t, compact);
+  const iconWidth = s(compact ? 22 : 28);
+  const iconHeight = s(compact ? 26 : 32);
 
   return (
     <Pressable
@@ -31,54 +36,68 @@ export function EducationTimelineHubCard({
       accessibilityRole="button"
       accessibilityLabel={title}
     >
-      <Image source={image} style={styles.image} resizeMode="cover" />
-      <View style={styles.metaRow}>
-        <Text style={styles.publisher}>{publisher}</Text>
+      <View style={styles.topRow}>
+        <View style={[styles.pdfBadge, { width: iconWidth, height: iconHeight + s(4) }]}>
+          <Image
+            source={educationIcons.pdfIcon}
+            style={{ width: iconWidth, height: iconHeight }}
+            resizeMode="contain"
+          />
+        </View>
         <View style={styles.chip}>
           <Text style={styles.chipText}>HOBBY TIMELINE</Text>
         </View>
       </View>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.body} numberOfLines={3}>
-        {description}
+
+      <View style={styles.imageWrap}>
+        <Image source={image} style={styles.image} resizeMode="cover" />
+      </View>
+
+      <Text style={styles.publisher} numberOfLines={1}>
+        {publisher}
       </Text>
+      <Text style={styles.title} numberOfLines={compact ? 2 : 3}>
+        {title}
+      </Text>
+      {!compact ? (
+        <Text style={styles.description} numberOfLines={3}>
+          {description}
+        </Text>
+      ) : null}
       <Text style={styles.meta}>
-        {yearRange} · {lengthLabel} · Reviewed {lastReviewed}
+        {yearRange} · {lengthLabel}
       </Text>
+      <Text style={styles.reviewed}>Reviewed {lastReviewed}</Text>
       <Text style={styles.cta}>Open interactive timeline</Text>
     </Pressable>
   );
 }
 
-function createStyles(s: (n: number) => number, t: (n: number) => number) {
+function createStyles(s: (n: number) => number, t: (n: number) => number, compact?: boolean) {
   return StyleSheet.create({
     card: {
-      width: s(280),
+      width: s(compact ? 200 : 230),
+      minHeight: s(compact ? 280 : 367),
       backgroundColor: figmaColors.cream,
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
-      borderRadius: s(14),
-      padding: s(12),
-      marginRight: s(12),
-      gap: s(6)
+      borderRadius: s(16),
+      paddingHorizontal: s(12),
+      paddingBottom: s(12),
+      marginRight: 0,
+      overflow: 'hidden'
     },
-    image: {
-      width: '100%',
-      height: s(110),
-      borderRadius: s(8),
-      backgroundColor: figmaColors.surfaceMuted
-    },
-    metaRow: {
+    pressed: { opacity: 0.88 },
+    topRow: {
+      marginTop: s(10),
       flexDirection: 'row',
-      flexWrap: 'wrap',
       alignItems: 'center',
-      gap: s(6),
-      marginTop: s(4)
+      justifyContent: 'space-between'
     },
-    publisher: {
-      fontFamily: appFonts.body,
-      fontSize: t(12),
-      color: figmaColors.brownMuted
+    pdfBadge: {
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      overflow: 'hidden'
     },
     chip: {
       borderWidth: 1,
@@ -90,35 +109,62 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     },
     chipText: {
       fontFamily: appFonts.accent,
-      fontSize: t(10),
-      color: figmaColors.brown,
-      letterSpacing: 0.5
+      fontSize: t(9),
+      letterSpacing: 0.4,
+      color: figmaColors.brown
     },
-    title: {
-      fontFamily: appFonts.display,
-      fontSize: t(18),
-      color: figmaColors.ink
+    imageWrap: {
+      width: '100%',
+      height: s(compact ? 120 : 160),
+      marginTop: s(6),
+      borderRadius: s(8),
+      overflow: 'hidden',
+      backgroundColor: figmaColors.surfaceHighlight,
+      alignItems: 'center',
+      justifyContent: 'center'
     },
-    body: {
+    image: {
+      width: '100%',
+      height: '100%'
+    },
+    publisher: {
+      marginTop: s(6),
       fontFamily: appFonts.body,
-      fontSize: t(13),
-      lineHeight: t(18),
-      color: figmaColors.charcoal
-    },
-    meta: {
-      fontFamily: appFonts.body,
-      fontSize: t(11),
+      fontSize: t(12),
       color: figmaColors.brownMuted
     },
+    title: {
+      marginTop: s(4),
+      fontFamily: appFonts.bodyBold,
+      fontSize: t(compact ? 16 : 20),
+      lineHeight: t(compact ? 20 : 26),
+      color: figmaColors.charcoal
+    },
+    description: {
+      marginTop: s(8),
+      fontFamily: appFonts.body,
+      fontSize: t(15),
+      lineHeight: t(20),
+      color: figmaColors.gray
+    },
+    meta: {
+      marginTop: s(10),
+      fontFamily: appFonts.body,
+      fontSize: t(12),
+      color: figmaColors.gray
+    },
+    reviewed: {
+      marginTop: s(4),
+      fontFamily: appFonts.body,
+      fontSize: t(11),
+      color: figmaColors.grayMuted
+    },
     cta: {
+      marginTop: s(8),
       fontFamily: appFonts.accent,
       fontSize: t(11),
       letterSpacing: 0.4,
-      color: figmaColors.bronze,
-      marginTop: s(2)
-    },
-    pressed: {
-      opacity: 0.88
+      color: figmaColors.bronze
     }
   });
 }

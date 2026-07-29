@@ -7,7 +7,7 @@ import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader'
 import { appFonts } from '@/constants/appFonts';
 import { guideByOutlineSlug } from '@/constants/educationContent';
 import { figmaColors } from '@/constants/figmaColors';
-import { educationHref } from '@/constants/navigation';
+import { educationDocumentHref, educationHref } from '@/constants/navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 
 export default function EducationGuideOutlineScreen() {
@@ -64,7 +64,16 @@ export default function EducationGuideOutlineScreen() {
           </View>
         ))}
 
-        {guide.href ? (
+        {guide.documentId ? (
+          <Pressable
+            onPress={() => router.push(educationDocumentHref(guide.documentId!))}
+            style={({ pressed }) => [styles.pdfCta, pressed && styles.pressed]}
+            accessibilityRole="button"
+          >
+            <Ionicons name="document-text-outline" size={s(18)} color={figmaColors.cream} />
+            <Text style={styles.pdfCtaText}>VIEW ORIGINAL PDF</Text>
+          </Pressable>
+        ) : guide.href ? (
           <Pressable
             onPress={() => void Linking.openURL(guide.href!)}
             style={({ pressed }) => [styles.pdfCta, pressed && styles.pressed]}

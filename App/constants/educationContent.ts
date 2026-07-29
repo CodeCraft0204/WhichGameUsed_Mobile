@@ -176,7 +176,8 @@ export const educationHobbyTimeline: EducationTimelineCard = {
   lengthLabel: '~12 min read',
   yearRange: '1996–2025',
   lastReviewed: 'Jul 2026',
-  image: educationIcons.timelineHistory,
+  // Hub thumbnail: cover art (not the dense original timeline document).
+  image: educationIcons.hero,
   sourceType: 'which_game_used',
   rightsStatus: 'owned',
   topics: ['intermediate', 'research']
@@ -210,6 +211,8 @@ export type EducationGuide = EducationLibraryFields & {
   isExternal?: boolean;
   /** Hosted PDF URL when available. */
   href?: string;
+  /** In-app document id (local PDF / original viewer). */
+  documentId?: string;
   /** In-app outline slug for WGU guides. */
   outlineSlug?: string;
   topics: EducationTopic[];
@@ -264,6 +267,8 @@ export type EducationCaseStudy = EducationLibraryFields & {
   ctaLabel: string;
   ctaTarget: EducationCaseStudyCta;
   topics: EducationTopic[];
+  /** Optional cover thumb so case cards match guide/video layout. */
+  image?: number;
 };
 
 export type EducationFeaturedItem =
@@ -370,6 +375,23 @@ export const educationGuides: EducationGuide[] = [
       'What to photograph before submitting for authentication',
       'Final red-flag checklist'
     ]
+  },
+  {
+    key: 'babe-and-the-big-break',
+    image: educationIcons.hero,
+    title: 'Babe and The Big Break: How We Rewrote Game-Used Card History',
+    description:
+      'This platform started with a card, a question, and a search for answers. One year later, we Photo Matched Babe Ruth’s best-known game-used jersey card to the 1926 World Series. Read the story here.',
+    publisher: 'Which Game Used',
+    contentType: 'pdf',
+    difficulty: 'all',
+    lengthLabel: 'Case study PDF',
+    lastReviewed: 'Jul 2026',
+    sourceType: 'which_game_used',
+    rightsStatus: 'owned',
+    documentId: 'babe-and-the-big-break',
+    topics: ['research', 'intermediate', 'beginner'],
+    tags: ['babe ruth', 'photo matching', '1926 world series']
   },
   {
     key: 'research-catalogs',
@@ -535,6 +557,7 @@ export const educationTools: EducationTool[] = [
 export const educationCaseStudies: EducationCaseStudy[] = [
   {
     key: 'mw-solved',
+    image: educationIcons.videoPatch,
     title: 'How a Most Wanted Card Was Solved',
     body: 'Community evidence, checklist research, and careful photo comparison turned an open hunt into a confirmed game-used record.',
     publisher: 'Which Game Used',
@@ -549,6 +572,7 @@ export const educationCaseStudies: EducationCaseStudy[] = [
   },
   {
     key: 'patch-flagged',
+    image: educationIcons.guideFakePatches,
     title: 'Why This Patch Was Flagged',
     body: 'Window alignment, stitch pattern, and material cues did not match known authentic examples—so the submission was held for more evidence.',
     publisher: 'Which Game Used',
@@ -563,6 +587,7 @@ export const educationCaseStudies: EducationCaseStudy[] = [
   },
   {
     key: 'conflicting-auctions',
+    image: educationIcons.guideBeckett,
     title: 'Comparing Two Conflicting Auction Listings',
     body: 'Two lot descriptions claimed the same provenance. Side-by-side photos and archived sale notes showed only one story held up.',
     publisher: 'Which Game Used',
@@ -577,6 +602,7 @@ export const educationCaseStudies: EducationCaseStudy[] = [
   },
   {
     key: 'wishlist-to-database',
+    image: educationIcons.hero,
     title: 'From Wishlist Request to Confirmed Database Record',
     body: 'Demand scoring, admin promotion, and community research moved a missing card from wishlist interest into the live catalog.',
     publisher: 'Which Game Used',
@@ -591,6 +617,7 @@ export const educationCaseStudies: EducationCaseStudy[] = [
   },
   {
     key: 'strong-evidence',
+    image: educationIcons.ctaShield,
     title: 'How to Submit Strong Authentication Evidence',
     body: 'Clear fronts and backs, patch close-ups, source links, and honest notes give reviewers what they need to confirm or reject a claim.',
     publisher: 'Which Game Used',

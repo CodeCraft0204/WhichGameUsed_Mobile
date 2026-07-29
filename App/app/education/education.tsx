@@ -56,8 +56,10 @@ import {
   databaseHref,
   databaseWishlistHref,
   discussionHref,
+  educationDocumentHref,
   educationGuideOutlineHref,
   educationTimelineHref,
+  educationVideoHref,
   mostWantedHref
 } from '@/constants/navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
@@ -178,6 +180,10 @@ function EducationScreenBody() {
 
   const openGuide = useCallback(
     (guide: EducationGuide) => {
+      if (guide.documentId) {
+        router.push(educationDocumentHref(guide.documentId));
+        return;
+      }
       if (guide.outlineSlug) {
         router.push(educationGuideOutlineHref(guide.outlineSlug));
         return;
@@ -187,9 +193,12 @@ function EducationScreenBody() {
     [router]
   );
 
-  const openVideo = useCallback((video: EducationVideo) => {
-    if (video.href) void openExternal(video.href);
-  }, []);
+  const openVideo = useCallback(
+    (video: EducationVideo) => {
+      router.push(educationVideoHref(video.key));
+    },
+    [router]
+  );
 
   const openCaseCta = useCallback(
     (target: EducationCaseStudyCta) => {
@@ -366,25 +375,47 @@ function EducationScreenBody() {
             </>
           ) : null}
 
-          {library.videos.map(({ key, ...video }) => (
-            <EducationVideoCard
-              key={`q-v-${key}`}
-              {...video}
-              s={s}
-              t={t}
-              onPress={() => openVideo({ key, ...video })}
-            />
-          ))}
+          {library.videos.length > 0 ? (
+            <>
+              <Text style={styles.subSectionLabel}>Videos</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.guideRow}
+              >
+                {library.videos.map(({ key, ...video }) => (
+                  <EducationVideoCard
+                    key={`q-v-${key}`}
+                    {...video}
+                    s={s}
+                    t={t}
+                    onPress={() => openVideo({ key, ...video })}
+                  />
+                ))}
+              </ScrollView>
+            </>
+          ) : null}
 
-          {library.cases.map(({ key, ...study }) => (
-            <EducationCaseStudyCard
-              key={`q-c-${key}`}
-              {...study}
-              s={s}
-              t={t}
-              onPressCta={() => openCaseCta(study.ctaTarget)}
-            />
-          ))}
+          {library.cases.length > 0 ? (
+            <>
+              <Text style={styles.subSectionLabel}>Case studies</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.guideRow}
+              >
+                {library.cases.map(({ key, ...study }) => (
+                  <EducationCaseStudyCard
+                    key={`q-c-${key}`}
+                    {...study}
+                    s={s}
+                    t={t}
+                    onPressCta={() => openCaseCta(study.ctaTarget)}
+                  />
+                ))}
+              </ScrollView>
+            </>
+          ) : null}
 
           {library.tools.map(({ key, ...tool }) => (
             <EducationToolCard
@@ -432,35 +463,35 @@ function EducationScreenBody() {
                 />
               );
             })}
+            {featuredVideoItem
+              ? (() => {
+                  const { key, ...video } = featuredVideoItem;
+                  return (
+                    <EducationVideoCard
+                      key={`feat-v-${key}`}
+                      {...video}
+                      s={s}
+                      t={t}
+                      onPress={() => openVideo(featuredVideoItem)}
+                    />
+                  );
+                })()
+              : null}
+            {featuredCaseItem
+              ? (() => {
+                  const { key, ...study } = featuredCaseItem;
+                  return (
+                    <EducationCaseStudyCard
+                      key={`feat-c-${key}`}
+                      {...study}
+                      s={s}
+                      t={t}
+                      onPressCta={() => openCaseCta(study.ctaTarget)}
+                    />
+                  );
+                })()
+              : null}
           </ScrollView>
-          {featuredVideoItem
-            ? (() => {
-                const { key, ...video } = featuredVideoItem;
-                return (
-                  <EducationVideoCard
-                    key={`feat-v-${key}`}
-                    {...video}
-                    s={s}
-                    t={t}
-                    onPress={() => openVideo(featuredVideoItem)}
-                  />
-                );
-              })()
-            : null}
-          {featuredCaseItem
-            ? (() => {
-                const { key, ...study } = featuredCaseItem;
-                return (
-                  <EducationCaseStudyCard
-                    key={`feat-c-${key}`}
-                    {...study}
-                    s={s}
-                    t={t}
-                    onPressCta={() => openCaseCta(study.ctaTarget)}
-                  />
-                );
-              })()
-            : null}
         </View>
       ) : null}
 
@@ -545,30 +576,42 @@ function EducationScreenBody() {
       {showVideos ? (
         <View onLayout={onSectionLayout('videos')}>
           <SectionTitle title="FEATURED VIDEOS" page={page} />
-          {educationVideos.map(({ key, ...video }) => (
-            <EducationVideoCard
-              key={`vid-${key}`}
-              {...video}
-              s={s}
-              t={t}
-              onPress={() => openVideo({ key, ...video })}
-            />
-          ))}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.guideRow}
+          >
+            {educationVideos.map(({ key, ...video }) => (
+              <EducationVideoCard
+                key={`vid-${key}`}
+                {...video}
+                s={s}
+                t={t}
+                onPress={() => openVideo({ key, ...video })}
+              />
+            ))}
+          </ScrollView>
         </View>
       ) : null}
 
       {showCases ? (
         <View onLayout={onSectionLayout('cases')}>
           <SectionTitle title="CASE STUDIES" page={page} />
-          {educationCaseStudies.map(({ key, ...study }) => (
-            <EducationCaseStudyCard
-              key={key}
-              {...study}
-              s={s}
-              t={t}
-              onPressCta={() => openCaseCta(study.ctaTarget)}
-            />
-          ))}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.guideRow}
+          >
+            {educationCaseStudies.map(({ key, ...study }) => (
+              <EducationCaseStudyCard
+                key={key}
+                {...study}
+                s={s}
+                t={t}
+                onPressCta={() => openCaseCta(study.ctaTarget)}
+              />
+            ))}
+          </ScrollView>
         </View>
       ) : null}
 
@@ -632,15 +675,24 @@ function EducationScreenBody() {
               />
             ))}
           </ScrollView>
-          {fraudVideos.map(({ key, ...video }) => (
-            <EducationVideoCard
-              key={`fraud-v-${key}`}
-              {...video}
-              s={s}
-              t={t}
-              onPress={() => openVideo({ key, ...video })}
-            />
-          ))}
+          {fraudVideos.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.guideRow}
+            >
+              {fraudVideos.map(({ key, ...video }) => (
+                <EducationVideoCard
+                  key={`fraud-v-${key}`}
+                  {...video}
+                  compact
+                  s={s}
+                  t={t}
+                  onPress={() => openVideo({ key, ...video })}
+                />
+              ))}
+            </ScrollView>
+          ) : null}
         </View>
       ) : null}
 

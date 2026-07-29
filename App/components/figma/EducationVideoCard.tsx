@@ -1,13 +1,14 @@
 import React from 'react';
 import { appFonts } from '@/constants/appFonts';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import type { EducationVideo } from '@/constants/educationContent';
+import { educationIcons, type EducationVideo } from '@/constants/educationContent';
 import { figmaColors } from '@/constants/figmaColors';
 
 type EducationVideoCardProps = Omit<EducationVideo, 'key'> & {
   s: (n: number) => number;
   t: (n: number) => number;
   onPress?: () => void;
+  compact?: boolean;
 };
 
 export function EducationVideoCard({
@@ -22,10 +23,13 @@ export function EducationVideoCard({
   lastReviewed,
   s,
   t,
-  onPress
+  onPress,
+  compact
 }: EducationVideoCardProps) {
-  const styles = createStyles(s, t);
+  const styles = createStyles(s, t, compact);
   const typeLabel = contentType === 'web_guide' ? 'GUIDE' : 'VIDEO';
+  const iconWidth = s(compact ? 22 : 28);
+  const iconHeight = s(compact ? 26 : 32);
 
   return (
     <Pressable
@@ -34,76 +38,72 @@ export function EducationVideoCard({
       style={({ pressed }) => [styles.card, pressed && onPress ? styles.pressed : null]}
       accessibilityRole={onPress ? 'button' : undefined}
     >
-      <View style={styles.thumbWrap}>
-        {/* New video thumbs already include play UI — no separate overlay. */}
+      <View style={styles.topRow}>
+        <View style={[styles.playBadge, { width: iconWidth, height: iconHeight + s(4) }]}>
+          <Image
+            source={educationIcons.playButton}
+            style={{ width: iconWidth, height: iconHeight }}
+            resizeMode="contain"
+          />
+        </View>
+        <View style={styles.chip}>
+          <Text style={styles.chipText}>
+            {typeLabel}
+            {isExternal ? ' · EXT' : ''}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.imageWrap}>
         <Image source={thumb} style={styles.thumb} resizeMode="cover" />
       </View>
 
-      <View style={styles.body}>
-        <View style={styles.metaRow}>
-          <View style={styles.chip}>
-            <Text style={styles.chipText}>{typeLabel}</Text>
-          </View>
-          {isExternal ? (
-            <View style={[styles.chip, styles.chipExternal]}>
-              <Text style={styles.chipText}>EXTERNAL</Text>
-            </View>
-          ) : null}
-        </View>
-        <Text style={styles.title} numberOfLines={3}>
-          {title}
-        </Text>
-        <Text style={styles.channel} numberOfLines={1}>
-          {publisher || channel}
-        </Text>
-        <Text style={styles.duration}>
+      <Text style={styles.publisher} numberOfLines={1}>
+        {publisher || channel}
+        {isExternal ? ' · External' : ''}
+      </Text>
+      <Text style={styles.title} numberOfLines={compact ? 2 : 3}>
+        {title}
+      </Text>
+      {!compact ? (
+        <Text style={styles.meta}>
           {duration} · {platform}
         </Text>
-        <Text style={styles.reviewed}>Reviewed {lastReviewed}</Text>
-      </View>
+      ) : (
+        <Text style={styles.meta} numberOfLines={1}>
+          {duration}
+        </Text>
+      )}
+      <Text style={styles.reviewed}>Reviewed {lastReviewed}</Text>
     </Pressable>
   );
 }
 
-function createStyles(s: (n: number) => number, t: (n: number) => number) {
+function createStyles(s: (n: number) => number, t: (n: number) => number, compact?: boolean) {
   return StyleSheet.create({
     card: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      width: s(compact ? 200 : 230),
+      minHeight: s(compact ? 280 : 340),
       backgroundColor: figmaColors.cream,
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
-      borderRadius: s(14),
-      minHeight: s(112),
-      marginBottom: s(10),
-      paddingVertical: s(8),
-      paddingHorizontal: s(8),
-      gap: s(10)
+      borderRadius: s(16),
+      paddingHorizontal: s(12),
+      paddingBottom: s(12),
+      marginRight: 0,
+      overflow: 'hidden'
     },
     pressed: { opacity: 0.92 },
-    thumbWrap: {
-      width: s(132),
-      height: s(96),
-      borderRadius: s(8),
-      overflow: 'hidden',
-      flexShrink: 0,
-      backgroundColor: figmaColors.surfaceHighlight
-    },
-    thumb: {
-      width: '100%',
-      height: '100%'
-    },
-    body: {
-      flex: 1,
-      minWidth: 0,
-      justifyContent: 'center',
-      gap: s(3),
-      paddingRight: s(4)
-    },
-    metaRow: {
+    topRow: {
+      marginTop: s(10),
       flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: s(6)
+      alignItems: 'center',
+      justifyContent: 'space-between'
+    },
+    playBadge: {
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      overflow: 'hidden'
     },
     chip: {
       borderWidth: 1,
@@ -113,34 +113,45 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       paddingHorizontal: s(6),
       paddingVertical: s(2)
     },
-    chipExternal: {
-      backgroundColor: figmaColors.surfaceHighlight
-    },
     chipText: {
       fontFamily: appFonts.accent,
       fontSize: t(9),
-      letterSpacing: 0.3,
+      letterSpacing: 0.4,
       color: figmaColors.brown
     },
-    title: {
-      fontFamily: appFonts.bodyBold,
-      fontSize: t(15),
-      lineHeight: t(20),
-      color: figmaColors.charcoal
+    imageWrap: {
+      width: '100%',
+      height: s(compact ? 120 : 160),
+      marginTop: s(6),
+      borderRadius: s(8),
+      overflow: 'hidden',
+      backgroundColor: figmaColors.surfaceHighlight
     },
-    channel: {
-      fontFamily: appFonts.body,
-      fontSize: t(13),
-      lineHeight: t(16),
-      color: figmaColors.gray
+    thumb: {
+      width: '100%',
+      height: '100%'
     },
-    duration: {
+    publisher: {
+      marginTop: s(6),
       fontFamily: appFonts.body,
       fontSize: t(12),
-      lineHeight: t(15),
+      color: figmaColors.brownMuted
+    },
+    title: {
+      marginTop: s(4),
+      fontFamily: appFonts.bodyBold,
+      fontSize: t(compact ? 16 : 20),
+      lineHeight: t(compact ? 20 : 26),
+      color: figmaColors.charcoal
+    },
+    meta: {
+      marginTop: s(8),
+      fontFamily: appFonts.body,
+      fontSize: t(12),
       color: figmaColors.gray
     },
     reviewed: {
+      marginTop: s(4),
       fontFamily: appFonts.body,
       fontSize: t(11),
       color: figmaColors.grayMuted

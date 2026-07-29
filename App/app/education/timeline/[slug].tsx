@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Linking,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,13 +12,17 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { EducationOriginalViewer } from '@/components/education/EducationOriginalViewer';
 import { EducationTimelineEventCard } from '@/components/figma/EducationTimelineEventCard';
-import { EducationTimelineOriginalModal } from '@/components/figma/EducationTimelineOriginalModal';
 import { EducationTimelineSportFilters } from '@/components/figma/EducationTimelineSportFilters';
 import { EducationTimelineYearNav } from '@/components/figma/EducationTimelineYearNav';
 import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader';
 import { appFonts } from '@/constants/appFonts';
 import { educationIcons } from '@/constants/educationContent';
+import {
+  getEducationDocument,
+  TIMELINE_ORIGINAL_DOCUMENT_ID
+} from '@/constants/educationDocuments';
 import { figmaColors } from '@/constants/figmaColors';
 import {
   authenticateHref,
@@ -212,7 +217,16 @@ export default function EducationTimelineScreen() {
             </Pressable>
             {timeline.pdf_url ? (
               <Pressable
-                onPress={() => void Linking.openURL(timeline.pdf_url!)}
+                onPress={() =>
+                  router.push({
+                    pathname: '/education/document/[id]',
+                    params: {
+                      id: 'remote-pdf',
+                      uri: timeline.pdf_url!,
+                      title: timeline.title
+                    }
+                  })
+                }
                 style={({ pressed }) => [styles.secondaryBtn, pressed && styles.pressed]}
               >
                 <Ionicons name="document-text-outline" size={s(16)} color={figmaColors.cream} />
@@ -316,14 +330,22 @@ export default function EducationTimelineScreen() {
         </View>
       </ScrollView>
 
-      <EducationTimelineOriginalModal
-        visible={originalOpen}
-        onClose={() => setOriginalOpen(false)}
-        imageSource={imageSource}
-        title="Original timeline"
-        s={s}
-        t={t}
-      />
+      <Modal visible={originalOpen} animationType="slide" onRequestClose={() => setOriginalOpen(false)}>
+        <EducationOriginalViewer
+          document={
+            getEducationDocument(TIMELINE_ORIGINAL_DOCUMENT_ID) ?? {
+              id: TIMELINE_ORIGINAL_DOCUMENT_ID,
+              title: 'Original timeline',
+              kind: 'image',
+              imageSource: educationIcons.timelineHistory
+            }
+          }
+          imageOverride={imageSource}
+          onClose={() => setOriginalOpen(false)}
+          s={s}
+          t={t}
+        />
+      </Modal>
     </SafeAreaView>
   );
 }

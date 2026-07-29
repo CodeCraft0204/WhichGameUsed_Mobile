@@ -149,7 +149,4 @@ export const mostWantedCopy = {
   } as const
 } as const;
 
-/** Set when the Ruth Education PDF is hosted; until then MW CTA opens Education. */
-export const mostWantedRuthPdfUrl: string | null = null;
-
 export type MostWantedContributionSection = keyof typeof mostWantedCopy.contributionSections;

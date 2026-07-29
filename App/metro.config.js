@@ -16,4 +16,9 @@ config.transformer = {
   })
 };
 
+// Bundle Education PDF guides as Metro assets.
+if (!config.resolver.assetExts.includes('pdf')) {
+  config.resolver.assetExts.push('pdf');
+}
+
 module.exports = config;

@@ -276,6 +276,14 @@ export function educationGuideOutlineHref(slug: string): Href {
   return { pathname: '/education/guides/[slug]', params: { slug } } as unknown as Href;
 }
 
+export function educationDocumentHref(id: string): Href {
+  return { pathname: '/education/document/[id]', params: { id } } as unknown as Href;
+}
+
 export function educationTimelineHref(slug: string): Href {
   return { pathname: '/education/timeline/[slug]', params: { slug } } as unknown as Href;
+}
+
+export function educationVideoHref(key: string): Href {
+  return { pathname: '/education/video/[key]', params: { key } } as unknown as Href;
 }
