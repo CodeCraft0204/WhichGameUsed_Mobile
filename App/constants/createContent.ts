@@ -1,13 +1,15 @@
 export const createCopy = {
   title: 'CREATE',
-  subtitle: 'Build research posts with templates, or photograph cards for authentication.',
-  step1: '1. Pick a template and add your photos',
-  step2: '2. Arrange evidence with frames and captions',
-  step3: '3. Submit for review — post to discussion or link to a card',
-  openCamera: 'OPEN CAMERA',
+  subtitle: 'Build evidence with our editing tools and templates.',
+  step1: '1. Create evidence boards with photos, screenshots, shapes, and text',
+  step2: '2. Crop, annotate, and frame photos — keep photo editing apps on the bench',
+  step3: '3. Submit your evidence to be linked to any card, or start a discussion for Squad feedback',
   openEditor: 'OPEN CONTENT EDITOR',
   chooseLibrary: 'CHOOSE FROM PHOTO LIBRARY',
-  signInRequired: 'Sign in to submit card photos or create content.'
+  signInRequired: 'Sign in to create evidence boards and submit content.',
+  ctaTitle: 'Talk shop with the Squad.',
+  ctaBody:
+    'Share research and rumors, ask a question about a questionable card, or show off your collection. A place to discuss (almost) all things hobby related.'
 } as const;
 
 export const editorCopy = {
@@ -48,8 +50,6 @@ export const editCopy = {
   missingFront: 'A front photo is required.',
   successTitle: 'Submitted',
   successBody: 'Your card photos were sent. We will notify you when review is complete.',
-  backToAuthenticate: 'Back to Authenticate',
-  backToCreate: 'Create another'
+  backToAuthenticate: 'Back to Submit',
+  backToCreate: 'Back to Create'
 } as const;
-
-export { cameraCopy } from '@/constants/cameraCopy';

@@ -23,7 +23,7 @@ import { authenticateIcons, authenticateTabs } from '@/constants/authenticateCon
 import { databaseCopy } from '@/constants/databaseCopy';
 import { databaseIcons } from '@/constants/databaseContent';
 import { figmaColors } from '@/constants/figmaColors';
-import { submissionDetailHref, databaseVerifyHref } from '@/constants/navigation';
+import { submissionDetailHref, databaseHref, databaseVerifyHref } from '@/constants/navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import {
   linkedCardTitleFromItems,
@@ -103,9 +103,9 @@ export default function AuthenticateScreen() {
         <View style={styles.page}>
           <View style={[page.scrollContent, styles.fixedTop]}>
             <FigmaPageHeader
-              title="AUTHENTICATE"
-              subtitle="SUBMIT YOUR CARDS WITHOUT SUBMITTING YOUR CARDS."
-              description="Scan your collection of game-used cards. If your card has been authenticated in our database, simply submit for authentication and we will mail you a tamper-proof QR-linked label for FREE."
+              title="SUBMIT"
+              subtitle="Like attaching an evidence file to your game-used card."
+              description=""
               heroSource={authenticateIcons.main}
               guidanceKey="authenticate"
               s={s}
@@ -178,7 +178,12 @@ export default function AuthenticateScreen() {
           )}
 
           <View style={styles.ctaAnchor}>
-            <ScanSubmitButton s={s} t={t} onPress={() => router.push('/create/create')} />
+            <ScanSubmitButton
+              label="UPLOAD TO SUBMIT YOUR CARD"
+              s={s}
+              t={t}
+              onPress={() => router.push('/camera/camera')}
+            />
             <ScanSubmitButton
               label="VERIFY A STICKER"
               s={s}
@@ -188,15 +193,15 @@ export default function AuthenticateScreen() {
 
             <Pressable
               style={styles.ctaCard}
-              onPress={() => router.push('/camera/camera')}
+              onPress={() => router.push(databaseHref())}
               accessibilityRole="button"
-              accessibilityLabel="Open camera to scan your card"
+              accessibilityLabel="Open database"
             >
               <Image source={authenticateIcons.ctaIcon} style={page.ctaIcon} resizeMode="contain" />
               <View style={page.ctaTextWrap}>
-                <Text style={styles.ctaTitle}>LET THE GAMES BEGIN.</Text>
+                <Text style={styles.ctaTitle}>A library of evidence in your pocket.</Text>
                 <Text style={styles.ctaBody}>
-                  Scan your cards, see the evidence, and submit for a FREE tamper-proof QR-linked label.
+                  Search for the cards you own. Read up on the cards you want to own.
                 </Text>
               </View>
               <Image

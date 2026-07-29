@@ -53,6 +53,7 @@ import {
 import { figmaColors } from '@/constants/figmaColors';
 import {
   authenticateHref,
+  databaseHref,
   databaseWishlistHref,
   discussionHref,
   educationGuideOutlineHref,
@@ -263,8 +264,8 @@ function EducationScreenBody() {
       >
         <FigmaPageHeader
           title="EDUCATION"
-          subtitle="LEARN THE HOBBY. SPOT THE FAKES."
-          description="A research library of guides, videos, case studies, and tools for studying game-used cards and spotting red flags."
+          subtitle="Get in, it’s training day."
+          description=""
           heroSource={educationIcons.hero}
           guidanceKey="education"
           s={s}
@@ -662,32 +663,21 @@ function EducationScreenBody() {
       ) : null}
 
       {!isSearching ? (
-        <>
-          <Pressable
-            onPress={() => router.push(authenticateHref())}
-            style={({ pressed }) => [page.ctaCard, pressed ? styles.pressed : null]}
-            accessibilityRole="button"
-            accessibilityLabel="Start authenticating"
-          >
-            <Image source={educationIcons.ctaShield} style={styles.ctaIcon} resizeMode="contain" />
-            <View style={page.ctaTextWrap}>
-              <Text style={page.ctaTitle}>KNOWLEDGE PROTECTS COLLECTORS.</Text>
-              <Text style={page.ctaBody}>
-                Learn the tells, verify the source, then apply what you know when you authenticate
-                or contribute evidence.
-              </Text>
-            </View>
-            <Image source={educationIcons.ctaArrow} style={styles.ctaArrow} resizeMode="contain" />
-          </Pressable>
-
-          <Pressable
-            onPress={() => router.push(mostWantedHref())}
-            style={styles.secondaryCta}
-            accessibilityRole="button"
-          >
-            <Text style={styles.secondaryCtaText}>OPEN MOST WANTED</Text>
-          </Pressable>
-        </>
+        <Pressable
+          onPress={() => router.push(databaseHref())}
+          style={({ pressed }) => [page.ctaCard, pressed ? styles.pressed : null]}
+          accessibilityRole="button"
+          accessibilityLabel="Open database"
+        >
+          <Image source={educationIcons.ctaShield} style={styles.ctaIcon} resizeMode="contain" />
+          <View style={page.ctaTextWrap}>
+            <Text style={page.ctaTitle}>A library of evidence in your pocket.</Text>
+            <Text style={page.ctaBody}>
+              Search for the cards you own. Read up on the cards you want to own.
+            </Text>
+          </View>
+          <Image source={educationIcons.ctaArrow} style={styles.ctaArrow} resizeMode="contain" />
+        </Pressable>
       ) : null}
       </ContextScrollView>
     </FigmaScreen>

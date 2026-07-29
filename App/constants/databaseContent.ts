@@ -16,7 +16,7 @@ export const databaseIcons = {
   metaShield: figmaIcons.metaShield,
   cardChevron: require('@/assets/figma/database/card_chevron.png'),
   sectionChevron: require('@/assets/figma/database/section_chevron.png'),
-  ctaRecords: require('@/assets/figma/database/cta_records.png'),
+  ctaRecords: require('@/assets/figma/database/cta_evidence.png'),
   ctaArrow: require('@/assets/figma/database/cta_arrow.png'),
   announcementBanner: require('@/assets/figma/database/Announcement Banner.png'),
   announcementBannerBig: require('@/assets/figma/database/Announcement Banner - Big.png'),

@@ -1,7 +1,7 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { appFonts } from '@/constants/appFonts';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaContentLoading } from '@/components/figma/FigmaContentLoading';
 import { FigmaHubBottomNav } from '@/components/figma/FigmaHubBottomNav';
@@ -20,12 +20,18 @@ import {
 } from '@/context/ContextHeaderScrollContext';
 import { leaderboardIcons, leaderboardPeriodTabs } from '@/constants/leaderboardContent';
 import { leaderboardCopy } from '@/constants/leaderboardCopy';
-import { publicProfileHref, pointsWorkHref, monthlyPrizeHref } from '@/constants/navigation';
+import {
+  mostWantedHref,
+  publicProfileHref,
+  pointsWorkHref,
+  monthlyPrizeHref
+} from '@/constants/navigation';
 import { figmaColors } from '@/constants/figmaColors';
 import { bodyText } from '@/constants/appTypography';
 import { useAuth } from '@/context/AuthContext';
 import { useSocialNotifications } from '@/context/SocialNotificationsContext';
-import { useFigmaLayout } from '@/hooks/useFigmaLayout';import { useLeaderboardRealtime } from '@/hooks/useLeaderboardRealtime';
+import { useFigmaLayout } from '@/hooks/useFigmaLayout';
+import { useLeaderboardRealtime } from '@/hooks/useLeaderboardRealtime';
 import {
   fetchActiveMonthlyPrize,
   getMyStanding,
@@ -264,6 +270,19 @@ function LeaderboardScreenBody() {
           />
         ) : null}
       </View>
+
+      <Pressable
+        style={styles.ctaCard}
+        onPress={() => router.push(mostWantedHref())}
+        accessibilityRole="button"
+        accessibilityLabel={leaderboardCopy.ctaTitle}
+      >
+        <Image source={leaderboardIcons.ctaArrow} style={styles.ctaArrow} resizeMode="contain" />
+        <View style={styles.ctaTextWrap}>
+          <Text style={styles.ctaTitle}>{leaderboardCopy.ctaTitle}</Text>
+          <Text style={styles.ctaBody}>{leaderboardCopy.ctaBody}</Text>
+        </View>
+      </Pressable>
     </FigmaScreen>
   );
 }
@@ -314,6 +333,31 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       marginBottom: s(8),
       paddingTop: s(16),
       alignItems: 'stretch'
+    },
+    ctaCard: {
+      minHeight: s(108),
+      borderRadius: s(12),
+      backgroundColor: figmaColors.ctaBackground,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: s(12),
+      paddingVertical: s(12),
+      marginBottom: s(10),
+      gap: s(10)
+    },
+    ctaArrow: { width: s(14), height: s(14) },
+    ctaTextWrap: { flex: 1 },
+    ctaTitle: {
+      fontFamily: appFonts.display,
+      fontSize: tb(16),
+      color: figmaColors.charcoal,
+      marginBottom: s(4)
+    },
+    ctaBody: {
+      fontFamily: appFonts.body,
+      fontSize: tb(14),
+      lineHeight: tb(18),
+      color: figmaColors.gray
     },
     centred: {
       alignItems: 'center',

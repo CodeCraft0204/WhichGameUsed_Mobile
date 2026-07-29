@@ -43,7 +43,7 @@ export const pointsWorkCopy = {
   } as const,
 
   actions: [
-    { key: 'authenticate', label: 'Authenticate a card', href: '/authenticate/authenticate' as const },
+    { key: 'authenticate', label: 'Submit a card', href: '/authenticate/authenticate' as const },
     { key: 'research', label: 'Research a card', href: '/database/database' as const },
     { key: 'discussion', label: 'Start a discussion', href: '/discussion/discussion' as const }
   ] as const,

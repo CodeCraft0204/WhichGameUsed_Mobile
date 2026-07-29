@@ -208,8 +208,8 @@ export default function DatabaseScreen() {
           <View style={[page.scrollContent, styles.fixedTop]}>
             <FigmaPageHeader
               title="DATABASE"
-              subtitle="A HISTORY OF HISTORY."
-              description="Browse authenticated cards, patch examples, provenance notes, and research evidence from across the hobby."
+              subtitle="A History of History."
+              description=""
               heroSource={databaseIcons.hero}
               guidanceKey="database"
               s={s}

@@ -3,9 +3,10 @@ export const databaseCopy = {
   searchTitle: 'Browse database',
   statsLine: (authenticated: number, total: number) =>
     `${authenticated.toLocaleString()} authenticated · ${total.toLocaleString()} catalog records`,
-  ctaObsessionTitle: 'AUTHENTICATION TAKES OBSESSION.',
+  ctaObsessionTitle: 'Become a true cardboard detective.',
   ctaObsessionBody:
-    'Learn how to authenticate game-used cards, contribute to the conversation, and win monthly prizes.',
+    'Learn how to evaluate any card’s game-used memorabilia with help from dozens of videos, guides, and resources.',
+  pageSubtitle: 'A History of History.',
   browseBySport: 'BROWSE BY SPORT',
   browseByYear: 'BROWSE BY YEAR',
   filter: 'FILTER',

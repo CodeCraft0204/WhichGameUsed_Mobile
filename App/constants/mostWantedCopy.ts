@@ -63,9 +63,11 @@ export const mostWantedBadgeCatalog = [
 
 export const mostWantedCopy = {
   pageTitle: 'MOST WANTED',
-  pageSubtitle: 'Help the community find missing game-used evidence.',
-  pageDescription:
-    'Browse active Most Wanted cards, contribute research, and earn contributor badges plus leaderboard points when your evidence is approved.',
+  pageSubtitle: 'Put on your detective hat and get to work.',
+  pageDescription:'',
+  ctaRuthTitle: 'Babe and The Big Break: How We Rewrote Game-Used Card History',
+  ctaRuthBody:
+    'This platform started with a card, a question, and a search for answers. One year later, we Photo Matched Babe Ruth’s best-known game-used jersey card to the 1926 World Series. Read the story here.',
   statsActive: 'Active Cards',
   statsSolved: 'Solved This Month',
   statsContributors: 'Contributors',
@@ -146,3 +148,8 @@ export const mostWantedCopy = {
     rejected: 'Rejected'
   } as const
 } as const;
+
+/** Set when the Ruth Education PDF is hosted; until then MW CTA opens Education. */
+export const mostWantedRuthPdfUrl: string | null = null;
+
+export type MostWantedContributionSection = keyof typeof mostWantedCopy.contributionSections;

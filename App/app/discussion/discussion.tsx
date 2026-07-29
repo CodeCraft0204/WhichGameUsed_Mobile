@@ -41,7 +41,8 @@ import {
   discussionFeedPreferencesHref,
   discussionSavedHref,
   discussionThreadHref,
-  discussionTopicHref
+  discussionTopicHref,
+  leaderboardHref
 } from '@/constants/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
@@ -146,8 +147,8 @@ export default function DiscussionScreen() {
           <View style={[page.scrollContent, styles.fixedTop]}>
             <FigmaPageHeader
               title="DISCUSSION"
-              subtitle="HOBBY TALK WITHOUT THE DRAMA."
-              description="Engage with the newest evidence, discuss past and future research findings, and align yourself with the hobby's best and brightest."
+              subtitle="Like an office where we only gossip about the hobby."
+              description=""
               heroSource={discussionIcons.hero}
               guidanceKey="discussion"
               s={s}
@@ -337,12 +338,13 @@ export default function DiscussionScreen() {
               </Pressable>
             </View>
 
-            <Pressable style={page.ctaCard} onPress={() => router.push(discussionCreateHref())}>
+            <Pressable style={page.ctaCard} onPress={() => router.push(leaderboardHref())}>
               <Image source={discussionIcons.ctaIcon} style={page.ctaIcon} resizeMode="contain" />
               <View style={page.ctaTextWrap}>
-                <Text style={page.ctaTitle}>THREADING THE NEEDLE.</Text>
+                <Text style={page.ctaTitle}>Follow the (Squad) leader.</Text>
                 <Text style={page.ctaBody}>
-                  Share what you know, question what you don't, and help the hobby get smarter.
+                  See where you rank among the finest. Prizes are awarded to the platform’s top
+                  participant each month.
                 </Text>
               </View>
               <Image source={discussionIcons.ctaArrow} style={page.ctaArrow} resizeMode="contain" />

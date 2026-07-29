@@ -1,9 +1,8 @@
 /** All UI strings for the Leaderboard screen. */
 export const leaderboardCopy = {
   title: 'LEADERBOARD',
-  subtitle: 'Top collectors. Serious research. Real evidence. Real community.',
-  description:
-    'Track the top 20 users each month. Rankings reward authentication work, helpful discussion, and research contributions.',
+  subtitle: 'The Squad’s finest true hobby detectives.',
+  description: '',
 
   sectionRanking: 'TOP 20 RANKING',
   topCollectorsTitle: 'TOP COLLECTORS',
@@ -31,12 +30,13 @@ export const leaderboardCopy = {
   resetBannerWithPrize: (days: number, prizeName: string) =>
     `${days} day${days === 1 ? '' : 's'} left to win ${prizeName}`,
 
-  ctaTitle: 'LEARN, PARTICIPATE, EARN.',
-  ctaBody: 'Each month, the #1 collector earns $50 cash on the monthly leaderboard.',
+  ctaTitle: 'Hunt down the hobby’s Most Wanted.',
+  ctaBody:
+    'The fastest way to take home bounties and rewards is by contributing to a card’s evidence file. Follow Most Wanted to keep up with the memorabilia mysteries plaguing the platform.',
 
   howPointsTitle: 'HOW POINTS WORK',
   prizeTitle: "THIS MONTH'S PRIZE",
-  prizeBody: '$50 cash for the #1 monthly collector.',
+  prizeBody: '$100 in sealed wax, cards, and hobby paraphernalia for the #1 monthly collector.',
   prizeLearnMore: 'LEARN MORE',
   pointsColumn: 'Points',
   viewFullTop20: 'View Full Top 20',

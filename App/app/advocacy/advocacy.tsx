@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { appFonts } from '@/constants/appFonts';
 import { bodyText } from '@/constants/appTypography';
@@ -8,6 +9,7 @@ import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import { figmaColors } from '@/constants/figmaColors';
+import { discussionHref } from '@/constants/navigation';
 import {
   ContextHeaderScrollProvider,
   useContextHeaderScrollProps
@@ -68,6 +70,7 @@ export default function AdvocacyScreen() {
 }
 
 function AdvocacyScreenBody() {
+  const router = useRouter();
   const { s, t } = useFigmaLayout();
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
@@ -78,8 +81,8 @@ function AdvocacyScreenBody() {
     <FigmaScreen bottomNav={<FigmaHubBottomNav active="advocacy" />} scrollProps={scrollProps}>
       <FigmaPageHeader
         title="ADVOCACY"
-        subtitle={'MORE TRANSPARENCY.\nMORE TRUST. BETTER HOBBY.'}
-        description="Sign petitions, raise your voice, and push the hobby toward transparency. Together, we can ask manufacturers to share the records collectors deserve."
+        subtitle="Shining a light on game-used cards."
+        description=""
         heroSource={icons.hero}
         guidanceKey="advocacy"
         s={s}
@@ -123,14 +126,22 @@ function AdvocacyScreenBody() {
         </View>
       ))}
 
-      <View style={page.ctaCard}>
+      <Pressable
+        style={page.ctaCard}
+        onPress={() => router.push(discussionHref())}
+        accessibilityRole="button"
+        accessibilityLabel="Open discussion"
+      >
         <Image source={icons.ctaIcon} style={page.ctaIcon} resizeMode="contain" />
         <View style={page.ctaTextWrap}>
-          <Text style={page.ctaTitle}>FULFILL YOUR CIVIC RESPONSIBILITY AND VOTE.</Text>
-          <Text style={page.ctaBody}>Transparency starts when collectors speak together.</Text>
+          <Text style={page.ctaTitle}>Share your stories with the Squad.</Text>
+          <Text style={page.ctaBody}>
+            Whether you have research or a rumor, a question or an answer, share your thoughts. A
+            place to discuss (almost) all things hobby related.
+          </Text>
         </View>
         <Image source={icons.ctaArrow} style={page.ctaArrow} resizeMode="contain" />
-      </View>
+      </Pressable>
     </FigmaScreen>
   );
 }

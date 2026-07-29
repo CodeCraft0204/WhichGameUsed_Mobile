@@ -25,7 +25,7 @@ export const primaryNav: Array<{ label: string; href: Href }> = [
   { label: 'Profile', href: '/profile/profile' },
   { label: 'Settings', href: '/settings/settings' },
   { label: 'Database', href: '/database/database' },
-  { label: 'Authenticate', href: '/authenticate/authenticate' },
+  { label: 'Submit', href: '/authenticate/authenticate' },
   { label: 'Discussion', href: '/discussion/discussion' },
   { label: 'Education', href: '/education/education' },
   { label: 'MostWanted', href: '/mostwanted/mostwanted' },
@@ -258,6 +258,14 @@ export function discussionHref(): Href {
 
 export function authenticateHref(): Href {
   return '/authenticate/authenticate' as unknown as Href;
+}
+
+export function databaseHref(): Href {
+  return '/database/database' as unknown as Href;
+}
+
+export function leaderboardHref(): Href {
+  return '/leaderboard/leaderboard' as unknown as Href;
 }
 
 export function educationHref(): Href {

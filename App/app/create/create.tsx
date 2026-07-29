@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { appFonts } from '@/constants/appFonts';
 import React, { useMemo } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ContextGuidanceStrip } from '@/components/context-header/ContextGuidanceStrip';
 import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
@@ -10,8 +10,10 @@ import { ScanSubmitButton } from '@/components/figma/ScanSubmitButton';
 import { AuthPrimaryButton } from '@/components/auth/AuthPrimaryButton';
 import { createCopy } from '@/constants/createContent';
 import { authenticateIcons } from '@/constants/authenticateContent';
+import { discussionIcons } from '@/constants/discussionContent';
 import { figmaColors } from '@/constants/figmaColors';
 import { figmaSharedIcons } from '@/constants/figmaShared';
+import { discussionHref } from '@/constants/navigation';
 import { useAuth } from '@/context/AuthContext';
 import {
   ContextHeaderScrollProvider,
@@ -35,10 +37,6 @@ function CreateScreenBody() {
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createStyles(s, t), [s, t]);
   const scrollProps = useContextHeaderScrollProps({ contentContainerStyle: page.scrollContent });
-
-  const openCamera = () => {
-    router.push('/camera/camera');
-  };
 
   const openLibraryThenEdit = async () => {
     const uri = await pickCardPhotoFromLibrary();
@@ -81,7 +79,6 @@ function CreateScreenBody() {
             s={s}
             t={t}
           />
-          <ScanSubmitButton onPress={openCamera} s={s} t={t} />
           <ScanSubmitButton
             label={createCopy.chooseLibrary}
             onPress={() => void openLibraryThenEdit()}
@@ -98,6 +95,20 @@ function CreateScreenBody() {
           />
         </View>
       )}
+
+      <Pressable
+        style={styles.ctaCard}
+        onPress={() => router.push(discussionHref())}
+        accessibilityRole="button"
+        accessibilityLabel="Open discussion"
+      >
+        <Image source={discussionIcons.ctaIcon} style={page.ctaIcon} resizeMode="contain" />
+        <View style={page.ctaTextWrap}>
+          <Text style={styles.ctaTitle}>{createCopy.ctaTitle}</Text>
+          <Text style={styles.ctaBody}>{createCopy.ctaBody}</Text>
+        </View>
+        <Image source={discussionIcons.ctaArrow} style={page.ctaArrow} resizeMode="contain" />
+      </Pressable>
     </FigmaScreen>
   );
 }
@@ -152,7 +163,8 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       borderRadius: s(12),
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
-      backgroundColor: figmaColors.ctaBackground
+      backgroundColor: figmaColors.ctaBackground,
+      marginBottom: s(12)
     },
     signInText: {
       fontFamily: appFonts.body,
@@ -160,6 +172,28 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       lineHeight: t(22),
       color: figmaColors.gray,
       textAlign: 'center'
+    },
+    ctaCard: {
+      minHeight: s(108),
+      borderRadius: s(12),
+      backgroundColor: figmaColors.ctaBackground,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: s(12),
+      marginTop: s(16),
+      marginBottom: s(10)
+    },
+    ctaTitle: {
+      fontFamily: appFonts.display,
+      fontSize: t(18),
+      color: figmaColors.charcoal,
+      marginBottom: s(4)
+    },
+    ctaBody: {
+      fontFamily: appFonts.body,
+      fontSize: t(16),
+      lineHeight: t(20),
+      color: figmaColors.gray
     }
   });
 }

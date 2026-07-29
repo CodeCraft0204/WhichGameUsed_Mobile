@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Image, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Linking, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import { chipOptionsFromLabels, FigmaChipRow } from '@/components/figma/FigmaChipRow';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaContentLoading } from '@/components/figma/FigmaContentLoading';
@@ -21,10 +21,12 @@ import { mostWantedIcons } from '@/constants/mostWantedContent';
 import {
   mostWantedCopy,
   mostWantedFilterTabs,
+  mostWantedRuthPdfUrl,
   type MostWantedFilterTab,
   type MostWantedSortKey
 } from '@/constants/mostWantedCopy';
 import {
+  educationHref,
   mostWantedContributionsHref,
   mostWantedDetailHref,
   mostWantedRankingsHref,
@@ -343,6 +345,22 @@ function MostWantedScreenBody() {
           </Pressable>
         ))}
       </View>
+
+      <Pressable
+        style={styles.ctaCard}
+        onPress={() => {
+          if (mostWantedRuthPdfUrl) void Linking.openURL(mostWantedRuthPdfUrl);
+          else router.push(educationHref());
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={mostWantedCopy.ctaRuthTitle}
+      >
+        <Image source={mostWantedIcons.ctaArrow} style={styles.ctaArrow} resizeMode="contain" />
+        <View style={styles.ctaTextWrap}>
+          <Text style={styles.ctaTitle}>{mostWantedCopy.ctaRuthTitle}</Text>
+          <Text style={styles.ctaBody}>{mostWantedCopy.ctaRuthBody}</Text>
+        </View>
+      </Pressable>
     </FigmaScreen>
   );
 }
@@ -405,6 +423,32 @@ function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
       fontSize: t(12),
       color: figmaColors.charcoal,
       letterSpacing: 0.4
+    },
+    ctaCard: {
+      minHeight: s(108),
+      borderRadius: s(12),
+      backgroundColor: figmaColors.ctaBackground,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: s(12),
+      paddingVertical: s(12),
+      marginTop: s(8),
+      marginBottom: s(10),
+      gap: s(10)
+    },
+    ctaArrow: { width: s(14), height: s(14) },
+    ctaTextWrap: { flex: 1 },
+    ctaTitle: {
+      fontFamily: appFonts.display,
+      fontSize: t(16),
+      color: figmaColors.charcoal,
+      marginBottom: s(4)
+    },
+    ctaBody: {
+      fontFamily: appFonts.body,
+      fontSize: t(14),
+      lineHeight: t(18),
+      color: figmaColors.gray
     }
   });
 }
