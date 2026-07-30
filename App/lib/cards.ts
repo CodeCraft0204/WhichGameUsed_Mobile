@@ -138,6 +138,7 @@ export type AuthenticatedAssetSummary = {
   status: string;
   authenticated_at: string | null;
   verification_url: string | null;
+  owner_user_id?: string | null;
 };
 
 function escapeIlike(term: string): string {
@@ -300,7 +301,7 @@ export async function listAuthenticatedAssetsForCard(
 ): Promise<{ items: AuthenticatedAssetSummary[]; error: string | null }> {
   const { data, error } = await supabase
     .from('authenticated_assets')
-    .select('id, asset_id, status, authenticated_at, verification_url')
+    .select('id, asset_id, status, authenticated_at, verification_url, owner_user_id')
     .eq('card_id', cardId)
     .eq('status', 'active')
     .order('authenticated_at', { ascending: false });

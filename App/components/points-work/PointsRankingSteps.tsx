@@ -25,6 +25,16 @@ export function PointsRankingSteps({ s, t }: Props) {
         </View>
       ))}
       <Text style={styles.note}>{pointsWorkCopy.eligibilityNote}</Text>
+
+      <Text style={[styles.title, styles.systemsTitle]}>{pointsWorkCopy.systemsTitle}</Text>
+      {pointsWorkCopy.systemsSteps.map((step, index) => (
+        <View key={`sys-${index}`} style={styles.step}>
+          <View style={styles.bullet}>
+            <Text style={styles.bulletText}>{index + 1}</Text>
+          </View>
+          <Text style={styles.stepText}>{step}</Text>
+        </View>
+      ))}
     </View>
   );
 }
@@ -84,6 +94,9 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       color: figmaColors.gray,
       marginTop: s(4),
       fontStyle: 'italic'
+    },
+    systemsTitle: {
+      marginTop: s(16)
     }
   });
 }

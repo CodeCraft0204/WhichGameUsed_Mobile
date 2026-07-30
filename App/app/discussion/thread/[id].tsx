@@ -21,7 +21,10 @@ import {
   type ReportSheetTarget
 } from '@/components/discussion/ReportContentSheet';
 import { ThreadEngagementBar } from '@/components/discussion/ThreadEngagementBar';
+import { DonutGiftButton } from '@/components/reputation/DonutGiftButton';
+import { DetectiveRankMini } from '@/components/reputation/DetectiveRankMini';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
+import { fetchReputationRankLevels } from '@/lib/reputation';
 import { FigmaDatabaseBottomNav } from '@/components/figma/FigmaDatabaseBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
@@ -66,6 +69,7 @@ export default function DiscussionThreadScreen() {
   const [reportTarget, setReportTarget] = useState<ReportTarget | null>(null);
   const [reportBusy, setReportBusy] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [rankLevels, setRankLevels] = useState<Record<string, number>>({});
 
   /*
   const claps = useThreadClaps({
@@ -90,7 +94,21 @@ export default function DiscussionThreadScreen() {
     }
     const { thread: data, error: err } = await getForumThread(id);
     if (err) setError(err);
-    else setThread(data);
+    else {
+      setThread(data);
+      if (data) {
+        const authorIds = [
+          data.author_id,
+          ...data.comments.map((c) => c.author_id)
+        ].filter((x): x is string => Boolean(x));
+        const ranks = await fetchReputationRankLevels(authorIds);
+        const map: Record<string, number> = {};
+        for (const [uid, row] of Object.entries(ranks.levels)) {
+          map[uid] = row.rankLevel;
+        }
+        setRankLevels(map);
+      }
+    }
     if (!opts?.silent) setLoading(false);
   }, [id]);
 
@@ -304,7 +322,14 @@ export default function DiscussionThreadScreen() {
           </Pressable>
 
           <View style={styles.threadHeader}>
-            <ProfileAvatar url={thread.author_avatar_url} name={author} size={s(56)} />
+            <View style={{ position: 'relative' }}>
+              <ProfileAvatar url={thread.author_avatar_url} name={author} size={s(56)} />
+              {thread.author_id ? (
+                <View style={{ position: 'absolute', right: -4, bottom: -4 }}>
+                  <DetectiveRankMini level={rankLevels[thread.author_id] ?? 1} s={s} size={24} />
+                </View>
+              ) : null}
+            </View>
             <View style={styles.headerBody}>
               <View style={styles.topicTag}>
                 <Text style={styles.topicTagText}>{thread.topic_title}</Text>
@@ -333,6 +358,16 @@ export default function DiscussionThreadScreen() {
             s={s}
             t={t}
           />
+
+          {user && thread.author_id && thread.author_id !== user.id ? (
+            <DonutGiftButton
+              toUserId={thread.author_id}
+              targetType="forum_thread"
+              targetId={thread.id}
+              s={s}
+              t={t}
+            />
+          ) : null}
         </View>
 
         <ScrollView
@@ -365,11 +400,22 @@ export default function DiscussionThreadScreen() {
               return (
                 <View key={comment.id} style={styles.commentCard}>
                   <View style={styles.commentHeader}>
-                    <ProfileAvatar
-                      url={comment.author_avatar_url}
-                      name={commentAuthor}
-                      size={s(40)}
-                    />
+                    <View style={{ position: 'relative' }}>
+                      <ProfileAvatar
+                        url={comment.author_avatar_url}
+                        name={commentAuthor}
+                        size={s(40)}
+                      />
+                      {comment.author_id ? (
+                        <View style={{ position: 'absolute', right: -4, bottom: -4 }}>
+                          <DetectiveRankMini
+                            level={rankLevels[comment.author_id] ?? 1}
+                            s={s}
+                            size={18}
+                          />
+                        </View>
+                      ) : null}
+                    </View>
                     <View style={styles.commentHeaderText}>
                       <Text style={styles.commentAuthor}>{commentAuthor}</Text>
                       <Text style={styles.commentMeta}>
@@ -388,6 +434,15 @@ export default function DiscussionThreadScreen() {
                   <ForumUserText t={t} variant="comment" style={styles.commentBody}>
                     {comment.body}
                   </ForumUserText>
+                  {user && comment.author_id && comment.author_id !== user.id ? (
+                    <DonutGiftButton
+                      toUserId={comment.author_id}
+                      targetType="forum_comment"
+                      targetId={comment.id}
+                      s={s}
+                      t={t}
+                    />
+                  ) : null}
                 </View>
               );
             })

@@ -17,8 +17,33 @@ export type LeaderboardRank = {
   highlight?: boolean;
 };
 
-/** THIS YEAR hidden until leaderboard_yearly DB view exists. */
-export const leaderboardPeriodTabs = ['THIS MONTH', 'ALL-TIME'] as const;
+/** THIS MONTH = prize points. Other tabs = reputation boards (do not inflate monthly XP). */
+export const leaderboardPeriodTabs = [
+  'THIS MONTH',
+  'LIFETIME XP',
+  'EVIDENCE',
+  'MOST WANTED',
+  'DONUTS'
+] as const;
+
+export type LeaderboardBoardTab = (typeof leaderboardPeriodTabs)[number];
+
+export function leaderboardTabToBoard(
+  tab: string
+): 'month' | 'lifetime' | 'evidence' | 'most_wanted' | 'donuts' {
+  switch (tab) {
+    case 'LIFETIME XP':
+      return 'lifetime';
+    case 'EVIDENCE':
+      return 'evidence';
+    case 'MOST WANTED':
+      return 'most_wanted';
+    case 'DONUTS':
+      return 'donuts';
+    default:
+      return 'month';
+  }
+}
 
 export const leaderboardRanks: LeaderboardRank[] = [
   {

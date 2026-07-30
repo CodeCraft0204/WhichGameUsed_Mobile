@@ -18,8 +18,13 @@ import {
   ContextHeaderScrollProvider,
   useContextHeaderScrollProps
 } from '@/context/ContextHeaderScrollContext';
-import { leaderboardIcons, leaderboardPeriodTabs } from '@/constants/leaderboardContent';
+import {
+  leaderboardIcons,
+  leaderboardPeriodTabs,
+  leaderboardTabToBoard
+} from '@/constants/leaderboardContent';
 import { leaderboardCopy } from '@/constants/leaderboardCopy';
+import { reputationCopy } from '@/constants/reputationCopy';
 import {
   mostWantedHref,
   publicProfileHref,
@@ -37,12 +42,57 @@ import {
   getMyStanding,
   listLeaderboard,
   type LeaderboardEntry,
-  type LeaderboardPeriod,
   type MonthlyPrize
 } from '@/lib/leaderboard';
+import {
+  getReputationBoardStanding,
+  listReputationBoard,
+  type ReputationBoardKey
+} from '@/lib/reputation';
 
-function tabToPeriod(tab: string): LeaderboardPeriod {
-  return tab === 'ALL-TIME' ? 'all_time' : 'month';
+function boardMetricHeader(board: ReturnType<typeof leaderboardTabToBoard>): string {
+  switch (board) {
+    case 'lifetime':
+      return reputationCopy.boardMetricXp;
+    case 'donuts':
+      return reputationCopy.boardMetricDonuts;
+    case 'evidence':
+      return reputationCopy.boardMetricEvidence;
+    case 'most_wanted':
+      return reputationCopy.boardMetricMw;
+    default:
+      return leaderboardCopy.pointsColumn;
+  }
+}
+
+function boardEmptyCopy(board: ReturnType<typeof leaderboardTabToBoard>): string {
+  switch (board) {
+    case 'lifetime':
+      return reputationCopy.boardEmptyLifetime;
+    case 'evidence':
+      return reputationCopy.boardEmptyEvidence;
+    case 'most_wanted':
+      return reputationCopy.boardEmptyMw;
+    case 'donuts':
+      return reputationCopy.boardEmptyDonuts;
+    default:
+      return leaderboardCopy.empty;
+  }
+}
+
+function boardHintCopy(board: ReturnType<typeof leaderboardTabToBoard>): string | null {
+  switch (board) {
+    case 'lifetime':
+      return reputationCopy.boardHintLifetime;
+    case 'evidence':
+      return reputationCopy.boardHintEvidence;
+    case 'most_wanted':
+      return reputationCopy.boardHintMw;
+    case 'donuts':
+      return reputationCopy.boardHintDonuts;
+    default:
+      return null;
+  }
 }
 
 export default function LeaderboardScreen() {
@@ -69,13 +119,15 @@ function LeaderboardScreenBody() {
   );
   const [items, setItems] = useState<LeaderboardEntry[]>([]);
   const [selfEntry, setSelfEntry] = useState<LeaderboardEntry | null>(null);
+  const [metricLabel, setMetricLabel] = useState('pts');
   const [monthlyPrize, setMonthlyPrize] = useState<MonthlyPrize | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const initialLoadDone = useRef(false);
 
-  const period = tabToPeriod(activeTab);
+  const board = leaderboardTabToBoard(activeTab);
+  const isMonthBoard = board === 'month';
 
   const load = useCallback(async (tab: string, opts?: { silent?: boolean }) => {
     const silent = opts?.silent && initialLoadDone.current;
@@ -83,24 +135,69 @@ function LeaderboardScreenBody() {
     else setRefreshing(true);
 
     setError(null);
-    const p = tabToPeriod(tab);
-    const standingPromise = user
-      ? getMyStanding(user.id, p)
-      : Promise.resolve({ entry: null, rank: null, error: null });
-    const [rankResult, prizeResult, standingResult] = await Promise.all([
-      listLeaderboard(p, 20),
-      fetchActiveMonthlyPrize(),
-      standingPromise
-    ]);
+    const nextBoard = leaderboardTabToBoard(tab);
 
-    if (rankResult.error) {
-      setError(rankResult.error);
-      setItems([]);
+    if (nextBoard === 'month') {
+      const standingPromise = user
+        ? getMyStanding(user.id, 'month')
+        : Promise.resolve({ entry: null, rank: null, error: null });
+      const [rankResult, prizeResult, standingResult] = await Promise.all([
+        listLeaderboard('month', 20),
+        fetchActiveMonthlyPrize(),
+        standingPromise
+      ]);
+      if (rankResult.error) {
+        setError(rankResult.error);
+        setItems([]);
+      } else {
+        setItems(rankResult.items);
+      }
+      setSelfEntry(standingResult.entry);
+      setMonthlyPrize(prizeResult.prize);
+      setMetricLabel('pts');
     } else {
-      setItems(rankResult.items);
+      const repBoard = nextBoard as ReputationBoardKey;
+      const standingPromise = user
+        ? getReputationBoardStanding(user.id, repBoard)
+        : Promise.resolve({ entry: null, error: null });
+      const [rankResult, standingResult, prizeResult] = await Promise.all([
+        listReputationBoard(repBoard, 20),
+        standingPromise,
+        fetchActiveMonthlyPrize()
+      ]);
+      if (rankResult.error) {
+        setError(rankResult.error);
+        setItems([]);
+      } else {
+        setItems(
+          rankResult.items.map((row) => ({
+            userId: row.userId,
+            rank: row.rank,
+            displayName: row.displayName,
+            username: row.username,
+            avatarUrl: row.avatarUrl,
+            points: row.points,
+            eventCount: row.eventCount
+          }))
+        );
+        setMetricLabel(rankResult.items[0]?.metricLabel?.toLowerCase() ?? boardMetricHeader(nextBoard).toLowerCase());
+      }
+      setSelfEntry(
+        standingResult.entry
+          ? {
+              userId: standingResult.entry.userId,
+              rank: standingResult.entry.rank,
+              displayName: standingResult.entry.displayName,
+              username: standingResult.entry.username,
+              avatarUrl: standingResult.entry.avatarUrl,
+              points: standingResult.entry.points,
+              eventCount: standingResult.entry.eventCount
+            }
+          : null
+      );
+      setMonthlyPrize(prizeResult.prize);
     }
-    setSelfEntry(standingResult.entry);
-    setMonthlyPrize(prizeResult.prize);
+
     setLoading(false);
     setRefreshing(false);
     initialLoadDone.current = true;
@@ -113,10 +210,10 @@ function LeaderboardScreenBody() {
     }, [activeTab, load, refreshCounts])
   );
   const silentRefresh = useCallback(() => {
-    void load(activeTab, { silent: true });
-  }, [load, activeTab]);
+    if (isMonthBoard) void load(activeTab, { silent: true });
+  }, [load, activeTab, isMonthBoard]);
 
-  useLeaderboardRealtime(silentRefresh, initialLoadDone.current);
+  useLeaderboardRealtime(silentRefresh, initialLoadDone.current && isMonthBoard);
 
   const handleTabChange = useCallback((tab: string) => {
     setActiveTab(tab as (typeof leaderboardPeriodTabs)[number]);
@@ -127,9 +224,9 @@ function LeaderboardScreenBody() {
     router.push(publicProfileHref(entry.userId, {
       rank: entry.rank,
       points: entry.points,
-      period
+      period: isMonthBoard ? 'month' : 'all_time'
     }));
-  }, [router, period]);
+  }, [router, isMonthBoard]);
 
   const handleViewPointsWork = useCallback(() => {
     router.push(pointsWorkHref());
@@ -144,17 +241,18 @@ function LeaderboardScreenBody() {
     router.push(publicProfileHref(user.id, {
       rank: selfEntry?.rank,
       points: selfEntry?.points,
-      period
+      period: isMonthBoard ? 'month' : 'all_time'
     }));
-  }, [router, selfEntry?.points, selfEntry?.rank, period, user]);
+  }, [router, selfEntry?.points, selfEntry?.rank, isMonthBoard, user]);
 
   const handleOpenSettings = useCallback(() => {
     router.push('/settings/settings');
   }, [router]);
 
   const top3 = items.slice(0, 3);
-  const showMonthBanner = period === 'month';
+  const showMonthBanner = isMonthBoard;
   const rankingHint = leaderboardCopy.rankingListShort(items.length);
+  const pointsHeader = boardMetricHeader(board);
 
   return (
     <FigmaScreen
@@ -192,6 +290,7 @@ function LeaderboardScreenBody() {
             <LeaderboardSelfCard
               entry={selfEntry}
               isEligible={profile?.leaderboard_eligible ?? true}
+              metricLabel={metricLabel}
               onGoToSettings={handleOpenSettings}
               onViewProfile={handleViewSelfProfile}
               s={s}
@@ -216,10 +315,13 @@ function LeaderboardScreenBody() {
             </View>
           ) : items.length === 0 ? (
             <View style={styles.centred}>
-              <Text style={styles.emptyText}>{leaderboardCopy.empty}</Text>
+              <Text style={styles.emptyText}>{boardEmptyCopy(board)}</Text>
             </View>
           ) : (
             <>
+              {boardHintCopy(board) ? (
+                <Text style={styles.rankingHint}>{boardHintCopy(board)}</Text>
+              ) : null}
               {top3.length > 0 ? (
                 <LeaderboardPodium
                   top3={top3}
@@ -232,7 +334,7 @@ function LeaderboardScreenBody() {
 
               <View style={styles.sectionHeader}>
                 <Text style={page.sectionTitle}>{leaderboardCopy.sectionRanking}</Text>
-                <Text style={styles.pointsHeader}>{leaderboardCopy.pointsColumn}</Text>
+                <Text style={styles.pointsHeader}>{pointsHeader}</Text>
               </View>
 
               {rankingHint ? (
@@ -248,6 +350,7 @@ function LeaderboardScreenBody() {
                   username={entry.username}
                   avatarUrl={entry.avatarUrl}
                   points={entry.points}
+                  metricLabel={metricLabel}
                   isCurrentUser={user?.id === entry.userId}
                   onPress={() => handlePressUser(entry)}
                   s={s}
@@ -261,7 +364,7 @@ function LeaderboardScreenBody() {
 
       <View style={styles.bottomCards}>
         <LeaderboardPointsExplainer s={s} t={t} onSeeAll={handleViewPointsWork} />
-        {period === 'month' ? (
+        {isMonthBoard ? (
           <LeaderboardPrizeCard
             prize={monthlyPrize}
             s={s}

@@ -15,6 +15,7 @@ export type LeaderboardRankCardProps = {
   username: string | null;
   avatarUrl: string | null;
   points: number;
+  metricLabel?: string;
   isCurrentUser?: boolean;
   onPress?: () => void;
   s: (n: number) => number;
@@ -28,6 +29,7 @@ export function LeaderboardRankCard({
   username,
   avatarUrl,
   points,
+  metricLabel = 'pts',
   isCurrentUser,
   onPress,
   s,
@@ -43,7 +45,7 @@ export function LeaderboardRankCard({
       onPress={onPress}
       disabled={!onPress}
       accessibilityRole={onPress ? 'button' : 'text'}
-      accessibilityLabel={`Rank ${rank}: ${nameLabel}, ${formatPoints(points)} points`}
+      accessibilityLabel={`Rank ${rank}: ${nameLabel}, ${formatPoints(points)} ${metricLabel}`}
     >
       <View style={styles.rankCol}>
         {isCurrentUser ? (
@@ -71,7 +73,12 @@ export function LeaderboardRankCard({
         </Text>
       </View>
 
-      <Text style={styles.points}>{formatPoints(points)}</Text>
+      <Text style={styles.points}>
+        {formatPoints(points)}
+        {metricLabel ? (
+          <Text style={styles.metricSuffix}> {metricLabel}</Text>
+        ) : null}
+      </Text>
 
       {onPress ? (
         <Image source={leaderboardAssets.sectionChevron} style={styles.chevron} resizeMode="contain" />
@@ -172,6 +179,11 @@ function createStyles(
       flexShrink: 0,
       minWidth: s(64),
       textAlign: 'right'
+    },
+    metricSuffix: {
+      fontFamily: appFonts.accent,
+      fontSize: tb(11),
+      color: figmaColors.gray
     },
     chevron: {
       width: s(10),

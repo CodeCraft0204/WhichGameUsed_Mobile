@@ -15,6 +15,7 @@ import { bodyText } from '@/constants/appTypography';
 type SelfCardProps = {
   entry: LeaderboardEntry | null;
   isEligible: boolean;
+  metricLabel?: string;
   onGoToSettings?: () => void;
   onViewProfile?: () => void;
   s: (n: number) => number;
@@ -24,6 +25,7 @@ type SelfCardProps = {
 export function LeaderboardSelfCard({
   entry,
   isEligible,
+  metricLabel = 'pts',
   onGoToSettings,
   onViewProfile,
   s,
@@ -81,7 +83,9 @@ export function LeaderboardSelfCard({
         <Text style={styles.role} numberOfLines={1}>
           {roleLabel}
         </Text>
-        <Text style={styles.points}>{formatPoints(entry.points)} pts</Text>
+        <Text style={styles.points}>
+          {formatPoints(entry.points)} {metricLabel}
+        </Text>
       </View>
 
       {onViewProfile ? (

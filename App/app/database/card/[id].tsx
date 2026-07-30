@@ -20,6 +20,9 @@ import { CardDetailTopBar } from '@/components/database/card-detail/CardDetailTo
 import { CardMetaRow } from '@/components/database/card-detail/CardMetaRow';
 import { EvidenceConfidencePanel } from '@/components/database/card-detail/EvidenceConfidencePanel';
 import { SectionPanel } from '@/components/database/card-detail/SectionPanel';
+import { CardEvidenceFilePanel } from '@/components/reputation/CardEvidenceFilePanel';
+import { DonutGiftButton } from '@/components/reputation/DonutGiftButton';
+import { EvidenceQualityChip } from '@/components/reputation/EvidenceQualityChip';
 import { DatabaseRecordCard } from '@/components/figma/DatabaseRecordCard';
 import { cardDetailCopy } from '@/constants/cardDetailCopy';
 import { databaseIcons } from '@/constants/databaseContent';
@@ -34,7 +37,8 @@ import {
   databaseCardHref,
   databaseSearchHref,
   discussionThreadHref,
-  mostWantedDetailHref
+  mostWantedDetailHref,
+  publicProfileHref
 } from '@/constants/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
@@ -62,6 +66,11 @@ import {
   getWishlistEntryForCard,
   removeWishlistByCardId
 } from '@/lib/wishlist';
+import {
+  fetchCardEvidenceFile,
+  fetchEvidenceQualityLevels,
+  type CardEvidenceFileSummary
+} from '@/lib/reputation';
 
 type SectionKey = 'evidence' | 'history' | 'discussion';
 
@@ -132,6 +141,8 @@ export default function CardDetailScreen() {
     status: string;
     reward_label: string | null;
   } | null>(null);
+  const [evidenceFile, setEvidenceFile] = useState<CardEvidenceFileSummary | null>(null);
+  const [evidenceQuality, setEvidenceQuality] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (!id || typeof id !== 'string') return;
@@ -144,8 +155,9 @@ export default function CardDetailScreen() {
       getWishlistEntryForCard(id),
       getCardResearchRatings(id),
       listForumThreads({ limit: 3, sort: 'newest' }),
-      findMostWantedByCardId(id)
-    ]).then(async ([cardResult, assetsResult, wishEntry, ratingsResult, forumResult, mwResult]) => {
+      findMostWantedByCardId(id),
+      fetchCardEvidenceFile(id)
+    ]).then(async ([cardResult, assetsResult, wishEntry, ratingsResult, forumResult, mwResult, fileResult]) => {
       if (!active) return;
 
       const loadedCard = cardResult.card;
@@ -164,6 +176,12 @@ export default function CardDetailScreen() {
         relatedItems = relatedResult.items.filter((c) => c.id !== loadedCard.id).slice(0, 6);
       }
 
+      const assetIds = assetsResult.items.map((a) => a.id);
+      const qualityRes =
+        assetIds.length > 0
+          ? await fetchEvidenceQualityLevels(assetIds)
+          : { levels: {} as Record<string, number>, error: null };
+
       if (!active) return;
       setCard(loadedCard);
       setAssets(assetsResult.items);
@@ -173,13 +191,17 @@ export default function CardDetailScreen() {
       setOnWishlist(!!wishEntry.itemId);
       setResearchRatings(ratingsResult.ratings);
       setRelatedMostWanted(mwResult.item);
+      setEvidenceFile(fileResult.summary);
+      setEvidenceQuality(qualityRes.levels);
       setError(
         cardResult.error ??
           assetsResult.error ??
           wishEntry.error ??
           ratingsResult.error ??
           forumResult.error ??
-          mwResult.error
+          mwResult.error ??
+          fileResult.error ??
+          qualityRes.error
       );
       setLoading(false);
     });
@@ -302,6 +324,13 @@ export default function CardDetailScreen() {
 
               <Text style={styles.cardTitle}>{card.title}</Text>
               {subtitle ? <Text style={styles.cardSubtitle}>{subtitle}</Text> : null}
+
+              <CardEvidenceFilePanel
+                summary={evidenceFile}
+                onPressResearcher={(r) => router.push(publicProfileHref(r.userId))}
+                s={s}
+                t={t}
+              />
 
               {heroMeta.length > 0 ? (
                 <View style={styles.metaBlock}>
@@ -524,26 +553,43 @@ export default function CardDetailScreen() {
                   <Text style={styles.empty}>{databaseCopy.noAuthenticatedCopies}</Text>
                 ) : (
                   assets.map((asset) => (
-                    <Pressable
-                      key={asset.id}
-                      style={styles.assetRow}
-                      onPress={() => router.push(authenticatedAssetHref(asset.id))}
-                    >
-                      <View style={styles.assetIcon}>
-                        <Ionicons name="document-attach-outline" size={s(20)} color={figmaColors.bronze} />
-                      </View>
-                      <View style={styles.assetBody}>
-                        <Text style={styles.assetId}>
-                          {databaseCopy.assetId}: {asset.asset_id}
-                        </Text>
-                        <Text style={styles.assetDate}>
-                          {asset.authenticated_at
-                            ? new Date(asset.authenticated_at).toLocaleDateString()
-                            : '—'}
-                        </Text>
-                      </View>
-                      <Text style={styles.assetLink}>{databaseCopy.viewVerification}</Text>
-                    </Pressable>
+                    <View key={asset.id} style={styles.assetRow}>
+                      <Pressable
+                        style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: s(10) }}
+                        onPress={() => router.push(authenticatedAssetHref(asset.id))}
+                      >
+                        <View style={styles.assetIcon}>
+                          <Ionicons name="document-attach-outline" size={s(20)} color={figmaColors.bronze} />
+                        </View>
+                        <View style={styles.assetBody}>
+                          <Text style={styles.assetId}>
+                            {databaseCopy.assetId}: {asset.asset_id}
+                          </Text>
+                          <Text style={styles.assetDate}>
+                            {asset.authenticated_at
+                              ? new Date(asset.authenticated_at).toLocaleDateString()
+                              : '—'}
+                          </Text>
+                          <EvidenceQualityChip
+                            level={evidenceQuality[asset.id]}
+                            s={s}
+                            t={t}
+                          />
+                          {user &&
+                          asset.owner_user_id &&
+                          asset.owner_user_id !== user.id ? (
+                            <DonutGiftButton
+                              toUserId={asset.owner_user_id}
+                              targetType="evidence"
+                              targetId={asset.id}
+                              s={s}
+                              t={t}
+                            />
+                          ) : null}
+                        </View>
+                        <Text style={styles.assetLink}>{databaseCopy.viewVerification}</Text>
+                      </Pressable>
+                    </View>
                   ))
                 )}
               </SectionPanel>

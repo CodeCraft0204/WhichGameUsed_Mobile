@@ -14,10 +14,13 @@ import {
   View
 } from 'react-native';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
+import { ProfileAchievementBadges } from '@/components/profile/ProfileAchievementBadges';
 import { ProfileContributorBadges } from '@/components/profile/ProfileContributorBadges';
+import { ProfileReputationSection } from '@/components/profile/ProfileReputationSection';
 import { ProfilePointHistory } from '@/components/profile/ProfilePointHistory';
 import { ProfilePointsBreakdown } from '@/components/profile/ProfilePointsBreakdown';
 import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader';
+import { DonutGiftButton } from '@/components/reputation/DonutGiftButton';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { LEADERBOARD_EVENT_GROUPS } from '@/constants/leaderboardEventLabels';
@@ -68,6 +71,7 @@ import {
   listUserConfirmedContributorBadges,
   type UserConfirmedContributorBadge
 } from '@/lib/most-wanted';
+import { fetchReputationProfile, type ReputationProfile } from '@/lib/reputation';
 
 function parsePeriod(raw: string | string[] | undefined): LeaderboardPeriod {
   if (raw === 'all_time' || raw === 'month') return raw;
@@ -112,6 +116,7 @@ export default function PublicProfileScreen() {
     Awaited<ReturnType<typeof listUserForumThreads>>['items']
   >([]);
   const [confirmedBadges, setConfirmedBadges] = useState<UserConfirmedContributorBadge[]>([]);
+  const [reputation, setReputation] = useState<ReputationProfile | null>(null);
 
   const isSelf = Boolean(user?.id && id && user.id === id);
 
@@ -130,7 +135,7 @@ export default function PublicProfileScreen() {
           { allowed: false, error: null }
         ] as const);
 
-    const [profileRes, standingRes, eventsRes, countsRes, threadsRes, socialRes, badgesRes] =
+    const [profileRes, standingRes, eventsRes, countsRes, threadsRes, socialRes, badgesRes, repRes] =
       await Promise.all([
         fetchPublicProfile(id),
         getUserStanding(id, period),
@@ -138,7 +143,8 @@ export default function PublicProfileScreen() {
         fetchFollowCounts(id),
         listUserForumThreads(id, 5),
         socialPromises,
-        listUserConfirmedContributorBadges(id)
+        listUserConfirmedContributorBadges(id),
+        fetchReputationProfile(id)
       ]);
 
     setProfile(profileRes.profile);
@@ -146,6 +152,7 @@ export default function PublicProfileScreen() {
     setFollowCounts(countsRes.counts);
     setForumThreads(threadsRes.items);
     setConfirmedBadges(badgesRes.items);
+    setReputation(repRes.profile);
 
     if (!isSelf && user) {
       const [followRes, messageRes] = socialRes;
@@ -344,6 +351,27 @@ export default function PublicProfileScreen() {
         ))}
       </View>
 
+      <ProfileReputationSection profile={reputation} s={s} t={t} />
+      {!isSelf && user && id ? (
+        <View style={{ marginBottom: s(12) }}>
+          <DonutGiftButton
+            toUserId={id}
+            targetType="profile"
+            targetId={id}
+            s={s}
+            t={t}
+          />
+        </View>
+      ) : null}
+      <ProfileAchievementBadges
+        awards={(reputation?.badges ?? []).map((b) => ({
+          badgeKey: b.badgeKey,
+          label: b.label,
+          awardedAt: b.awardedAt
+        }))}
+        s={s}
+        t={t}
+      />
       <ProfileContributorBadges badges={confirmedBadges} s={s} t={t} />
 
       {/* Stats bar */}

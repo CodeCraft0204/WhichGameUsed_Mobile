@@ -11,7 +11,9 @@ import {
 } from 'react-native';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { ProfileContributorBadges } from '@/components/profile/ProfileContributorBadges';
+import { ProfileAchievementBadges } from '@/components/profile/ProfileAchievementBadges';
 import { ProfileField } from '@/components/profile/ProfileField';
+import { ProfileReputationSection } from '@/components/profile/ProfileReputationSection';
 import { ProfileSection } from '@/components/profile/ProfileSection';
 import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
@@ -32,6 +34,7 @@ import {
   listUserConfirmedContributorBadges,
   type UserConfirmedContributorBadge
 } from '@/lib/most-wanted';
+import { fetchReputationProfile, type ReputationProfile } from '@/lib/reputation';
 import type { MyProfile } from '@/types/profile';
 
 function isValidUsername(value: string): boolean {
@@ -59,6 +62,7 @@ export default function ProfileScreen() {
   const [locationText, setLocationText] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [confirmedBadges, setConfirmedBadges] = useState<UserConfirmedContributorBadge[]>([]);
+  const [reputation, setReputation] = useState<ReputationProfile | null>(null);
 
   const applyProfile = useCallback((row: MyProfile) => {
     setSavedProfile(row);
@@ -73,13 +77,15 @@ export default function ProfileScreen() {
     if (!user) return;
     setLoading(true);
     setError(null);
-    const [{ profile, error: loadError }, badgesRes] = await Promise.all([
+    const [{ profile, error: loadError }, badgesRes, repRes] = await Promise.all([
       fetchMyProfile(user.id),
-      listUserConfirmedContributorBadges(user.id)
+      listUserConfirmedContributorBadges(user.id),
+      fetchReputationProfile(user.id)
     ]);
     if (loadError) setError(loadError);
     if (profile) applyProfile(profile);
     setConfirmedBadges(badgesRes.items);
+    setReputation(repRes.profile);
     setLoading(false);
   }, [applyProfile, user]);
 
@@ -262,6 +268,16 @@ export default function ProfileScreen() {
         </Pressable>
       </View>
 
+      <ProfileReputationSection profile={reputation} s={s} t={t} allowSubtitleRequest />
+      <ProfileAchievementBadges
+        awards={(reputation?.badges ?? []).map((b) => ({
+          badgeKey: b.badgeKey,
+          label: b.label,
+          awardedAt: b.awardedAt
+        }))}
+        s={s}
+        t={t}
+      />
       <ProfileContributorBadges badges={confirmedBadges} s={s} t={t} />
 
       {error ? (

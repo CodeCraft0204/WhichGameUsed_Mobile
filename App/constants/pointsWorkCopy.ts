@@ -3,10 +3,11 @@ export const pointsWorkCopy = {
   title: 'HOW POINTS WORK',
   subtitle: 'Earn recognition for authentication work, research, and community help.',
   description:
-    'Points count toward the monthly Top 20 board and your all-time standing. Rules below reflect the live scoring configuration.',
+    'Monthly points feed the Top 20 prize board. Detective XP, Donuts, evidence stars, and card badges are separate systems — they do not inflate monthly rankings.',
 
   summaryTitle: 'AT A GLANCE',
   rankingTitle: 'HOW RANKINGS WORK',
+  systemsTitle: 'RELATED SYSTEMS',
   actionsTitle: 'START EARNING',
   prizeTitle: "THIS MONTH'S PRIZE",
   penaltiesTitle: 'PENALTIES & ADJUSTMENTS',
@@ -22,6 +23,14 @@ export const pointsWorkCopy = {
     'The monthly board resets each calendar month. Top 20 collectors appear on the leaderboard.',
     'All-time standing tracks your lifetime total and never resets.',
     'Opt in under Settings to appear on the public leaderboard.'
+  ] as const,
+
+  systemsSteps: [
+    'Monthly Points — prize leaderboard; resets each month.',
+    'Detective XP — lifetime reputation that unlocks ranks (never decreases except fraud reversal).',
+    'Donuts — transferable appreciation you earn and gift; separate from prize XP.',
+    'Evidence Stars — quality rating on evidence items (admin confirms Strong and above).',
+    'Card Badges — Photo Matched, Catalogued, Published, Trending, Top Rated on the evidence file.'
   ] as const,
 
   eligibilityNote:
