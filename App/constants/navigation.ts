@@ -284,6 +284,33 @@ export function educationTimelineHref(slug: string): Href {
   return { pathname: '/education/timeline/[slug]', params: { slug } } as unknown as Href;
 }
 
+export function advocacyHref(): Href {
+  return '/advocacy/advocacy' as unknown as Href;
+}
+
+export function advocacyCampaignHref(id: string): Href {
+  return { pathname: '/advocacy/[id]', params: { id } } as unknown as Href;
+}
+
+export function advocacyMySupportHref(): Href {
+  return '/advocacy/my-advocacy' as unknown as Href;
+}
+
+export function advocacyMyAdvocacyHref(): Href {
+  return '/advocacy/my-advocacy' as unknown as Href;
+}
+
+export function advocacySubmitIssueHref(): Href {
+  return '/advocacy/submit-issue' as unknown as Href;
+}
+
+export function advocacySubmitEvidenceHref(initiativeId: string): Href {
+  return {
+    pathname: '/advocacy/submit-evidence',
+    params: { initiativeId }
+  } as unknown as Href;
+}
+
 export function educationVideoHref(key: string): Href {
   return { pathname: '/education/video/[key]', params: { key } } as unknown as Href;
 }

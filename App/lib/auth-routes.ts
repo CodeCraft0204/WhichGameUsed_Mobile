@@ -31,6 +31,19 @@ export function isPublicAuthRoute(segments: string[]): boolean {
   const root = segments[0];
   if (!root) return true;
   if (PUBLIC_ROUTE_ROOTS.has(root)) return true;
+  // Guest browse for Advocacy list + initiative detail; submit/my require auth.
+  if (root === 'advocacy') {
+    const leaf = segments[1];
+    if (
+      leaf === 'my-support' ||
+      leaf === 'my-advocacy' ||
+      leaf === 'submit-issue' ||
+      leaf === 'submit-evidence'
+    ) {
+      return false;
+    }
+    return true;
+  }
   const nested = nestedPath(segments);
   return nested != null && PUBLIC_NESTED_PATHS.has(nested);
 }

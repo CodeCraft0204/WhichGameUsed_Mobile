@@ -20,6 +20,14 @@ describe('resolveLinkPath', () => {
   it('routes wishlist paths', () => {
     expect(resolveLinkPath('/database/wishlist')).toEqual({ type: 'wishlist' });
   });
+
+  it('routes advocacy campaign paths', () => {
+    expect(resolveLinkPath('/advocacy/camp-1')).toEqual({
+      type: 'advocacy_detail',
+      campaignId: 'camp-1'
+    });
+    expect(resolveLinkPath('/advocacy')).toEqual({ type: 'advocacy' });
+  });
 });
 
 describe('resolvePushNotificationTarget', () => {

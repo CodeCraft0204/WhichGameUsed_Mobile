@@ -1,5 +1,5 @@
-import { useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { appFonts } from '@/constants/appFonts';
 import { bodyText } from '@/constants/appTypography';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -8,6 +8,7 @@ import { FigmaHubBottomNav } from '@/components/figma/FigmaHubBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
+import { advocacyCopy } from '@/constants/advocacyCopy';
 import { figmaColors } from '@/constants/figmaColors';
 import { discussionHref } from '@/constants/navigation';
 import {
@@ -15,51 +16,37 @@ import {
   useContextHeaderScrollProps
 } from '@/context/ContextHeaderScrollContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
-
 import { figmaIcons } from '@/constants/figmaIcons';
-import { figmaSharedIcons } from '@/constants/figmaShared';
+import {
+  advocacyCampaignHref,
+  advocacyMyAdvocacyHref,
+  advocacySubmitIssueHref
+} from '@/constants/navigation';
+import {
+  ADVOCACY_LIST_FILTERS,
+  ADVOCACY_SPORT_FILTERS,
+  advocacyStatusLabel,
+  advocacyTypeLabel,
+  formatAdvocacyCount,
+  getAdvocacyHubSummary,
+  listAdvocacyInitiatives,
+  mapSportLabelToFilter,
+  mapTabLabelToFilter,
+  type AdvocacyHubSummary,
+  type AdvocacyInitiativeListItem,
+  type AdvocacyListFilter,
+  type AdvocacySportFilter
+} from '@/lib/advocacy';
 
 const icons = {
   hero: require('@/assets/figma/advocacy/hero_illustration.png'),
-  titleBrush: require('@/assets/figma/advocacy/title_brush.png'),
-  petitionPanini: require('@/assets/figma/advocacy/petition_panini.png'),
-  petitionTopps: require('@/assets/figma/advocacy/petition_topps.png'),
-  petitionFanatics: require('@/assets/figma/advocacy/petition_fanatics.png'),
+  fallback: require('@/assets/figma/advocacy/petition_panini.png'),
   ctaIcon: figmaIcons.megaphone,
   ctaArrow: require('@/assets/figma/advocacy/section_chevron.png')
 };
 
-const advocacyTabs = ['ALL', 'ACTIVE', 'WINS'] as const;
-
-const petitions = [
-  {
-    key: 'panini',
-    image: icons.petitionPanini,
-    title: 'Ask Panini to Open Their Database of Game Used Memorabilia',
-    description: 'Collectors deserve access to the source records behind game-used memorabilia cards.',
-    goal: 'Goal 10,000',
-    progress: 0.52,
-    signatures: '6,284'
-  },
-  {
-    key: 'topps',
-    image: icons.petitionTopps,
-    title: 'Ask Topps to Provide Images of Their Game-Used Memorabilia',
-    description: 'Show collectors the memorabilia used, so the hobby can evaluate cards with better evidence.',
-    goal: 'Goal 6,000',
-    progress: 0.41,
-    signatures: '3,912'
-  },
-  {
-    key: 'fanatics',
-    image: icons.petitionFanatics,
-    title: "Fanatics Wants to Lead, We're Asking Them To",
-    description: 'If Fanatics wants to lead the hobby, transparency should be part of the standard.',
-    goal: 'Goal 5,000',
-    progress: 0.47,
-    signatures: '2,262'
-  }
-];
+const tabLabels = ADVOCACY_LIST_FILTERS.map((f) => f.label);
+const sportLabels = ADVOCACY_SPORT_FILTERS.map((f) => f.label);
 
 export default function AdvocacyScreen() {
   return (
@@ -69,62 +56,222 @@ export default function AdvocacyScreen() {
   );
 }
 
+function InitiativeCard({
+  item,
+  styles,
+  onPress
+}: {
+  item: AdvocacyInitiativeListItem;
+  styles: ReturnType<typeof createLocalStyles>;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable style={styles.card} onPress={onPress}>
+      <Image
+        source={item.cover_image_url ? { uri: item.cover_image_url } : icons.fallback}
+        style={styles.cardImage}
+        resizeMode="cover"
+      />
+      <View style={styles.cardBody}>
+        <Text style={styles.meta}>
+          {advocacyTypeLabel(item.initiative_type)} · {advocacyStatusLabel(item.status)}
+        </Text>
+        <Text style={styles.cardTitle} numberOfLines={3}>
+          {item.title}
+        </Text>
+        {item.summary ? (
+          <Text style={styles.cardDescription} numberOfLines={3}>
+            {item.summary}
+          </Text>
+        ) : null}
+        <Text style={styles.metrics}>
+          {formatAdvocacyCount(item.supporter_count)} supporters ·{' '}
+          {formatAdvocacyCount(item.confirmed_evidence_count)} evidence ·{' '}
+          {formatAdvocacyCount(item.update_count)} updates
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
 function AdvocacyScreenBody() {
   const router = useRouter();
   const { s, t } = useFigmaLayout();
   const page = useMemo(() => createFigmaPageStyles(s, t), [s, t]);
   const styles = useMemo(() => createLocalStyles(s, t), [s, t]);
-  const [activeTab, setActiveTab] = useState<(typeof advocacyTabs)[number]>(advocacyTabs[0]);
+  const [activeTab, setActiveTab] = useState(tabLabels[0]);
+  const [sportTab, setSportTab] = useState(sportLabels[0]);
+  const filter = mapTabLabelToFilter(activeTab);
+  const sport = mapSportLabelToFilter(sportTab);
+  const [items, setItems] = useState<AdvocacyInitiativeListItem[]>([]);
+  const [summary, setSummary] = useState<AdvocacyHubSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const scrollProps = useContextHeaderScrollProps({ contentContainerStyle: page.scrollContent });
+
+  const load = useCallback(async (nextFilter: AdvocacyListFilter, nextSport: AdvocacySportFilter) => {
+    setLoading(true);
+    const [listRes, sumRes] = await Promise.all([
+      listAdvocacyInitiatives(nextFilter, nextSport),
+      getAdvocacyHubSummary()
+    ]);
+    setItems(listRes.items);
+    setError(listRes.error ?? sumRes.error);
+    setSummary(sumRes.summary);
+    setLoading(false);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      void load(filter, sport);
+    }, [filter, load, sport])
+  );
+
+  const featured = items.find((i) => i.promoted_rank != null) ?? items[0] ?? null;
+  const alerts = items.filter(
+    (i) => i.initiative_type === 'collector_alert' && ['active', 'awaiting_response'].includes(i.status)
+  );
+  const transparency = items.filter((i) =>
+    ['transparency_initiative', 'standards_proposal'].includes(i.initiative_type)
+  );
+  const gathering = items.filter((i) => i.status === 'evidence_gathering');
+  const outcomes = items.filter((i) => i.status === 'resolved' || i.status === 'closed');
 
   return (
     <FigmaScreen bottomNav={<FigmaHubBottomNav active="advocacy" />} scrollProps={scrollProps}>
       <FigmaPageHeader
-        title="ADVOCACY"
-        subtitle="Shining a light on game-used cards."
-        description=""
+        title={advocacyCopy.hubTitle}
+        subtitle={advocacyCopy.hubSubtitle}
+        description={advocacyCopy.hubDescription}
         heroSource={icons.hero}
         guidanceKey="advocacy"
         s={s}
         page={page}
       >
+        <View style={styles.headerActions}>
+          <Pressable onPress={() => router.push(advocacyMyAdvocacyHref())}>
+            <Text style={styles.headerAction}>{advocacyCopy.myAdvocacy}</Text>
+          </Pressable>
+          <Pressable onPress={() => router.push(advocacySubmitIssueHref())}>
+            <Text style={styles.headerAction}>{advocacyCopy.submitIssue}</Text>
+          </Pressable>
+        </View>
         <FigmaChipRow
-          options={chipOptionsFromLabels(advocacyTabs)}
+          options={chipOptionsFromLabels(tabLabels)}
           value={activeTab}
           onChange={setActiveTab}
           s={s}
           t={t}
           style={styles.chipRow}
-        />      </FigmaPageHeader>
+        />
+        <FigmaChipRow
+          options={chipOptionsFromLabels(sportLabels)}
+          value={sportTab}
+          onChange={setSportTab}
+          s={s}
+          t={t}
+          style={styles.chipRowTight}
+        />
+      </FigmaPageHeader>
 
-      <View style={page.sectionHeaderRow}>
-        <Text style={page.sectionTitle}>ACTVE PETITONS</Text>
-        <View style={page.viewAllRow}>
-          <Text style={page.viewAllText}>VIEW ALL</Text>
-          <Image source={icons.ctaArrow} style={page.sectionChevron} resizeMode="contain" />
+      {summary ? (
+        <View style={styles.summaryStrip}>
+          <Text style={styles.summaryText}>
+            {summary.active_count} Active Initiatives · {summary.gathering_evidence_count} Gathering
+            Evidence · {summary.resolved_count} Resolved Issues
+          </Text>
+          <Text style={styles.tipText}>{advocacyCopy.mwVsAdvocacyTip}</Text>
         </View>
-      </View>
+      ) : null}
 
-      {petitions.map((petition) => (
-        <View key={petition.key} style={styles.card}>
-          <Image source={petition.image} style={styles.cardImage} resizeMode="contain" />
-          <View style={styles.cardCenter}>
-            <Text style={styles.cardTitle}>{petition.title}</Text>
-            <Text style={styles.cardDescription}>{petition.description}</Text>
-            <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${petition.progress * 100}%` }]} />
-            </View>
-            <Text style={styles.goalText}>{petition.goal}</Text>
-          </View>
-          <View style={styles.cardRight}>
-            <Text style={styles.signatureNumber}>{petition.signatures}</Text>
-            <Text style={styles.signatureLabel}>SIGNATURES</Text>
-            <Pressable style={styles.signButton}>
-              <Text style={styles.signButtonText}>SIGN PETITION</Text>
-            </Pressable>
-          </View>
-        </View>
-      ))}
+      {error ? <Text style={styles.metaText}>{error}</Text> : null}
+      {loading && items.length === 0 ? <Text style={styles.metaText}>Loading…</Text> : null}
+      {!loading && !error && items.length === 0 ? (
+        <Text style={styles.metaText}>{advocacyCopy.empty}</Text>
+      ) : null}
+
+      {featured && filter === 'all' ? (
+        <>
+          <Text style={page.sectionTitle}>{advocacyCopy.featured}</Text>
+          <InitiativeCard
+            item={featured}
+            styles={styles}
+            onPress={() => router.push(advocacyCampaignHref(featured.id))}
+          />
+          <Pressable
+            style={styles.primaryBtn}
+            onPress={() => router.push(advocacyCampaignHref(featured.id))}
+          >
+            <Text style={styles.primaryBtnText}>{advocacyCopy.viewInitiative}</Text>
+          </Pressable>
+        </>
+      ) : null}
+
+      {filter === 'all' ? (
+        <>
+          {alerts.length > 0 ? (
+            <>
+              <Text style={page.sectionTitle}>{advocacyCopy.activeAlerts}</Text>
+              {alerts.map((item) => (
+                <InitiativeCard
+                  key={item.id}
+                  item={item}
+                  styles={styles}
+                  onPress={() => router.push(advocacyCampaignHref(item.id))}
+                />
+              ))}
+            </>
+          ) : null}
+          {transparency.length > 0 ? (
+            <>
+              <Text style={page.sectionTitle}>{advocacyCopy.transparencyStandards}</Text>
+              {transparency.map((item) => (
+                <InitiativeCard
+                  key={item.id}
+                  item={item}
+                  styles={styles}
+                  onPress={() => router.push(advocacyCampaignHref(item.id))}
+                />
+              ))}
+            </>
+          ) : null}
+          {gathering.length > 0 ? (
+            <>
+              <Text style={page.sectionTitle}>{advocacyCopy.gatheringEvidence}</Text>
+              {gathering.map((item) => (
+                <InitiativeCard
+                  key={item.id}
+                  item={item}
+                  styles={styles}
+                  onPress={() => router.push(advocacyCampaignHref(item.id))}
+                />
+              ))}
+            </>
+          ) : null}
+          {outcomes.length > 0 ? (
+            <>
+              <Text style={page.sectionTitle}>{advocacyCopy.recentOutcomes}</Text>
+              {outcomes.map((item) => (
+                <InitiativeCard
+                  key={item.id}
+                  item={item}
+                  styles={styles}
+                  onPress={() => router.push(advocacyCampaignHref(item.id))}
+                />
+              ))}
+            </>
+          ) : null}
+        </>
+      ) : (
+        items.map((item) => (
+          <InitiativeCard
+            key={item.id}
+            item={item}
+            styles={styles}
+            onPress={() => router.push(advocacyCampaignHref(item.id))}
+          />
+        ))
+      )}
 
       <Pressable
         style={page.ctaCard}
@@ -148,116 +295,93 @@ function AdvocacyScreenBody() {
 
 function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
   const tb = (n: number) => bodyText(t, n);
-
   return StyleSheet.create({
-    chipRow: {
-      marginTop: s(20),
-      marginBottom: 0
+    headerActions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: s(16),
+      marginTop: s(12)
     },
-    utilityBar: {
-      position: 'absolute',
-      right: 0,
-      top: s(28),
-      width: s(84),
-      height: s(263),
-      borderRadius: s(18),
+    headerAction: {
+      fontFamily: appFonts.body,
+      fontSize: tb(13),
+      color: figmaColors.charcoal,
+      textDecorationLine: 'underline'
+    },
+    chipRow: { marginTop: s(16), marginBottom: 0 },
+    chipRowTight: { marginTop: s(10), marginBottom: 0 },
+    summaryStrip: {
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
-      backgroundColor: figmaColors.utilityBar,
-      alignItems: 'center',
-      justifyContent: 'space-evenly'
+      backgroundColor: figmaColors.cream,
+      borderRadius: s(12),
+      padding: s(12),
+      marginBottom: s(14)
     },
-    utilityIcon: {
-      width: s(44),
-      height: s(44)
+    summaryText: {
+      fontFamily: appFonts.body,
+      fontSize: tb(15),
+      color: figmaColors.charcoal
+    },
+    tipText: {
+      fontFamily: appFonts.body,
+      fontSize: tb(13),
+      lineHeight: tb(18),
+      color: figmaColors.gray,
+      marginTop: s(8)
+    },
+    metaText: {
+      fontFamily: appFonts.body,
+      fontSize: tb(16),
+      color: figmaColors.gray,
+      marginBottom: s(12)
     },
     card: {
       backgroundColor: figmaColors.cream,
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
       borderRadius: s(16),
-      minHeight: s(224),
       marginBottom: s(10),
       flexDirection: 'row',
-      paddingLeft: s(8),
-      paddingRight: s(12),
-      paddingVertical: s(10)
+      overflow: 'hidden'
     },
-    cardImage: {
-      width: s(174),
-      height: s(182),
-      marginTop: s(8)
-    },
-    cardCenter: {
-      flex: 1,
-      paddingLeft: s(8),
-      paddingRight: s(10),
-      justifyContent: 'space-between'
+    cardImage: { width: s(120), height: s(140) },
+    cardBody: { flex: 1, padding: s(12), gap: s(4) },
+    meta: {
+      fontFamily: appFonts.body,
+      fontSize: tb(12),
+      color: figmaColors.gray,
+      letterSpacing: 0.6
     },
     cardTitle: {
-      marginTop: s(2),
       fontFamily: appFonts.body,
-      fontSize: tb(22),
-      lineHeight: tb(26),
+      fontSize: tb(20),
+      lineHeight: tb(24),
       color: figmaColors.charcoal
     },
     cardDescription: {
-      marginTop: s(6),
-      fontFamily: appFonts.body,
-      fontSize: tb(17),
-      lineHeight: tb(21),
-      color: figmaColors.gray
-    },
-    progressTrack: {
-      marginTop: s(10),
-      width: '96%',
-      height: s(10),
-      backgroundColor: figmaColors.progressTrack,
-      borderRadius: s(8)
-    },
-    progressFill: {
-      height: '100%',
-      backgroundColor: figmaColors.progressFill,
-      borderRadius: s(8)
-    },
-    goalText: {
-      marginTop: s(8),
       fontFamily: appFonts.body,
       fontSize: tb(15),
+      lineHeight: tb(20),
       color: figmaColors.gray
     },
-    cardRight: {
-      width: s(178),
-      borderLeftWidth: 1,
-      borderLeftColor: figmaColors.borderLight,
-      paddingLeft: s(14),
-      justifyContent: 'center',
-      alignItems: 'center',
-      gap: s(4)
-    },
-    signatureNumber: {
+    metrics: {
+      marginTop: s(4),
       fontFamily: appFonts.body,
-      fontSize: tb(32),
-      lineHeight: tb(46),
-      color: figmaColors.charcoal
+      fontSize: tb(13),
+      color: figmaColors.gray
     },
-    signatureLabel: {
-      fontFamily: appFonts.body,
-      fontSize: tb(14),
-      color: figmaColors.gray,
-      marginBottom: s(8)
-    },
-    signButton: {
-      width: s(178),
-      height: s(42),
-      borderRadius: s(20),
+    primaryBtn: {
+      height: s(48),
+      borderRadius: s(24),
       borderWidth: 1,
       borderColor: figmaColors.buttonPrimaryBorder,
       backgroundColor: figmaColors.buttonPrimaryBg,
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      marginBottom: s(16)
     },
-    signButtonText: {
+    primaryBtnText: {
       fontFamily: appFonts.body,
       fontSize: tb(14),
       color: figmaColors.buttonPrimaryText

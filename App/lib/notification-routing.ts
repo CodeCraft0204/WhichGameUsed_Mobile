@@ -2,6 +2,8 @@ import type { Router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import type { UserNotification } from '@/lib/notifications';
 import {
+  advocacyCampaignHref,
+  advocacyHref,
   databaseCardHref,
   databaseWishlistHref,
   messageConversationHref,
@@ -64,6 +66,12 @@ function navigateToTarget(router: Router, target: NotificationNavTarget): void {
       return;
     case 'mw_detail':
       router.push(mostWantedDetailHref(target.huntId));
+      return;
+    case 'advocacy_detail':
+      router.push(advocacyCampaignHref(target.campaignId));
+      return;
+    case 'advocacy':
+      router.push(advocacyHref());
       return;
   }
 }

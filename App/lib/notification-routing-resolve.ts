@@ -11,6 +11,8 @@ export type NotificationNavTarget =
   | { type: 'mw_contributions' }
   | { type: 'mw_solved' }
   | { type: 'mw_detail'; huntId: string }
+  | { type: 'advocacy_detail'; campaignId: string }
+  | { type: 'advocacy' }
   | null;
 
 export function resolveLinkPath(path: string | null | undefined): NotificationNavTarget {
@@ -48,6 +50,17 @@ export function resolveLinkPath(path: string | null | undefined): NotificationNa
     const huntId = trimmed.replace('/mostwanted/', '').split('/')[0];
     if (huntId && huntId !== 'contributions' && huntId !== 'solved' && huntId !== 'watched') {
       return { type: 'mw_detail', huntId };
+    }
+  }
+
+  if (trimmed === '/advocacy' || trimmed === '/advocacy/advocacy') {
+    return { type: 'advocacy' };
+  }
+
+  if (trimmed.startsWith('/advocacy/')) {
+    const campaignId = trimmed.replace('/advocacy/', '').split('/')[0];
+    if (campaignId && campaignId !== 'advocacy' && campaignId !== 'my-support') {
+      return { type: 'advocacy_detail', campaignId };
     }
   }
 
