@@ -42,6 +42,7 @@ export function FigmaChipRow<T extends string>({
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.row}
+        style={styles.scroll}
         keyboardShouldPersistTaps="handled"
       >
         {options.map((opt) => {
@@ -67,7 +68,14 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
   const tb = (n: number) => bodyText(t, n);
 
   return StyleSheet.create({
-    wrap: { marginVertical: s(20) },
+    wrap: {
+      width: '100%',
+      alignSelf: 'stretch',
+      marginVertical: s(20)
+    },
+    scroll: {
+      width: '100%'
+    },
     label: {
       fontFamily: appFonts.accent,
       fontSize: tb(10),
@@ -79,8 +87,10 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
     row: {
       flexDirection: 'row',
       alignItems: 'center',
+      flexGrow: 1,
       gap: s(10),
-      paddingRight: s(4)
+      paddingRight: s(8),
+      minWidth: '100%'
     },
     chip: {
       minHeight: s(40),

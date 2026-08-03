@@ -6,7 +6,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { chipOptionsFromLabels, FigmaChipRow } from '@/components/figma/FigmaChipRow';
 import { FigmaHubBottomNav } from '@/components/figma/FigmaHubBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
-import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
+import { FigmaPageHeader, HEADER_TOOLBAR_GAP_UNITS } from '@/components/figma/FigmaPageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
 import { CampaignProgressBar } from '@/components/advocacy/CampaignProgressBar';
 import { advocacyCopy } from '@/constants/advocacyCopy';
@@ -43,7 +43,9 @@ const icons = {
   hero: require('@/assets/figma/advocacy/hero_illustration.png'),
   fallback: require('@/assets/figma/advocacy/petition_panini.png'),
   ctaIcon: figmaIcons.megaphone,
-  ctaArrow: require('@/assets/figma/advocacy/section_chevron.png')
+  ctaArrow: require('@/assets/figma/advocacy/section_chevron.png'),
+  myAdvocacy: figmaIcons.bookmark,
+  submitIssue: figmaIcons.scrollQuestion
 };
 
 const tabLabels = ADVOCACY_LIST_FILTERS.map((f) => f.label);
@@ -153,15 +155,9 @@ function AdvocacyScreenBody() {
         guidanceKey="advocacy"
         s={s}
         page={page}
-      >
-        <View style={styles.headerActions}>
-          <Pressable onPress={() => router.push(advocacyMyAdvocacyHref())}>
-            <Text style={styles.headerAction}>{advocacyCopy.myAdvocacy}</Text>
-          </Pressable>
-          <Pressable onPress={() => router.push(advocacySubmitIssueHref())}>
-            <Text style={styles.headerAction}>{advocacyCopy.submitIssue}</Text>
-          </Pressable>
-        </View>
+      />
+
+      <View style={styles.toolbar}>
         <FigmaChipRow
           options={chipOptionsFromLabels(tabLabels)}
           value={activeTab}
@@ -178,7 +174,7 @@ function AdvocacyScreenBody() {
           t={t}
           style={styles.chipRowTight}
         />
-      </FigmaPageHeader>
+      </View>
 
       {summary ? (
         <View style={styles.summaryStrip}>
@@ -288,22 +284,49 @@ function AdvocacyScreenBody() {
       <Text style={page.sectionTitle}>{advocacyCopy.howItWorks}</Text>
       <Text style={[styles.tipText, { marginBottom: s(16) }]}>{advocacyCopy.howBody}</Text>
 
-      <Pressable
-        style={page.ctaCard}
-        onPress={() => router.push(discussionHref())}
-        accessibilityRole="button"
-        accessibilityLabel="Open discussion"
-      >
-        <Image source={icons.ctaIcon} style={page.ctaIcon} resizeMode="contain" />
-        <View style={page.ctaTextWrap}>
-          <Text style={page.ctaTitle}>Share your stories with the Squad.</Text>
-          <Text style={page.ctaBody}>
-            Whether you have research or a rumor, a question or an answer, share your thoughts. A
-            place to discuss (almost) all things hobby related.
-          </Text>
+      <View style={styles.bottomActions}>
+        <View style={styles.quickLinksRow}>
+          <Pressable
+            style={styles.quickLinkCard}
+            onPress={() => router.push(advocacyMyAdvocacyHref())}
+            accessibilityRole="button"
+            accessibilityLabel={advocacyCopy.myAdvocacy}
+          >
+            <Image source={icons.myAdvocacy} style={styles.quickLinkIcon} resizeMode="contain" />
+            <Text style={styles.quickLinkLabel} numberOfLines={2}>
+              {advocacyCopy.myAdvocacy}
+            </Text>
+          </Pressable>
+          <Pressable
+            style={styles.quickLinkCard}
+            onPress={() => router.push(advocacySubmitIssueHref())}
+            accessibilityRole="button"
+            accessibilityLabel={advocacyCopy.submitIssue}
+          >
+            <Image source={icons.submitIssue} style={styles.quickLinkIcon} resizeMode="contain" />
+            <Text style={styles.quickLinkLabel} numberOfLines={2}>
+              {advocacyCopy.submitIssue}
+            </Text>
+          </Pressable>
         </View>
-        <Image source={icons.ctaArrow} style={page.ctaArrow} resizeMode="contain" />
-      </Pressable>
+
+        <Pressable
+          style={page.ctaCard}
+          onPress={() => router.push(discussionHref())}
+          accessibilityRole="button"
+          accessibilityLabel="Open discussion"
+        >
+          <Image source={icons.ctaIcon} style={page.ctaIcon} resizeMode="contain" />
+          <View style={page.ctaTextWrap}>
+            <Text style={page.ctaTitle}>Share your stories with the Squad.</Text>
+            <Text style={page.ctaBody}>
+              Whether you have research or a rumor, a question or an answer, share your thoughts. A
+              place to discuss (almost) all things hobby related.
+            </Text>
+          </View>
+          <Image source={icons.ctaArrow} style={page.ctaArrow} resizeMode="contain" />
+        </Pressable>
+      </View>
     </FigmaScreen>
   );
 }
@@ -311,26 +334,73 @@ function AdvocacyScreenBody() {
 function createLocalStyles(s: (n: number) => number, t: (n: number) => number) {
   const tb = (n: number) => bodyText(t, n);
   return StyleSheet.create({
-    headerActions: {
+    toolbar: {
+      width: '100%',
+      alignSelf: 'stretch',
+      marginTop: s(HEADER_TOOLBAR_GAP_UNITS),
+      marginBottom: s(16),
+      gap: s(10)
+    },
+    chipRow: {
+      width: '100%',
+      alignSelf: 'stretch',
+      marginTop: 0,
+      marginBottom: 0,
+      marginVertical: 0
+    },
+    chipRowTight: {
+      width: '100%',
+      alignSelf: 'stretch',
+      marginTop: 0,
+      marginBottom: 0,
+      marginVertical: 0
+    },
+    bottomActions: {
+      marginTop: s(8),
+      gap: s(10),
+      paddingTop: s(6),
+      marginBottom: s(8)
+    },
+    quickLinksRow: {
       flexDirection: 'row',
-      justifyContent: 'flex-end',
-      gap: s(16),
-      marginTop: s(12)
+      gap: s(18)
     },
-    headerAction: {
+    quickLinkCard: {
+      flex: 1,
+      minWidth: 0,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(8),
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      borderRadius: s(12),
+      backgroundColor: figmaColors.ctaBackground,
+      paddingVertical: s(12),
+      paddingHorizontal: s(10)
+    },
+    quickLinkIcon: {
+      width: s(16),
+      height: s(18),
+      opacity: 0.85,
+      flexShrink: 0
+    },
+    quickLinkLabel: {
+      flex: 1,
+      minWidth: 0,
       fontFamily: appFonts.body,
-      fontSize: tb(13),
-      color: figmaColors.charcoal,
-      textDecorationLine: 'underline'
+      textAlign: 'center',
+      fontWeight: '600',
+      fontSize: tb(16),
+      lineHeight: tb(18),
+      color: figmaColors.charcoal
     },
-    chipRow: { marginTop: s(16), marginBottom: 0 },
-    chipRowTight: { marginTop: s(10), marginBottom: 0 },
     summaryStrip: {
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
       backgroundColor: figmaColors.cream,
       borderRadius: s(12),
       padding: s(12),
+      marginTop: s(2),
       marginBottom: s(14)
     },
     summaryText: {

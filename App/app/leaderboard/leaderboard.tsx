@@ -268,15 +268,15 @@ function LeaderboardScreenBody() {
         guidanceKey="leaderboard"
         s={s}
         page={page}
-      >
-        <LeaderboardPeriodTabs
-          tabs={leaderboardPeriodTabs}
-          value={activeTab}
-          onChange={handleTabChange}
-          s={s}
-          t={t}
-        />
-      </FigmaPageHeader>
+      />
+
+      <LeaderboardPeriodTabs
+        tabs={leaderboardPeriodTabs}
+        value={activeTab}
+        onChange={handleTabChange}
+        s={s}
+        t={t}
+      />
 
       {loading ? (
         <FigmaContentLoading message={leaderboardCopy.loading} s={s} t={t} />
