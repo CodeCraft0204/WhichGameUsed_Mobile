@@ -13,6 +13,7 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { CampaignProgressBar } from '@/components/advocacy/CampaignProgressBar';
 import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader';
 import { advocacyCopy } from '@/constants/advocacyCopy';
 import { appFonts } from '@/constants/appFonts';
@@ -31,6 +32,7 @@ import {
 } from '@/constants/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
+import * as LinkingExpo from 'expo-linking';
 import {
   advocacyPrimaryCta,
   advocacyRelationTypeLabel,
@@ -97,6 +99,16 @@ export default function AdvocacyInitiativeDetailScreen() {
   }
 
   function relationPressable(rel: AdvocacyRelationItem) {
+    // Hide memorabilia/product until dedicated mobile routes exist.
+    if (rel.relation_type === 'memorabilia_piece' || rel.relation_type === 'product') {
+      return (
+        <View key={rel.id} style={styles.rowItem}>
+          <Text style={styles.rowText}>
+            {advocacyRelationTypeLabel(rel.relation_type)}: {rel.title}
+          </Text>
+        </View>
+      );
+    }
     const canOpen =
       rel.relation_type === 'catalog_card' ||
       rel.relation_type === 'authenticated_asset' ||
@@ -235,6 +247,14 @@ export default function AdvocacyInitiativeDetailScreen() {
               {formatAdvocacyCount(initiative.follower_count)} followers ·{' '}
               {formatAdvocacyCount(initiative.update_count)} updates
             </Text>
+            {initiative.progress != null ||
+            (initiative.goal_count != null && initiative.goal_count > 0) ? (
+              <CampaignProgressBar
+                progress={initiative.progress}
+                s={s}
+                style={{ marginTop: s(8), marginBottom: s(4) }}
+              />
+            ) : null}
 
             {initiative.viewer_has_supported ? (
               <Text style={styles.you}>{advocacyCopy.youSupported}</Text>
@@ -280,11 +300,13 @@ export default function AdvocacyInitiativeDetailScreen() {
               ) : null}
               <Pressable
                 style={styles.secondaryBtn}
-                onPress={() =>
+                onPress={() => {
+                  const deepLink = LinkingExpo.createURL(`/advocacy/${initiative.id}`);
                   void Share.share({
-                    message: `${initiative.title} — Which Game Used Advocacy`
-                  })
-                }
+                    message: `${initiative.title} — Which Game Used Advocacy\n${deepLink}`,
+                    url: deepLink
+                  });
+                }}
               >
                 <Text style={styles.secondaryText}>{advocacyCopy.share}</Text>
               </Pressable>

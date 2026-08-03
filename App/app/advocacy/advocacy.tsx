@@ -8,6 +8,7 @@ import { FigmaHubBottomNav } from '@/components/figma/FigmaHubBottomNav';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { FigmaPageHeader } from '@/components/figma/FigmaPageHeader';
 import { FigmaScreen } from '@/components/figma/FigmaScreen';
+import { CampaignProgressBar } from '@/components/advocacy/CampaignProgressBar';
 import { advocacyCopy } from '@/constants/advocacyCopy';
 import { figmaColors } from '@/constants/figmaColors';
 import { discussionHref } from '@/constants/navigation';
@@ -59,10 +60,12 @@ export default function AdvocacyScreen() {
 function InitiativeCard({
   item,
   styles,
+  s,
   onPress
 }: {
   item: AdvocacyInitiativeListItem;
   styles: ReturnType<typeof createLocalStyles>;
+  s: (n: number) => number;
   onPress: () => void;
 }) {
   return (
@@ -83,6 +86,9 @@ function InitiativeCard({
           <Text style={styles.cardDescription} numberOfLines={3}>
             {item.summary}
           </Text>
+        ) : null}
+        {item.progress != null || (item.goal_count != null && item.goal_count > 0) ? (
+          <CampaignProgressBar progress={item.progress} s={s} style={{ marginTop: s(4) }} />
         ) : null}
         <Text style={styles.metrics}>
           {formatAdvocacyCount(item.supporter_count)} supporters ·{' '}
@@ -196,6 +202,7 @@ function AdvocacyScreenBody() {
           <InitiativeCard
             item={featured}
             styles={styles}
+            s={s}
             onPress={() => router.push(advocacyCampaignHref(featured.id))}
           />
           <Pressable
@@ -217,6 +224,7 @@ function AdvocacyScreenBody() {
                   key={item.id}
                   item={item}
                   styles={styles}
+                  s={s}
                   onPress={() => router.push(advocacyCampaignHref(item.id))}
                 />
               ))}
@@ -230,6 +238,7 @@ function AdvocacyScreenBody() {
                   key={item.id}
                   item={item}
                   styles={styles}
+                  s={s}
                   onPress={() => router.push(advocacyCampaignHref(item.id))}
                 />
               ))}
@@ -243,6 +252,7 @@ function AdvocacyScreenBody() {
                   key={item.id}
                   item={item}
                   styles={styles}
+                  s={s}
                   onPress={() => router.push(advocacyCampaignHref(item.id))}
                 />
               ))}
@@ -256,6 +266,7 @@ function AdvocacyScreenBody() {
                   key={item.id}
                   item={item}
                   styles={styles}
+                  s={s}
                   onPress={() => router.push(advocacyCampaignHref(item.id))}
                 />
               ))}
@@ -268,10 +279,14 @@ function AdvocacyScreenBody() {
             key={item.id}
             item={item}
             styles={styles}
+            s={s}
             onPress={() => router.push(advocacyCampaignHref(item.id))}
           />
         ))
       )}
+
+      <Text style={page.sectionTitle}>{advocacyCopy.howItWorks}</Text>
+      <Text style={[styles.tipText, { marginBottom: s(16) }]}>{advocacyCopy.howBody}</Text>
 
       <Pressable
         style={page.ctaCard}

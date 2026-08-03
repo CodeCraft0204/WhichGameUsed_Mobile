@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader';
 import { advocacyCopy } from '@/constants/advocacyCopy';
@@ -9,7 +9,8 @@ import { bodyText } from '@/constants/appTypography';
 import { figmaColors } from '@/constants/figmaColors';
 import { advocacyCampaignHref, advocacyHref, safeGoBack } from '@/constants/navigation';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
-import { submitAdvocacyEvidence } from '@/lib/advocacy';
+import { submitAdvocacyEvidence, uploadAdvocacyEvidencePhoto } from '@/lib/advocacy';
+import { pickCardPhotoFromLibrary } from '@/lib/capture-photos';
 
 export default function AdvocacySubmitEvidenceScreen() {
   const router = useRouter();
@@ -21,9 +22,15 @@ export default function AdvocacySubmitEvidenceScreen() {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [url, setUrl] = useState('');
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+
+  async function pickPhoto() {
+    const uri = await pickCardPhotoFromLibrary();
+    if (uri) setPhotoUri(uri);
+  }
 
   async function submit() {
     if (!initiativeId) {
@@ -36,12 +43,25 @@ export default function AdvocacySubmitEvidenceScreen() {
     }
     setBusy(true);
     setError(null);
+
+    let storagePath: string | null = null;
+    if (photoUri) {
+      const uploaded = await uploadAdvocacyEvidencePhoto(photoUri);
+      if (uploaded.error) {
+        setBusy(false);
+        setError(uploaded.error);
+        return;
+      }
+      storagePath = uploaded.storagePath;
+    }
+
     const { error: err } = await submitAdvocacyEvidence({
       initiative_id: initiativeId,
       evidence_kind: kind,
       title: title.trim(),
       body: body.trim(),
-      url: url.trim()
+      url: url.trim(),
+      storage_path: storagePath
     });
     setBusy(false);
     if (err) setError(err);
@@ -111,6 +131,15 @@ export default function AdvocacySubmitEvidenceScreen() {
               onChangeText={setUrl}
               autoCapitalize="none"
             />
+            <Text style={styles.label}>Photo (optional)</Text>
+            <Pressable style={styles.photoBtn} onPress={() => void pickPhoto()}>
+              <Text style={styles.photoBtnText}>
+                {photoUri ? 'CHANGE PHOTO' : 'ADD PHOTO'}
+              </Text>
+            </Pressable>
+            {photoUri ? (
+              <Image source={{ uri: photoUri }} style={styles.preview} resizeMode="cover" />
+            ) : null}
             {error ? <Text style={styles.error}>{error}</Text> : null}
             <Pressable
               style={[styles.cta, busy && styles.disabled]}
@@ -161,6 +190,26 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       fontFamily: appFonts.body,
       fontSize: tb(14),
       color: figmaColors.charcoal
+    },
+    photoBtn: {
+      height: s(40),
+      borderRadius: s(10),
+      borderWidth: 1,
+      borderColor: figmaColors.borderLight,
+      backgroundColor: figmaColors.cream,
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    photoBtnText: {
+      fontFamily: appFonts.body,
+      fontSize: tb(13),
+      color: figmaColors.charcoal
+    },
+    preview: {
+      marginTop: s(10),
+      width: '100%',
+      height: s(180),
+      borderRadius: s(10)
     },
     cta: {
       marginTop: s(20),

@@ -6,6 +6,7 @@ import {
   advocacyHref,
   databaseCardHref,
   databaseWishlistHref,
+  leaderboardHref,
   messageConversationHref,
   mostWantedContributionsHref,
   mostWantedDetailHref,
@@ -51,6 +52,12 @@ function navigateToTarget(router: Router, target: NotificationNavTarget): void {
       return;
     case 'profile':
       router.push(publicProfileHref(target.profileId));
+      return;
+    case 'own_profile':
+      router.push('/profile/profile');
+      return;
+    case 'leaderboard':
+      router.push(leaderboardHref());
       return;
     case 'database_card':
       router.push(databaseCardHref(target.cardId));

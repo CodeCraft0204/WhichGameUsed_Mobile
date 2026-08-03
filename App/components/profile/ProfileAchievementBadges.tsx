@@ -1,6 +1,5 @@
 /**
- * Achievement badges on profile — same visual section pattern as Most Wanted badges.
- * Shows earned awards only (with artwork), not a locked catalog grid.
+ * Achievement badges on profile — full catalog with earned + locked states.
  */
 import React, { useMemo } from 'react';
 import { Image, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
@@ -8,6 +7,7 @@ import { appFonts } from '@/constants/appFonts';
 import { figmaColors } from '@/constants/figmaColors';
 import { reputationCopy } from '@/constants/reputationCopy';
 import {
+  achievementBadgeCatalog,
   achievementBadgeImage,
   achievementBadgeLabel
 } from '@/constants/reputationContent';
@@ -28,29 +28,40 @@ export function ProfileAchievementBadges({
   t: (n: number) => number;
 }) {
   const { width: windowWidth } = useWindowDimensions();
+  const earnedByKey = useMemo(() => {
+    const map = new Map<string, ProfileAchievementAward>();
+    for (const a of awards) {
+      if (a.badgeKey) map.set(a.badgeKey, a);
+    }
+    return map;
+  }, [awards]);
+
   const badges = useMemo(
     () =>
-      awards
-        .filter((a) => Boolean(a.badgeKey))
-        .map((a) => ({
-          badgeKey: a.badgeKey,
-          label: a.label?.trim() || achievementBadgeLabel(a.badgeKey),
-          awardedAt: a.awardedAt
-        })),
-    [awards]
+      achievementBadgeCatalog.map((row) => {
+        const earned = earnedByKey.get(row.key);
+        return {
+          badgeKey: row.key,
+          label: earned?.label?.trim() || achievementBadgeLabel(row.key),
+          awardedAt: earned?.awardedAt ?? null,
+          earned: Boolean(earned)
+        };
+      }),
+    [earnedByKey]
   );
 
+  const earnedCount = badges.filter((b) => b.earned).length;
   const styles = useMemo(
     () => createStyles(s, t, windowWidth, badges.length),
     [s, t, windowWidth, badges.length]
   );
 
-  if (badges.length === 0) return null;
-
   const summary =
-    badges.length === 1
-      ? '1 achievement badge earned.'
-      : `${badges.length} achievement badges earned.`;
+    earnedCount === 0
+      ? 'No achievement badges earned yet — keep contributing.'
+      : earnedCount === 1
+        ? '1 achievement badge earned.'
+        : `${earnedCount} achievement badges earned.`;
 
   return (
     <View style={styles.section}>
@@ -63,21 +74,29 @@ export function ProfileAchievementBadges({
           return (
             <View
               key={badge.badgeKey}
-              style={styles.item}
-              accessibilityLabel={`${badge.label} achievement`}
+              style={[styles.item, !badge.earned ? styles.itemLocked : null]}
+              accessibilityLabel={
+                badge.earned
+                  ? `${badge.label} achievement`
+                  : `${badge.label} locked`
+              }
             >
               <View style={styles.imageWrap}>
-                <Image source={source} style={styles.image} resizeMode="contain" />
+                <Image
+                  source={source}
+                  style={[styles.image, !badge.earned ? styles.imageLocked : null]}
+                  resizeMode="contain"
+                />
               </View>
               <Text style={styles.label} numberOfLines={2}>
                 {badge.label}
               </Text>
-              {badge.awardedAt ? (
-                <Text style={styles.countLabel}>
-                  {formatAwarded(badge.awardedAt)}
-                </Text>
-              ) : (
+              {badge.earned && badge.awardedAt ? (
+                <Text style={styles.countLabel}>{formatAwarded(badge.awardedAt)}</Text>
+              ) : badge.earned ? (
                 <Text style={styles.countLabel}>Earned</Text>
+              ) : (
+                <Text style={styles.lockedLabel}>{reputationCopy.achievementLocked}</Text>
               )}
             </View>
           );
@@ -150,6 +169,9 @@ function createStyles(
       gap: s(4),
       paddingVertical: s(4)
     },
+    itemLocked: {
+      opacity: 0.55
+    },
     imageWrap: {
       width: imageSize,
       height: imageSize * 1.18,
@@ -160,6 +182,9 @@ function createStyles(
     image: {
       width: imageSize,
       height: imageSize * 1.18
+    },
+    imageLocked: {
+      opacity: 0.45
     },
     label: {
       fontFamily: appFonts.bodyBold,
@@ -174,6 +199,13 @@ function createStyles(
       fontSize: t(10),
       letterSpacing: 0.4,
       color: figmaColors.accentStrong,
+      textAlign: 'center'
+    },
+    lockedLabel: {
+      fontFamily: appFonts.accent,
+      fontSize: t(10),
+      letterSpacing: 0.4,
+      color: figmaColors.gray,
       textAlign: 'center'
     }
   });

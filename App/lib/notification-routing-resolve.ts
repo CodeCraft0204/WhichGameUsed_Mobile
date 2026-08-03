@@ -6,6 +6,8 @@
 export type NotificationNavTarget =
   | { type: 'messages'; conversationId: string }
   | { type: 'profile'; profileId: string }
+  | { type: 'own_profile' }
+  | { type: 'leaderboard' }
   | { type: 'database_card'; cardId: string }
   | { type: 'wishlist' }
   | { type: 'mw_contributions' }
@@ -24,9 +26,17 @@ export function resolveLinkPath(path: string | null | undefined): NotificationNa
     return conversationId ? { type: 'messages', conversationId } : null;
   }
 
+  if (trimmed === '/profile/profile' || trimmed === '/profile') {
+    return { type: 'own_profile' };
+  }
+
   if (trimmed.startsWith('/profile/')) {
     const profileId = trimmed.replace('/profile/', '').split('/')[0];
     return profileId ? { type: 'profile', profileId } : null;
+  }
+
+  if (trimmed === '/leaderboard' || trimmed.startsWith('/leaderboard/')) {
+    return { type: 'leaderboard' };
   }
 
   if (trimmed.startsWith('/database/card/')) {
@@ -120,6 +130,25 @@ export function resolvePushNotificationTarget(data: Record<string, unknown>): No
     kind === 'card_request_approved'
   ) {
     return { type: 'wishlist' };
+  }
+
+  if (
+    kind === 'donut_received' ||
+    kind === 'rank_advanced' ||
+    kind === 'badge_earned' ||
+    kind === 'subtitle_approved' ||
+    kind === 'subtitle_rejected'
+  ) {
+    return { type: 'own_profile' };
+  }
+
+  if (
+    kind === 'advocacy_update' ||
+    kind === 'advocacy_resolved' ||
+    kind === 'advocacy_evidence_confirmed' ||
+    kind === 'advocacy_evidence_needs_context'
+  ) {
+    return { type: 'advocacy' };
   }
 
   return null;

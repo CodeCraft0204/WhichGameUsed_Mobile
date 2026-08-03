@@ -39,7 +39,7 @@ export const cardEvidenceAttributeCatalog: {
   {
     key: 'trending',
     label: 'Trending',
-    description: 'High recent activity (comments, votes, evidence, saves, views) over 7 days.',
+    description: 'High recent research ratings and leaderboard activity over 7 days.',
     automatic: true
   },
   {

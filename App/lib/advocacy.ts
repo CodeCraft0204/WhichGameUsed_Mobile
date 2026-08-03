@@ -148,6 +148,34 @@ export async function submitAdvocacyEvidence(payload: Record<string, unknown>) {
   return { id: (data as { id?: string } | null)?.id ?? null, error: null };
 }
 
+const ADVOCACY_MEDIA_BUCKET = 'advocacy-campaign-media';
+
+/** Upload evidence photo to storage path evidence/{uid}/{uuid}.jpg */
+export async function uploadAdvocacyEvidencePhoto(localUri: string): Promise<{
+  storagePath: string | null;
+  error: string | null;
+}> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) {
+    return { storagePath: null, error: userError?.message ?? 'Sign in required.' };
+  }
+  try {
+    const res = await fetch(localUri);
+    const blob = await res.blob();
+    const path = `evidence/${userData.user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.jpg`;
+    const { error: uploadError } = await supabase.storage
+      .from(ADVOCACY_MEDIA_BUCKET)
+      .upload(path, blob, { contentType: 'image/jpeg', upsert: false });
+    if (uploadError) return { storagePath: null, error: uploadError.message };
+    return { storagePath: path, error: null };
+  } catch (e) {
+    return {
+      storagePath: null,
+      error: e instanceof Error ? e.message : 'Upload failed.'
+    };
+  }
+}
+
 export async function listMyAdvocacy() {
   const { data, error } = await supabase.rpc('list_my_advocacy');
   if (error) return { supported: [], following: [], error: error.message };
