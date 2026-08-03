@@ -35,8 +35,10 @@ type Props = {
   containerStyle?: StyleProp<ViewStyle>;
 };
 
-const INTRO_DELAY_MS = 5000;
-const MESSAGE_CYCLE_MS = 5200;
+/** Page description stays visible longer before tip rotation begins. */
+const INTRO_DELAY_MS = 7500;
+/** Dwell time per rotating tip — client ask: increase display time on each page. */
+const MESSAGE_CYCLE_MS = 10000;
 const FADE_MS = 260;
 const SCROLL_DESCRIPTION_THRESHOLD = 12;
 const SWIPE_THRESHOLD = 40;

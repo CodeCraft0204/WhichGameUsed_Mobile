@@ -9,6 +9,7 @@ import {
   type CardEvidenceAttributeKey
 } from '@/constants/reputationContent';
 
+/** Icons with text labels for active evidence-file attributes. */
 export function CardEvidenceAttributeStrip({
   activeKeys,
   s,
@@ -37,13 +38,15 @@ export function CardEvidenceAttributeStrip({
           const src = cardEvidenceAttributeImage(item.key);
           if (!src) return null;
           return (
-            <View key={item.key} style={styles.badge}>
+            <View
+              key={item.key}
+              style={styles.badge}
+              accessibilityLabel={`${item.label}: ${item.description}`}
+            >
               <Image source={src} style={styles.icon} resizeMode="contain" />
-              {!compact ? (
-                <Text style={styles.label} numberOfLines={1}>
-                  {item.label}
-                </Text>
-              ) : null}
+              <Text style={styles.label} numberOfLines={2}>
+                {item.label}
+              </Text>
             </View>
           );
         })}
@@ -54,7 +57,7 @@ export function CardEvidenceAttributeStrip({
 
 function createStyles(s: (n: number) => number, t: (n: number) => number, compact?: boolean) {
   return StyleSheet.create({
-    wrap: { gap: s(6), marginTop: s(8), marginBottom: s(4) },
+    wrap: { gap: s(6), marginTop: s(4), marginBottom: s(2) },
     title: {
       fontFamily: appFonts.accent,
       fontSize: t(11),
@@ -67,19 +70,28 @@ function createStyles(s: (n: number) => number, t: (n: number) => number, compac
       gap: s(compact ? 6 : 8)
     },
     badge: {
+      flexDirection: compact ? 'column' : 'row',
       alignItems: 'center',
-      width: s(compact ? 44 : 64),
-      gap: s(2)
+      gap: s(compact ? 2 : 6),
+      maxWidth: compact ? s(72) : undefined,
+      paddingHorizontal: compact ? 0 : s(8),
+      paddingVertical: compact ? 0 : s(6),
+      borderRadius: s(10),
+      backgroundColor: compact ? 'transparent' : figmaColors.tagBg,
+      borderWidth: compact ? 0 : 1,
+      borderColor: figmaColors.borderLight
     },
     icon: {
-      width: s(compact ? 40 : 52),
-      height: s(compact ? 40 : 52)
+      width: s(compact ? 36 : 28),
+      height: s(compact ? 36 : 28)
     },
     label: {
       fontFamily: appFonts.body,
-      fontSize: t(9),
-      color: figmaColors.brownMuted,
-      textAlign: 'center'
+      fontSize: t(compact ? 9 : 11),
+      color: figmaColors.ink,
+      textAlign: compact ? 'center' : 'left',
+      flexShrink: 1,
+      maxWidth: compact ? s(68) : s(120)
     }
   });
 }

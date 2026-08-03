@@ -9,6 +9,7 @@ import {
   TextInput,
   View
 } from 'react-native';
+import { ResponseGifOverlay } from '@/components/ui/ResponseGifOverlay';
 import { appFonts } from '@/constants/appFonts';
 import {
   mostWantedCopy,
@@ -74,6 +75,7 @@ export function SubmitEvidenceForm({
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showGif, setShowGif] = useState(false);
   const [reviewerNotes, setReviewerNotes] = useState<string | null>(null);
   const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
   const [loadingExisting, setLoadingExisting] = useState(!!submissionId);
@@ -186,12 +188,20 @@ export function SubmitEvidenceForm({
       setError(submitError);
       return;
     }
-    onSubmitted();
+    setShowGif(true);
   }
 
   return (
     <View style={styles.wrap}>
-      {/* Hunt context — parchment banner like the detail hero */}
+      <ResponseGifOverlay
+        visible={showGif}
+        onDone={() => {
+          setShowGif(false);
+          onSubmitted();
+        }}
+        mood="success"
+        label="Evidence filed"
+      />      {/* Hunt context — parchment banner like the detail hero */}
       {contextTitle ? (
         <View style={styles.contextPanel}>
           <Image source={mostWantedIcons.ctaShield} style={styles.contextShield} resizeMode="contain" />

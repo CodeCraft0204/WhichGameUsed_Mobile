@@ -28,8 +28,12 @@ export function CardEvidenceFilePanel({
   if (!summary) return null;
 
   const keys = summary.attributes?.activeKeys ?? [];
+  const score = summary.communityScore;
+  const voteCount = summary.communityVoteCount;
+  const hasScore = score != null && score > 0;
   const hasBody =
     keys.length > 0 ||
+    hasScore ||
     summary.topQualityLevel != null ||
     summary.donutsReceived > 0 ||
     summary.researchers.length > 0;
@@ -48,28 +52,37 @@ export function CardEvidenceFilePanel({
         ) : null}
       </View>
 
+      <View style={styles.scoreBlock}>
+        <Text style={styles.subhead}>{reputationCopy.scoreTitle}</Text>
+        <Text style={styles.scoreValue}>
+          {reputationCopy.scoreValue(hasScore ? score! : 0, voteCount)}
+        </Text>
+      </View>
+
       {keys.length > 0 ? (
-        <CardEvidenceAttributeStrip
-          activeKeys={keys as CardEvidenceAttributeKey[]}
-          showTitle={false}
-          s={s}
-          t={t}
-        />
+        <View>
+          <Text style={styles.subhead}>{reputationCopy.attributesTitle}</Text>
+          <CardEvidenceAttributeStrip
+            activeKeys={keys as CardEvidenceAttributeKey[]}
+            showTitle={false}
+            s={s}
+            t={t}
+          />
+        </View>
       ) : null}
 
-      <View style={styles.metaRow}>
-        {summary.topQualityLevel != null ? (
-          <View style={styles.metaBlock}>
-            <Text style={styles.subhead}>{reputationCopy.qualityTitle}</Text>
-            <EvidenceQualityChip level={summary.topQualityLevel} s={s} t={t} />
-          </View>
-        ) : null}
-        {summary.donutsReceived > 0 ? (
-          <Text style={styles.donutText}>
-            {reputationCopy.cardDonutsReceived(summary.donutsReceived)}
-          </Text>
-        ) : null}
-      </View>
+      {summary.topQualityLevel != null ? (
+        <View style={styles.metaBlock}>
+          <Text style={styles.subhead}>{reputationCopy.qualityTitle}</Text>
+          <EvidenceQualityChip level={summary.topQualityLevel} s={s} t={t} />
+        </View>
+      ) : null}
+
+      {summary.donutsReceived > 0 ? (
+        <Text style={styles.donutText}>
+          {reputationCopy.cardDonutsReceived(summary.donutsReceived)}
+        </Text>
+      ) : null}
 
       {summary.researchers.length > 0 ? (
         <View style={styles.researchers}>
@@ -126,7 +139,7 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       backgroundColor: figmaColors.surfaceElevated,
       borderWidth: 1,
       borderColor: figmaColors.borderLight,
-      gap: s(10)
+      gap: s(12)
     },
     headerRow: {
       flexDirection: 'row',
@@ -156,6 +169,13 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       color: figmaColors.ink
     },
     donutIcon: { width: s(18), height: s(18) },
+    scoreBlock: { gap: s(4) },
+    scoreValue: {
+      fontFamily: appFonts.bodyBold,
+      fontSize: t(22),
+      color: figmaColors.charcoal,
+      letterSpacing: 0.2
+    },
     subhead: {
       fontFamily: appFonts.accent,
       fontSize: t(10),
@@ -163,7 +183,6 @@ function createStyles(s: (n: number) => number, t: (n: number) => number) {
       color: figmaColors.brown,
       marginBottom: s(4)
     },
-    metaRow: { gap: s(6) },
     metaBlock: { gap: s(2) },
     donutText: {
       fontFamily: appFonts.body,

@@ -13,8 +13,15 @@ export const reputationCopy = {
   requestSubtitlePlaceholder: 'e.g. Patch Pattern Sleuth',
   requestSubtitleCta: 'REQUEST REVIEW',
   requestSubtitleBusy: 'Submitting…',
-  attributesTitle: 'FILE STATUS',
+  attributesTitle: 'EVIDENCE ATTRIBUTES',
   evidenceFileTitle: 'EVIDENCE FILE',
+  scoreTitle: 'SCORE',
+  scoreValue: (score: number, votes: number) =>
+    votes > 0
+      ? `${score.toFixed(1)} · ${votes.toLocaleString()} vote${votes === 1 ? '' : 's'}`
+      : score > 0
+        ? score.toFixed(1)
+        : 'Unrated',
   researchersTitle: 'RESEARCHERS',
   qualityTitle: 'EVIDENCE QUALITY',
   cardDonutsReceived: (n: number) =>

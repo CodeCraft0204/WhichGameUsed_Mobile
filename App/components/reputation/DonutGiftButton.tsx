@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ResponseGifOverlay } from '@/components/ui/ResponseGifOverlay';
 import { appFonts } from '@/constants/appFonts';
 import { figmaColors } from '@/constants/figmaColors';
 import { reputationCopy } from '@/constants/reputationCopy';
@@ -26,6 +27,7 @@ export function DonutGiftButton({
   const styles = useMemo(() => createStyles(s, t), [s, t]);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  const [showGif, setShowGif] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scale = useRef(new Animated.Value(1)).current;
   const pop = useRef(new Animated.Value(0)).current;
@@ -59,6 +61,7 @@ export function DonutGiftButton({
       return;
     }
     setDone(true);
+    setShowGif(true);
     onGifted?.();
   }, [busy, disabled, done, onGifted, targetId, targetType, toUserId]);
 
@@ -112,6 +115,7 @@ export function DonutGiftButton({
         <Image source={reputationUiImages.donut} style={styles.burstIcon} resizeMode="contain" />
       </Animated.View>
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      <ResponseGifOverlay visible={showGif} onDone={() => setShowGif(false)} mood="success" />
     </View>
   );
 }

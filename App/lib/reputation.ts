@@ -26,6 +26,9 @@ export type CardEvidenceAttributes = {
   evidencePublished: boolean;
   trending: boolean;
   topRated: boolean;
+  trendingScore: number;
+  topRatedScore: number;
+  topRatedVoteCount: number;
   activeKeys: CardEvidenceAttributeKey[];
 };
 
@@ -143,6 +146,9 @@ export type CardEvidenceFileSummary = {
   researchers: CardResearcher[];
   donutsReceived: number;
   topQualityLevel: number | null;
+  /** Community research rating (1–5 scale), when available. */
+  communityScore: number | null;
+  communityVoteCount: number;
 };
 
 function mapAttributesFromRaw(o: Record<string, unknown>, cardId: string): CardEvidenceAttributes {
@@ -159,8 +165,29 @@ function mapAttributesFromRaw(o: Record<string, unknown>, cardId: string): CardE
     evidencePublished: Boolean(o.evidence_published),
     trending: Boolean(o.trending),
     topRated: Boolean(o.top_rated),
+    trendingScore: Number(o.trending_score ?? 0),
+    topRatedScore: Number(o.top_rated_score ?? 0),
+    topRatedVoteCount: Number(o.top_rated_vote_count ?? 0),
     activeKeys: flags
   };
+}
+
+function resolveCommunityScore(
+  o: Record<string, unknown>,
+  attrs: CardEvidenceAttributes | null
+): { score: number | null; votes: number } {
+  const rawScore = o.community_score ?? o.community_research_rating;
+  const rawVotes = o.community_vote_count ?? o.community_research_vote_count;
+  if (rawScore != null && Number(rawScore) > 0) {
+    return {
+      score: Number(rawScore),
+      votes: Number(rawVotes ?? attrs?.topRatedVoteCount ?? 0)
+    };
+  }
+  if (attrs && attrs.topRatedScore > 0) {
+    return { score: attrs.topRatedScore, votes: attrs.topRatedVoteCount };
+  }
+  return { score: null, votes: attrs?.topRatedVoteCount ?? 0 };
 }
 
 export async function fetchCardEvidenceFile(cardId: string): Promise<{
@@ -172,6 +199,7 @@ export async function fetchCardEvidenceFile(cardId: string): Promise<{
   });
   if (error) {
     const attrs = await fetchCardEvidenceAttributes(cardId);
+    const scoreInfo = resolveCommunityScore({}, attrs.attributes);
     return {
       summary: attrs.attributes
         ? {
@@ -179,7 +207,9 @@ export async function fetchCardEvidenceFile(cardId: string): Promise<{
             attributes: attrs.attributes,
             researchers: [],
             donutsReceived: 0,
-            topQualityLevel: null
+            topQualityLevel: null,
+            communityScore: scoreInfo.score,
+            communityVoteCount: scoreInfo.votes
           }
         : null,
       error: error.message
@@ -191,11 +221,13 @@ export async function fetchCardEvidenceFile(cardId: string): Promise<{
     o.attributes && typeof o.attributes === 'object'
       ? (o.attributes as Record<string, unknown>)
       : {};
+  const attributes = mapAttributesFromRaw(attrsRaw, cardId);
+  const scoreInfo = resolveCommunityScore(o, attributes);
   const researchersRaw = Array.isArray(o.researchers) ? o.researchers : [];
   return {
     summary: {
       cardId: String(o.card_id ?? cardId),
-      attributes: mapAttributesFromRaw(attrsRaw, cardId),
+      attributes,
       researchers: researchersRaw.map((r) => {
         const row = r as Record<string, unknown>;
         return {
@@ -210,7 +242,9 @@ export async function fetchCardEvidenceFile(cardId: string): Promise<{
       topQualityLevel:
         o.top_quality_level == null || Number(o.top_quality_level) < 1
           ? null
-          : Number(o.top_quality_level)
+          : Number(o.top_quality_level),
+      communityScore: scoreInfo.score,
+      communityVoteCount: scoreInfo.votes
     },
     error: null
   };
