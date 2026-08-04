@@ -111,7 +111,7 @@ async function profileAfterSession(): Promise<AuthSessionResult> {
   }
   const { profile, clockSkew } = await fetchProfile(userId);
   if (clockSkew) {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
     return { error: null, profile: null, isAdmin: false };
   }
   return { error: null, profile, isAdmin: isAdminRole(profile?.role) };
@@ -146,7 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfileLoading(true);
     const { profile: next, clockSkew } = await fetchProfile(user.id);
     if (clockSkew) {
-      await supabase.auth.signOut();
+      await supabase.auth.signOut({ scope: 'local' });
       setProfile(null);
       return;
     }
@@ -191,7 +191,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void fetchProfile(user.id).then(async ({ profile: next, clockSkew }) => {
       if (!mounted) return;
       if (clockSkew) {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: 'local' });
         setProfile(null);
         setProfileLoading(false);
         return;
@@ -279,7 +279,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: formatAuthError(pwdResult.error.message), requiresReauth: false };
       }
       if (signOutError) {
-        await supabase.auth.signOut();
+        // Password changed — revoke remaining sessions on this and other devices.
+        await supabase.auth.signOut({ scope: 'global' });
       }
       setSession(null);
       setUser(null);
@@ -309,7 +310,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    // Local only — do not revoke portal / other device sessions (default is global).
+    await supabase.auth.signOut({ scope: 'local' });
     setProfile(null);
   }, []);
 

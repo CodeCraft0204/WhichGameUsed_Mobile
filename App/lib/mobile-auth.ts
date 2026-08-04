@@ -143,7 +143,8 @@ export async function requestSignInOtpAfterPassword(email: string, password: str
     return { passwordError, otpError: null };
   }
 
-  await supabase.auth.signOut();
+  // Drop the temporary password-check session only on this device.
+  await supabase.auth.signOut({ scope: 'local' });
 
   const { error: otpError } = await sendMobileOtp(trimmed, { createUser: false });
   return { passwordError: null, otpError };
