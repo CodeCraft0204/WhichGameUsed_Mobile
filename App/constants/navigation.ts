@@ -74,6 +74,13 @@ export function authenticatedAssetHref(assetId: string): Href {
   return { pathname: '/database/asset/[id]', params: { id: assetId } } as unknown as Href;
 }
 
+export function stickerShippingHref(assetId: string): Href {
+  return {
+    pathname: '/commerce/sticker-shipping/[assetId]',
+    params: { assetId }
+  } as unknown as Href;
+}
+
 export function databaseVerificationHref(code: string): Href {
   return { pathname: '/database/verification/[code]', params: { code } } as unknown as Href;
 }

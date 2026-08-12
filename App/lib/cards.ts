@@ -318,7 +318,7 @@ export async function getAuthenticatedAssetById(
 }> {
   const { data, error } = await supabase
     .from('authenticated_assets')
-    .select('id, asset_id, status, authenticated_at, verification_url, card_id')
+    .select('id, asset_id, status, authenticated_at, verification_url, card_id, owner_user_id')
     .eq('id', assetId)
     .maybeSingle();
 

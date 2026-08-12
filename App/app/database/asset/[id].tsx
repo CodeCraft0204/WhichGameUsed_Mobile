@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -16,56 +16,79 @@ import { databaseIcons } from '@/constants/databaseContent';
 import { appFonts } from '@/constants/appFonts';
 import { databaseCopy } from '@/constants/databaseCopy';
 import { figmaColors } from '@/constants/figmaColors';
-import { databaseCardHref, databaseVerificationHref } from '@/constants/navigation';
+import {
+  databaseCardHref,
+  databaseVerificationHref,
+  stickerShippingHref
+} from '@/constants/navigation';
+import { useAuth } from '@/context/AuthContext';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 import {
   getAuthenticatedAssetById,
   getCardById,
   type CardDetail
 } from '@/lib/cards';
+import {
+  formatCents,
+  getMyCommerceOrderForAsset,
+  orderStatusLabel,
+  type CommerceOrder
+} from '@/lib/commerce';
 import { getCurrentStickerStatusForAsset, stickerStatusLabel } from '@/lib/verification';
 
 export default function AuthenticatedAssetScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { s, t } = useFigmaLayout();
   const styles = useMemo(() => createStyles(s, t), [s, t]);
   const [card, setCard] = useState<CardDetail | null>(null);
+  const [assetUuid, setAssetUuid] = useState('');
   const [assetId, setAssetId] = useState('');
+  const [ownerUserId, setOwnerUserId] = useState<string | null>(null);
   const [authenticatedAt, setAuthenticatedAt] = useState<string | null>(null);
   const [stickerStatus, setStickerStatus] = useState<string | null>(null);
+  const [order, setOrder] = useState<CommerceOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!id || typeof id !== 'string') return;
-    let active = true;
     setLoading(true);
-    void (async () => {
-      const assetRes = await getAuthenticatedAssetById(id);
-      if (!active) return;
-      if (assetRes.error || !assetRes.asset) {
-        setError(assetRes.error ?? 'Asset not found.');
-        setLoading(false);
-        return;
-      }
-      const asset = assetRes.asset;
-      setAssetId(asset.asset_id);
-      setAuthenticatedAt(asset.authenticated_at);
-      const [cardRes, stickerRes] = await Promise.all([
-        getCardById(asset.card_id),
-        getCurrentStickerStatusForAsset(asset.id)
-      ]);
-      if (!active) return;
-      setCard(cardRes.card);
-      setStickerStatus(stickerRes.status);
-      setError(cardRes.error ?? stickerRes.error);
+    const assetRes = await getAuthenticatedAssetById(id);
+    if (assetRes.error || !assetRes.asset) {
+      setError(assetRes.error ?? 'Asset not found.');
       setLoading(false);
-    })();
-    return () => {
-      active = false;
-    };
-  }, [id]);
+      return;
+    }
+    const asset = assetRes.asset;
+    setAssetUuid(asset.id);
+    setAssetId(asset.asset_id);
+    setOwnerUserId(asset.owner_user_id ?? null);
+    setAuthenticatedAt(asset.authenticated_at);
+    const [cardRes, stickerRes, orderRes] = await Promise.all([
+      getCardById(asset.card_id),
+      getCurrentStickerStatusForAsset(asset.id),
+      user?.id ? getMyCommerceOrderForAsset(asset.id) : Promise.resolve({ order: null, error: null })
+    ]);
+    setCard(cardRes.card);
+    setStickerStatus(stickerRes.status);
+    setOrder(orderRes.order);
+    setError(cardRes.error ?? stickerRes.error ?? orderRes.error);
+    setLoading(false);
+  }, [id, user?.id]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const isOwner = Boolean(user?.id && ownerUserId && user.id === ownerUserId);
+  const stickerAlreadyShipped =
+    stickerStatus === 'mailed' || stickerStatus === 'active';
+  const showShipCta =
+    isOwner &&
+    !stickerAlreadyShipped &&
+    !(order && ['mailed', 'delivered'].includes(order.status));
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -98,11 +121,32 @@ export default function AuthenticatedAssetScreen() {
               </Text>
               <Text style={styles.label}>Sticker</Text>
               <Text style={styles.value}>{stickerStatusLabel(stickerStatus)}</Text>
+              {order ? (
+                <>
+                  <Text style={styles.label}>Shipping order</Text>
+                  <Text style={styles.value}>
+                    {orderStatusLabel(order.status)}
+                    {order.payment_required
+                      ? ` · ${formatCents(order.amount_cents, order.currency)}`
+                      : ' · Free'}
+                  </Text>
+                </>
+              ) : null}
             </View>
             <AuthPrimaryButton
               label={databaseCopy.viewCatalogCard}
               onPress={() => router.push(databaseCardHref(card.id))}
             />
+            {showShipCta && assetUuid ? (
+              <AuthPrimaryButton
+                label={
+                  order?.status === 'awaiting_payment'
+                    ? 'Complete sticker shipping'
+                    : 'Request physical sticker'
+                }
+                onPress={() => router.push(stickerShippingHref(assetUuid))}
+              />
+            ) : null}
             {assetId ? (
               <Pressable
                 style={styles.secondary}

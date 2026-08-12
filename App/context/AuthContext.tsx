@@ -19,6 +19,7 @@ import {
   sendMobileOtp,
   verifyMobileOtp
 } from '@/lib/mobile-auth';
+import { configurePurchases, revenueCatLogIn, revenueCatLogOut } from '@/lib/revenuecat';
 import { supabase } from '@/lib/supabase';
 import type { AppRole, MyProfile } from '@/types/profile';
 
@@ -157,19 +158,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
+    void configurePurchases();
+
     void supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
       setSession(data.session);
       setUser(data.session?.user ?? null);
       setLoading(false);
+      if (data.session?.user?.id) {
+        void revenueCatLogIn(data.session.user.id);
+      }
     });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
       setLoading(false);
       if (!nextSession) {
         setProfile(null);
+        void revenueCatLogOut();
+      } else if (nextSession.user?.id && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION')) {
+        void revenueCatLogIn(nextSession.user.id);
       }
     });
 
@@ -311,6 +320,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     // Local only — do not revoke portal / other device sessions (default is global).
+    await revenueCatLogOut();
     await supabase.auth.signOut({ scope: 'local' });
     setProfile(null);
   }, []);
