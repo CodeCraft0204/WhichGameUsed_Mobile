@@ -6,7 +6,11 @@
       "version": "1.0.0",
       "orientation": "portrait",
       "userInterfaceStyle": "light",
-      "assetBundlePatterns": ["**/*"],
+      "assetBundlePatterns": [
+      "assets/Splash.png",
+      "assets/fonts/**/*",
+      "assets/camera/**/*"
+    ],
       "plugins": [
         "expo-router",
         [

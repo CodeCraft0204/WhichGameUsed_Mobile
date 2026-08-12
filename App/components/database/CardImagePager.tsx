@@ -8,7 +8,8 @@ import {
   StyleSheet,
   Text,
   View,
-  useWindowDimensions
+  useWindowDimensions,
+  type ImageSourcePropType
 } from 'react-native';
 import { appFonts } from '@/constants/appFonts';
 import { bodyText, broadsheetAccent } from '@/constants/appTypography';
@@ -16,8 +17,8 @@ import { databaseCopy } from '@/constants/databaseCopy';
 import { figmaColors } from '@/constants/figmaColors';
 
 type CardImagePagerProps = {
-  frontSource: { uri: string } | number;
-  backSource: { uri: string } | number;
+  frontSource: ImageSourcePropType;
+  backSource: ImageSourcePropType;
   hasFrontImage?: boolean;
   hasBackImage?: boolean;
   s: (n: number) => number;

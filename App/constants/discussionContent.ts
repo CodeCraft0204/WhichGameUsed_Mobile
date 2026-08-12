@@ -1,10 +1,11 @@
-import { Platform, TextStyle } from 'react-native';
+import { remoteAsset } from '@/constants/remoteAssets';
+import { Platform, TextStyle, type ImageSourcePropType } from 'react-native';
 import { figmaIcons } from '@/constants/figmaIcons';
 import { figmaColors } from '@/constants/figmaColors';
 
 /** Discussion screen assets (node 1:431). */
 export const discussionIcons = {
-  hero: require('@/assets/figma/discussion/hero.png'),
+  hero: remoteAsset('figma/discussion/hero.png'),
   topicAuthenticated: figmaIcons.sealApproved,
   topicCounterfeits: figmaIcons.sealRejected,
   topicShowTell: figmaIcons.evidencePinned,
@@ -15,13 +16,13 @@ export const discussionIcons = {
   threadLike: figmaIcons.thumbsUp,
   threadClap: figmaIcons.starImportant,
   threadReport: figmaIcons.watchEye,
-  avatar1: require('@/assets/figma/leaderboard/avatar_rank1.png'),
-  avatar2: require('@/assets/figma/leaderboard/avatar_rank2.png'),
-  avatar3: require('@/assets/figma/leaderboard/avatar_rank3.png'),
-  sectionChevron: require('@/assets/figma/discussion/chevron.png'),
-  cardChevron: require('@/assets/figma/database/card_chevron.png'),
-  ctaIcon: require('@/assets/figma/discussion/cta_icon.png'),
-  ctaArrow: require('@/assets/figma/discussion/cta_arrow.png'),
+  avatar1: remoteAsset('figma/leaderboard/avatar_rank1.png'),
+  avatar2: remoteAsset('figma/leaderboard/avatar_rank2.png'),
+  avatar3: remoteAsset('figma/leaderboard/avatar_rank3.png'),
+  sectionChevron: remoteAsset('figma/discussion/chevron.png'),
+  cardChevron: remoteAsset('figma/database/card_chevron.png'),
+  ctaIcon: remoteAsset('figma/discussion/cta_icon.png'),
+  ctaArrow: remoteAsset('figma/discussion/cta_arrow.png'),
   metaFollowers: figmaIcons.metaSupporters
 } as const;
 
@@ -29,7 +30,7 @@ export const discussionTabs = ['NEWEST', 'ALL-TIME GREATS', 'HOTTEST'] as const;
 
 export type DiscussionTab = (typeof discussionTabs)[number];
 
-export const topicIconBySlug: Record<string, number> = {
+export const topicIconBySlug: Record<string, ImageSourcePropType> = {
   'newly-authenticated': discussionIcons.topicAuthenticated,
   counterfeits: discussionIcons.topicCounterfeits,
   'show-and-tell': discussionIcons.topicShowTell,

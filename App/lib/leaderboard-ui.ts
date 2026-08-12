@@ -1,9 +1,10 @@
 import { LEADERBOARD_EVENT_GROUPS } from '@/constants/leaderboardEventLabels';
 import { leaderboardAssets } from '@/constants/leaderboardAssets';
 import type { PointBreakdownGroup, PointEvent } from '@/lib/leaderboard';
+import type { ImageSourcePropType } from 'react-native';
 
 export type RankTheme = {
-  laurel: number | null;
+  laurel: ImageSourcePropType | null;
   accent: string;
   accentMuted: string;
 };

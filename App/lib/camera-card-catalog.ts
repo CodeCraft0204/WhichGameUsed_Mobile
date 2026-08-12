@@ -1,3 +1,4 @@
+import type { ImageSourcePropType } from 'react-native';
 import { databaseIcons } from '@/constants/databaseContent';
 import {
   cardDescription,
@@ -11,7 +12,7 @@ export type CameraCardSearchResult = {
   title: string;
   description: string;
   tags: string[];
-  cardImage: number;
+  cardImage: ImageSourcePropType;
   imageUrl: string | null;
 };
 

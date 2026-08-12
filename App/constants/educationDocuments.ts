@@ -1,3 +1,4 @@
+import { remoteAsset, remoteAssetUri } from '@/constants/remoteAssets';
 import type { ImageSourcePropType } from 'react-native';
 import { educationIcons } from '@/constants/educationContent';
 
@@ -8,14 +9,14 @@ export type EducationDocument = {
   title: string;
   subtitle?: string;
   kind: EducationDocumentKind;
-  /** Bundled asset module from require(...). Used on iOS/Android. */
+  /** Bundled asset module from require(...). Optional for native-only leftovers. */
   assetModule?: number;
   /**
-   * Static web path under /public (Expo serves these with correct PDF MIME).
-   * Prefer this on web — Metro asset URLs often fail Chrome's PDF viewer.
+   * Optional static web path under /public.
+   * Prefer remoteUri (Supabase public bucket) for PDF MIME correctness.
    */
   webPublicPath?: string;
-  /** Remote https URL (PDF or image). */
+  /** Remote https URL (PDF or image) — preferred for Storage-hosted guides. */
   remoteUri?: string;
   /** Static image source for timeline originals. */
   imageSource?: ImageSourcePropType;
@@ -23,7 +24,7 @@ export type EducationDocument = {
 
 /**
  * In-app originals / PDF guides.
- * Babe Ruth story is the founding case study PDF bundled under education assets.
+ * Babe Ruth story PDF is hosted on Supabase Storage (`mobile-app-assets`).
  */
 export const educationDocuments: Record<string, EducationDocument> = {
   'babe-and-the-big-break': {
@@ -32,7 +33,7 @@ export const educationDocuments: Record<string, EducationDocument> = {
     subtitle:
       'This platform started with a card, a question, and a search for answers. One year later, we Photo Matched Babe Ruth’s best-known game-used jersey card to the 1926 World Series.',
     kind: 'pdf',
-    assetModule: require('@/assets/figma/education/babe_ruth_1926_home_jersey.pdf'),
+    remoteUri: remoteAssetUri('figma/education/babe_ruth_1926_home_jersey.pdf'),
     webPublicPath: '/education/babe-and-the-big-break.pdf'
   },
   'game-used-hobby-timeline-original': {

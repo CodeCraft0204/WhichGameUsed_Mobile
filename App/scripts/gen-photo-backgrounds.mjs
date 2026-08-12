@@ -7,7 +7,9 @@ const chunksDir = path.join(outDir, 'chunks');
 const legacyFile = path.resolve('constants/photoEditorBackgrounds.ts');
 const CHUNK_SIZE = 8;
 
-const files = fs.readdirSync(bgDir).filter((f) => /\.(jpg|jpeg|png)$/i.test(f)).sort();
+const files = fs.existsSync(bgDir)
+  ? fs.readdirSync(bgDir).filter((f) => /\.(jpg|jpeg|png)$/i.test(f)).sort()
+  : [];
 const used = new Set();
 
 function keyFor(name) {
@@ -54,14 +56,22 @@ for (let i = 0; i < chunkCount; i++) {
   const slice = entries.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
   const chunkName = `chunk${i}`;
   let chunk = `/** Background assets chunk ${i + 1}/${chunkCount} — generated, do not edit. */\n\n`;
+  chunk += `import { remoteAsset } from '@/constants/remoteAssets';\n\n`;
   chunk += `export const ${chunkName} = {\n`;
   for (const entry of slice) {
     const escaped = entry.file.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-    chunk += `  ${entry.key}: require('@/assets/Photo Editor/background/${escaped}'),\n`;
+    chunk += `  ${entry.key}: remoteAsset('Photo Editor/background/${escaped}'),\n`;
   }
   chunk += `} as const;\n`;
   fs.writeFileSync(path.join(chunksDir, `${chunkName}.ts`), chunk);
   chunkImports.push(chunkName);
+}
+
+// Clear stale chunks if background count shrank
+for (const existing of fs.readdirSync(chunksDir)) {
+  if (!/^chunk\d+\.ts$/.test(existing)) continue;
+  const idx = Number(existing.replace(/chunk|\.ts/g, ''));
+  if (idx >= chunkCount) fs.unlinkSync(path.join(chunksDir, existing));
 }
 
 let index = `/** Photo editor canvas backgrounds (Photo Editor/background). */\n\n`;
@@ -107,10 +117,10 @@ const totalBytes = files.reduce((sum, file) => {
 }, 0);
 const totalMb = (totalBytes / (1024 * 1024)).toFixed(1);
 
-console.log(`Wrote ${entries.length} backgrounds in ${chunkCount} chunks to ${outDir}`);
-console.log(`Total background asset size: ${totalMb} MB`);
-if (totalBytes > 40 * 1024 * 1024) {
+console.log(`Wrote ${entries.length} remote backgrounds in ${chunkCount} chunks to ${outDir}`);
+console.log(`Source background size on disk: ${totalMb} MB (served from Supabase after upload)`);
+if (!files.length) {
   console.warn(
-    'Warning: backgrounds exceed ~40 MB. Metro may run out of memory unless images are compressed or Node heap is increased.'
+    'No local background files found — chunks empty. Restore assets or re-run after download.'
   );
 }

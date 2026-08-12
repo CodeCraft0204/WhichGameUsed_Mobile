@@ -7,7 +7,9 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "assetBundlePatterns": [
-      "**/*"
+      "assets/Splash.png",
+      "assets/fonts/**/*",
+      "assets/camera/**/*"
     ],
     "plugins": [
       "expo-router",

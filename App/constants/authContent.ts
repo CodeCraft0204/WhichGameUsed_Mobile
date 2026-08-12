@@ -1,14 +1,16 @@
+import { remoteAsset } from '@/constants/remoteAssets';
+
 /** Auth flow copy, assets, and password rules. */
 export const authIcons = {
-  logo: require('@/assets/auth/logo.png'),
-  heroLogin: require('@/assets/auth/hero_login_crop.png'),
-  heroSignup: require('@/assets/auth/hero_signup_crop.png'),
-  heroReset: require('@/assets/auth/hero_reset_crop.png'),
-  heroSetPassword: require('@/assets/auth/hero_set_password_crop.png'),
-  resetPasswordInfoIllustration: require('@/assets/auth/ResetPwd_info_img.png'),
-  checkMail: require('@/assets/auth/CheckMail.png'),
-  setNewPasswordInfoIllustration: require('@/assets/auth/SetNewPwd_info_img.png'),
-  titleBrush: require('@/assets/figma/advocacy/title_brush.png'),
+  logo: remoteAsset('auth/logo.png'),
+  heroLogin: remoteAsset('auth/hero_login_crop.png'),
+  heroSignup: remoteAsset('auth/hero_signup_crop.png'),
+  heroReset: remoteAsset('auth/hero_reset_crop.png'),
+  heroSetPassword: remoteAsset('auth/hero_set_password_crop.png'),
+  resetPasswordInfoIllustration: remoteAsset('auth/ResetPwd_info_img.png'),
+  checkMail: remoteAsset('auth/CheckMail.png'),
+  setNewPasswordInfoIllustration: remoteAsset('auth/SetNewPwd_info_img.png'),
+  titleBrush: remoteAsset('figma/advocacy/title_brush.png'),
   tornEdge: require('@/assets/camera/bord.png')
 } as const;
 

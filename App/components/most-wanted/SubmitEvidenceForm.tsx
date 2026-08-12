@@ -7,7 +7,8 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  View
+  View,
+  type ImageSourcePropType
 } from 'react-native';
 import { ResponseGifOverlay } from '@/components/ui/ResponseGifOverlay';
 import { appFonts } from '@/constants/appFonts';
@@ -46,7 +47,7 @@ const STEPS = [
   mostWantedCopy.submitStepReview
 ] as const;
 
-const evidenceTypeIcons: Record<MostWantedEvidenceTypeKey, number> = {
+const evidenceTypeIcons: Record<MostWantedEvidenceTypeKey, ImageSourcePropType> = {
   card_front: mostWantedIcons.evidenceImage,
   card_back: mostWantedIcons.evidenceImage,
   source_link: mostWantedIcons.evidenceLink,
@@ -533,7 +534,7 @@ function ReviewRow({
   value,
   styles
 }: {
-  icon: number;
+  icon: ImageSourcePropType;
   label: string;
   value: string;
   styles: ReturnType<typeof createStyles>;

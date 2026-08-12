@@ -1,3 +1,4 @@
+import { remoteAsset } from '@/constants/remoteAssets';
 import { figmaIcons } from '@/constants/figmaIcons';
 
 /** Icons reused across hub screens (Return / Education / Most Wanted / Leaderboard / Advocacy). */
@@ -5,8 +6,8 @@ export const figmaSharedIcons = {
   utilitySearch: figmaIcons.utilitySearch,
   utilityProfile: figmaIcons.utilityProfile,
   utilitySettings: figmaIcons.utilitySettings,
-  titleBrush: require('@/assets/figma/advocacy/title_brush.png'),
-  sectionChevron: require('@/assets/figma/advocacy/section_chevron.png'),
+  titleBrush: remoteAsset('figma/advocacy/title_brush.png'),
+  sectionChevron: remoteAsset('figma/advocacy/section_chevron.png'),
   navReturn: figmaIcons.navReturn,
   navEducation: figmaIcons.navEducation,
   navMostwanted: figmaIcons.navMostWanted,

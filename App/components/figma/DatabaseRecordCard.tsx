@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
 import {
   databaseIcons,
   type DatabaseMetaIconKey,
@@ -9,7 +9,7 @@ import { appFonts } from '@/constants/appFonts';
 import { bodyText } from '@/constants/appTypography';
 import { figmaColors } from '@/constants/figmaColors';
 
-const metaIconSources: Record<DatabaseMetaIconKey, number> = {
+const metaIconSources: Record<DatabaseMetaIconKey, ImageSourcePropType> = {
   person: databaseIcons.metaPerson,
   baseball: databaseIcons.metaBaseball,
   basketball: databaseIcons.metaBasketball,
@@ -18,7 +18,7 @@ const metaIconSources: Record<DatabaseMetaIconKey, number> = {
 };
 
 type DatabaseRecordCardProps = {
-  cardImage?: number;
+  cardImage?: ImageSourcePropType;
   imageUrl?: string | null;
   title: string;
   description: string;
@@ -32,6 +32,7 @@ type DatabaseRecordCardProps = {
 
 /** Shared card layout — featured vs recent differs only in surface color. */
 export function DatabaseRecordCard({
+  cardImage,
   imageUrl,
   title,
   description,
@@ -43,20 +44,19 @@ export function DatabaseRecordCard({
   t
 }: DatabaseRecordCardProps) {
   const styles = createStyles(s, t, variant);
+  const imageSource = imageUrl
+    ? { uri: imageUrl }
+    : (cardImage ?? databaseIcons.cardPlaceholder);
 
   const content = (
     <>
       <View style={styles.imageWrap}>
-        {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.cardImage} resizeMode="contain" />
-        ) : (
-          <Image
-            source={databaseIcons.cardPlaceholder}
-            style={styles.cardImage}
-            resizeMode="cover"
-            accessibilityLabel="No card image"
-          />
-        )}
+        <Image
+          source={imageSource}
+          style={styles.cardImage}
+          resizeMode={imageUrl || cardImage ? 'contain' : 'cover'}
+          accessibilityLabel={imageUrl || cardImage ? undefined : 'No card image'}
+        />
       </View>
 
       <View style={styles.body}>

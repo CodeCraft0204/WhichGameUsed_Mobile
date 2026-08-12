@@ -1,30 +1,31 @@
+import { remoteAsset } from '@/constants/remoteAssets';
 import type { ImageSourcePropType } from 'react-native';
 
 /** Client-provided reaction GIFs for success / acknowledgment feedback. */
 export const responseGifCatalog = [
   {
     key: 'acknowledge',
-    source: require('@/assets/Gif/1.gif') as ImageSourcePropType,
+    source: remoteAsset('Gif/1.gif') as ImageSourcePropType,
     label: 'On it'
   },
   {
     key: 'approved',
-    source: require('@/assets/Gif/2.gif') as ImageSourcePropType,
+    source: remoteAsset('Gif/2.gif') as ImageSourcePropType,
     label: 'Approved'
   },
   {
     key: 'watching',
-    source: require('@/assets/Gif/3.gif') as ImageSourcePropType,
+    source: remoteAsset('Gif/3.gif') as ImageSourcePropType,
     label: 'Watching'
   },
   {
     key: 'case_note',
-    source: require('@/assets/Gif/4.gif') as ImageSourcePropType,
+    source: remoteAsset('Gif/4.gif') as ImageSourcePropType,
     label: 'Case note'
   },
   {
     key: 'deal_with_it',
-    source: require('@/assets/Gif/5.gif') as ImageSourcePropType,
+    source: remoteAsset('Gif/5.gif') as ImageSourcePropType,
     label: 'Case closed'
   }
 ] as const;

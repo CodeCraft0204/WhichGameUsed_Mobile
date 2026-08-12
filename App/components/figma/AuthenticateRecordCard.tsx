@@ -1,7 +1,7 @@
 import React from 'react';
 import { appFonts } from '@/constants/appFonts';
 import { bodyText } from '@/constants/appTypography';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
 import {
   authenticateIcons,
   type AuthenticateDraftRecord,
@@ -10,7 +10,7 @@ import {
 } from '@/constants/authenticateContent';
 import { figmaColors } from '@/constants/figmaColors';
 
-const metaIconSources: Record<AuthenticateMetaIconKey, number> = {
+const metaIconSources: Record<AuthenticateMetaIconKey, ImageSourcePropType> = {
   calendar: authenticateIcons.metaCalendar,
   clock: authenticateIcons.metaClock,
   scan: authenticateIcons.metaScan

@@ -1,26 +1,28 @@
+import type { ImageSourcePropType } from 'react-native';
+import { remoteAsset } from '@/constants/remoteAssets';
 import { figmaIcons } from '@/constants/figmaIcons';
 
 export { databaseCopy } from '@/constants/databaseCopy';
 
 export const databaseIcons = {
-  hero: require('@/assets/figma/database/hero_archive.png'),
-  recordMantle: require('@/assets/figma/database/record_mantle.png'),
-  recordJordan: require('@/assets/figma/database/record_jordan.png'),
-  recordRuth: require('@/assets/figma/database/record_ruth.png'),
-  recentKobe: require('@/assets/figma/database/recent_kobe.png'),
-  recentGehrig: require('@/assets/figma/database/recent_gehrig.png'),
+  hero: remoteAsset('figma/database/hero_archive.png'),
+  recordMantle: remoteAsset('figma/database/record_mantle.png'),
+  recordJordan: remoteAsset('figma/database/record_jordan.png'),
+  recordRuth: remoteAsset('figma/database/record_ruth.png'),
+  recentKobe: remoteAsset('figma/database/recent_kobe.png'),
+  recentGehrig: remoteAsset('figma/database/recent_gehrig.png'),
   metaPerson: figmaIcons.metaPerson,
-  metaBaseball: require('@/assets/figma/database/meta_baseball.png'),
-  metaBasketball: require('@/assets/figma/database/meta_basketball.png'),
+  metaBaseball: remoteAsset('figma/database/meta_baseball.png'),
+  metaBasketball: remoteAsset('figma/database/meta_basketball.png'),
   metaCalendar: figmaIcons.metaCalendar,
   metaShield: figmaIcons.metaShield,
-  cardChevron: require('@/assets/figma/database/card_chevron.png'),
-  sectionChevron: require('@/assets/figma/database/section_chevron.png'),
-  ctaRecords: require('@/assets/figma/database/cta_evidence.png'),
-  ctaArrow: require('@/assets/figma/database/cta_arrow.png'),
-  announcementBanner: require('@/assets/figma/database/Announcement Banner.png'),
-  announcementBannerBig: require('@/assets/figma/database/Announcement Banner - Big.png'),
-  cardPlaceholder: require('@/assets/authenticate/card-placeholder.png')
+  cardChevron: remoteAsset('figma/database/card_chevron.png'),
+  sectionChevron: remoteAsset('figma/database/section_chevron.png'),
+  ctaRecords: remoteAsset('figma/database/cta_evidence.png'),
+  ctaArrow: remoteAsset('figma/database/cta_arrow.png'),
+  announcementBanner: remoteAsset('figma/database/Announcement Banner.png'),
+  announcementBannerBig: remoteAsset('figma/database/Announcement Banner - Big.png'),
+  cardPlaceholder: remoteAsset('authenticate/card-placeholder.png')
 } as const;
 
 export type DatabaseMetaIconKey = 'person' | 'baseball' | 'basketball' | 'calendar' | 'shield';
@@ -33,7 +35,7 @@ export type DatabaseMetaItem = {
 
 export type DatabaseRecord = {
   key: string;
-  cardImage: number;
+  cardImage: ImageSourcePropType;
   title: string;
   description: string;
   tags: string[];

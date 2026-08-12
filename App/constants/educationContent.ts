@@ -1,21 +1,23 @@
+import { remoteAsset } from '@/constants/remoteAssets';
+import type { ImageSourcePropType } from 'react-native';
 /** Education screen assets — guide/video thumbs + tool icons in assets/figma/education. */
 export const educationIcons = {
-  hero: require('@/assets/figma/education/hero_illustration.png'),
-  guideFakePatches: require('@/assets/figma/education/guide_fake_patches.png'),
-  guideBeckett: require('@/assets/figma/education/guide_beckett.png'),
-  guideHobbyHistory: require('@/assets/figma/education/guide_hobby_history.png'),
-  pdfIcon: require('@/assets/figma/education/pdf_icon.png'),
-  videoEbay: require('@/assets/figma/education/video_thumb_ebay.png'),
-  videoBeckett: require('@/assets/figma/education/video_thumb_beckett.png'),
-  videoPatch: require('@/assets/figma/education/video_thumb_patch.png'),
-  ctaShield: require('@/assets/figma/education/cta_shield.png'),
-  ctaArrow: require('@/assets/figma/education/cta_arrow.png'),
-  playButton: require('@/assets/figma/education/play_button.png'),
-  toolPsa: require('@/assets/figma/education/tool_psa.png'),
-  toolMlb: require('@/assets/figma/education/tool_mlb.png'),
-  toolUda: require('@/assets/figma/education/tool_uda.png'),
-  toolHeritage: require('@/assets/figma/education/tool_heritage.png'),
-  timelineHistory: require('@/assets/figma/education/timeline_game_used_history.png')
+  hero: remoteAsset('figma/education/hero_illustration.png'),
+  guideFakePatches: remoteAsset('figma/education/guide_fake_patches.png'),
+  guideBeckett: remoteAsset('figma/education/guide_beckett.png'),
+  guideHobbyHistory: remoteAsset('figma/education/guide_hobby_history.png'),
+  pdfIcon: remoteAsset('figma/education/pdf_icon.png'),
+  videoEbay: remoteAsset('figma/education/video_thumb_ebay.png'),
+  videoBeckett: remoteAsset('figma/education/video_thumb_beckett.png'),
+  videoPatch: remoteAsset('figma/education/video_thumb_patch.png'),
+  ctaShield: remoteAsset('figma/education/cta_shield.png'),
+  ctaArrow: remoteAsset('figma/education/cta_arrow.png'),
+  playButton: remoteAsset('figma/education/play_button.png'),
+  toolPsa: remoteAsset('figma/education/tool_psa.png'),
+  toolMlb: remoteAsset('figma/education/tool_mlb.png'),
+  toolUda: remoteAsset('figma/education/tool_uda.png'),
+  toolHeritage: remoteAsset('figma/education/tool_heritage.png'),
+  timelineHistory: remoteAsset('figma/education/timeline_game_used_history.png')
 } as const;
 
 export type EducationContentType =
@@ -157,7 +159,7 @@ export type EducationTimelineCard = {
   lengthLabel: string;
   yearRange: string;
   lastReviewed: string;
-  image: number;
+  image: ImageSourcePropType;
   sourceType: EducationSourceType;
   rightsStatus: EducationRightsStatus;
   topics: EducationTopic[];
@@ -200,7 +202,7 @@ type EducationLibraryFields = {
 
 export type EducationGuide = EducationLibraryFields & {
   key: string;
-  image: number;
+  image: ImageSourcePropType;
   title: string;
   description: string;
   publisher: string;
@@ -221,7 +223,7 @@ export type EducationGuide = EducationLibraryFields & {
 
 export type EducationVideo = EducationLibraryFields & {
   key: string;
-  thumb: number;
+  thumb: ImageSourcePropType;
   title: string;
   channel: string;
   duration: string;
@@ -237,7 +239,7 @@ export type EducationVideo = EducationLibraryFields & {
 
 export type EducationTool = EducationLibraryFields & {
   key: string;
-  icon: number;
+  icon: ImageSourcePropType;
   title: string;
   description: string;
   publisher: string;
@@ -268,7 +270,7 @@ export type EducationCaseStudy = EducationLibraryFields & {
   ctaTarget: EducationCaseStudyCta;
   topics: EducationTopic[];
   /** Optional cover thumb so case cards match guide/video layout. */
-  image?: number;
+  image?: ImageSourcePropType;
 };
 
 export type EducationFeaturedItem =

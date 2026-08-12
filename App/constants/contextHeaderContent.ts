@@ -1,3 +1,4 @@
+import type { ImageSourcePropType } from 'react-native';
 import { figmaIcons } from '@/constants/figmaIcons';
 
 export type ContextHeaderPageKey =
@@ -18,7 +19,7 @@ export type ContextHeaderMessage = {
 
 export type ContextHeaderConfig = {
   key: ContextHeaderPageKey;
-  icon: number;
+  icon: ImageSourcePropType;
   messages: ContextHeaderMessage[];
   dismissible?: boolean;
 };

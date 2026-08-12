@@ -46,7 +46,7 @@ const SEARCH_PAGE_SIZE = 50;
 
 type LiveRecord = DatabaseRecord & { imageUrl?: string | null; cardId?: string };
 
-function cardToLiveRecord(card: CardSummary, cardImage: number): LiveRecord {
+function cardToLiveRecord(card: CardSummary, cardImage: DatabaseRecord['cardImage']): LiveRecord {
   const meta: DatabaseMetaItem[] = [];
   if (card.player_name) meta.push({ key: 'player', icon: 'person', label: card.player_name });
   if (card.team_name) meta.push({ key: 'team', icon: 'baseball', label: card.team_name });

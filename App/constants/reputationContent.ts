@@ -1,13 +1,14 @@
+import { remoteAsset } from '@/constants/remoteAssets';
 import type { ImageSourcePropType } from 'react-native';
 import { contributorBadgeImages } from '@/constants/mostWantedContent';
 
 /** Card evidence-file attribute badges (status of the card). */
 export const cardEvidenceAttributeImages = {
-  photo_matched: require('@/assets/figma/reputation/attr_photo_matched.png'),
-  catalogued: require('@/assets/figma/reputation/attr_catalogued.png'),
-  evidence_published: require('@/assets/figma/reputation/attr_evidence_published.png'),
-  trending: require('@/assets/figma/reputation/attr_trending.png'),
-  top_rated: require('@/assets/figma/reputation/attr_top_rated.png')
+  photo_matched: remoteAsset('figma/reputation/attr_photo_matched.png'),
+  catalogued: remoteAsset('figma/reputation/attr_catalogued.png'),
+  evidence_published: remoteAsset('figma/reputation/attr_evidence_published.png'),
+  trending: remoteAsset('figma/reputation/attr_trending.png'),
+  top_rated: remoteAsset('figma/reputation/attr_top_rated.png')
 } as const satisfies Record<string, ImageSourcePropType>;
 
 export type CardEvidenceAttributeKey = keyof typeof cardEvidenceAttributeImages;
@@ -52,11 +53,11 @@ export const cardEvidenceAttributeCatalog: {
 
 /** Detective rank icons (lifetime XP progression). */
 export const detectiveRankImages = {
-  1: require('@/assets/figma/reputation/rank_evidence_room_lurker.png'),
-  2: require('@/assets/figma/reputation/rank_rookie.png'),
-  3: require('@/assets/figma/reputation/rank_patch_patrol.png'),
-  4: require('@/assets/figma/reputation/rank_rabbit_hole_ranger.png'),
-  5: require('@/assets/figma/reputation/rank_cardboard_commissioner.png')
+  1: remoteAsset('figma/reputation/rank_evidence_room_lurker.png'),
+  2: remoteAsset('figma/reputation/rank_rookie.png'),
+  3: remoteAsset('figma/reputation/rank_patch_patrol.png'),
+  4: remoteAsset('figma/reputation/rank_rabbit_hole_ranger.png'),
+  5: remoteAsset('figma/reputation/rank_cardboard_commissioner.png')
 } as const satisfies Record<number, ImageSourcePropType>;
 
 export type DetectiveRankLevel = 1 | 2 | 3 | 4 | 5;
@@ -99,10 +100,10 @@ export function cardEvidenceAttributeImage(
 
 /** Donut currency + gift / level-up art (Phase 2). */
 export const reputationUiImages = {
-  donut: require('@/assets/figma/reputation/donut_currency.png'),
-  qualityStar: require('@/assets/figma/reputation/quality_star.png'),
-  qualityStarEmpty: require('@/assets/figma/reputation/quality_star_empty.png'),
-  rankLevelUp: require('@/assets/figma/reputation/rank_level_up.png')
+  donut: remoteAsset('figma/reputation/donut_currency.png'),
+  qualityStar: remoteAsset('figma/reputation/quality_star.png'),
+  qualityStarEmpty: remoteAsset('figma/reputation/quality_star_empty.png'),
+  rankLevelUp: remoteAsset('figma/reputation/rank_level_up.png')
 } as const;
 
 /** Evidence quality levels with police-star art. */

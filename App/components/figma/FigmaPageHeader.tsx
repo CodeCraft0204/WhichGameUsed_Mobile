@@ -4,6 +4,7 @@ import {
   StyleSheet,
   Text,
   View,
+  type ImageSourcePropType,
   type ImageStyle,
   type StyleProp,
   type TextStyle,
@@ -22,7 +23,7 @@ type FigmaPageHeaderProps = {
   title: string;
   subtitle: string;
   description?: string;
-  heroSource: number;
+  heroSource: ImageSourcePropType;
   heroWidth?: number;
   heroHeight?: number;
   s: (n: number) => number;

@@ -10,7 +10,8 @@ import {
   Share,
   StyleSheet,
   Text,
-  View
+  View,
+  type ImageSourcePropType
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProfileSubpageHeader } from '@/components/profile/ProfileSubpageHeader';
@@ -61,7 +62,7 @@ import { addCardToWishlist } from '@/lib/wishlist';
 
 const LEADS_PREVIEW_COUNT = 3;
 
-function requirementIcon(requirementKey: string): number {
+function requirementIcon(requirementKey: string): ImageSourcePropType {
   const key = requirementKey.toLowerCase();
   if (key.includes('front') || key.includes('back')) return mostWantedIcons.evidenceImage;
   if (key.includes('source') || key.includes('link')) return mostWantedIcons.evidenceLink;

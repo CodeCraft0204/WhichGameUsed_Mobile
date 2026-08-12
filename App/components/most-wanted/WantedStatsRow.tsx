@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
 import { appFonts } from '@/constants/appFonts';
 import { mostWantedIcons } from '@/constants/mostWantedContent';
 import { figmaColors } from '@/constants/figmaColors';
@@ -18,7 +18,7 @@ function StatItem({
   s,
   t
 }: {
-  icon: number;
+  icon: ImageSourcePropType;
   text: string;
   s: (n: number) => number;
   t: (n: number) => number;

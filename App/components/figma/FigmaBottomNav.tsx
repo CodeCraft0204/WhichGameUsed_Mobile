@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
 import { createFigmaPageStyles } from '@/components/figma/figmaPageStyles';
 import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 
@@ -8,7 +8,7 @@ export type FigmaBottomNavItem = {
   key: string;
   label: string;
   href: import('expo-router').Href;
-  icon: number;
+  icon: ImageSourcePropType;
 };
 
 type FigmaBottomNavProps = {

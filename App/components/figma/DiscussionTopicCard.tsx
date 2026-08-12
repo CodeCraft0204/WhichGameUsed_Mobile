@@ -1,11 +1,11 @@
 import React from 'react';
 import { appFonts } from '@/constants/appFonts';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
 import { discussionIcons } from '@/constants/discussionContent';
 import { figmaColors } from '@/constants/figmaColors';
 
 type DiscussionTopicCardProps = {
-  icon: number;
+  icon: ImageSourcePropType;
   title: string;
   description: string;
   threadsLabel: string;

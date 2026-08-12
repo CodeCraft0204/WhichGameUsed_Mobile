@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { appFonts } from '@/constants/appFonts';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
 import { BREAKDOWN_ICONS } from '@/constants/leaderboardAssets';
 import { bodyText } from '@/constants/appTypography';
 import { figmaColors } from '@/constants/figmaColors';
@@ -16,7 +16,7 @@ type Props = {
   footerNote?: string;
 };
 
-const GROUP_ICONS: Record<string, number> = {
+const GROUP_ICONS: Record<string, ImageSourcePropType> = {
   auth: BREAKDOWN_ICONS.auth,
   research: BREAKDOWN_ICONS.research,
   forum: BREAKDOWN_ICONS.forum,

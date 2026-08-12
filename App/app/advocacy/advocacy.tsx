@@ -1,3 +1,4 @@
+import { remoteAsset } from '@/constants/remoteAssets';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { appFonts } from '@/constants/appFonts';
@@ -40,10 +41,10 @@ import {
 } from '@/lib/advocacy';
 
 const icons = {
-  hero: require('@/assets/figma/advocacy/hero_illustration.png'),
-  fallback: require('@/assets/figma/advocacy/petition_panini.png'),
+  hero: remoteAsset('figma/advocacy/hero_illustration.png'),
+  fallback: remoteAsset('figma/advocacy/petition_panini.png'),
   ctaIcon: figmaIcons.megaphone,
-  ctaArrow: require('@/assets/figma/advocacy/section_chevron.png'),
+  ctaArrow: remoteAsset('figma/advocacy/section_chevron.png'),
   myAdvocacy: figmaIcons.bookmark,
   submitIssue: figmaIcons.scrollQuestion
 };

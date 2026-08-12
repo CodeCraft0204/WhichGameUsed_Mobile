@@ -11,7 +11,8 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  View
+  View,
+  type ImageSourcePropType
 } from 'react-native';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { ProfileAchievementBadges } from '@/components/profile/ProfileAchievementBadges';
@@ -525,7 +526,7 @@ function StatCell({
   s,
   t
 }: {
-  icon: number;
+  icon: ImageSourcePropType;
   value: string;
   label: string;
   s: (n: number) => number;

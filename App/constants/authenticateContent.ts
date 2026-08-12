@@ -1,14 +1,16 @@
+import type { ImageSourcePropType } from 'react-native';
+import { remoteAsset } from '@/constants/remoteAssets';
 import { databaseIcons } from '@/constants/databaseContent';
 import { figmaIcons } from '@/constants/figmaIcons';
 
 /** Authenticate screen assets (node 1:96) + shared database card/meta art. */
 export const authenticateIcons = {
-  main: require('@/assets/figma/authenticate/main.png'),
-  hero: require('@/assets/figma/authenticate/hero.png'),
-  sectionChevron: require('@/assets/figma/authenticate/chevron.png'),
-  ctaIcon: require('@/assets/figma/authenticate/cta_icon.png'),
-  ctaArrow: require('@/assets/figma/authenticate/cta_arrow.png'),
-  cardPlaceholder: require('@/assets/authenticate/card-placeholder.png'),
+  main: remoteAsset('figma/authenticate/main.png'),
+  hero: remoteAsset('figma/authenticate/hero.png'),
+  sectionChevron: remoteAsset('figma/authenticate/chevron.png'),
+  ctaIcon: remoteAsset('figma/authenticate/cta_icon.png'),
+  ctaArrow: remoteAsset('figma/authenticate/cta_arrow.png'),
+  cardPlaceholder: remoteAsset('authenticate/card-placeholder.png'),
   metaCalendar: figmaIcons.metaCalendar,
   metaClock: figmaIcons.hourglassPending,
   metaScan: figmaIcons.collectionChest,
@@ -26,7 +28,7 @@ export type AuthenticateMetaItem = {
 
 export type AuthenticateDraftRecord = {
   key: string;
-  cardImage: number;
+  cardImage: ImageSourcePropType;
   title: string;
   description: string;
   tags: string[];
@@ -35,7 +37,7 @@ export type AuthenticateDraftRecord = {
 
 export type AuthenticateScannedRecord = {
   key: string;
-  cardImage: number;
+  cardImage: ImageSourcePropType;
   title: string;
   tags: string[];
   scannedAt: string;
