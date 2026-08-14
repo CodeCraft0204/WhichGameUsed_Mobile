@@ -5,9 +5,11 @@
     "scheme": "whichgameused",
     "version": "1.0.1",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "assetBundlePatterns": [
       "assets/Splash.png",
+      "assets/icon.png",
       "assets/fonts/**/*",
       "assets/camera/**/*"
     ],
@@ -71,12 +73,18 @@
     },
     "ios": {
       "bundleIdentifier": "com.whichgameused.mobile",
+      "icon": "./assets/icon.png",
       "associatedDomains": [
         "applinks:which-game-used.vercel.app"
       ]
     },
     "android": {
       "package": "com.whichgameused.mobile",
+      "icon": "./assets/icon.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#E8D9B8"
+      },
       "softwareKeyboardLayoutMode": "resize",
       "blockedPermissions": [
         "com.google.android.gms.permission.AD_ID"
