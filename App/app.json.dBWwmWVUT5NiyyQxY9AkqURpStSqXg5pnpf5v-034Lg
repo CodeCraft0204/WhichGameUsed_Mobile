@@ -59,7 +59,8 @@
             "extraProguardRules": "-keep class com.revenuecat.purchases.** { *; }\n-keep class com.android.billingclient.** { *; }\n-keep class expo.modules.** { *; }\n-dontwarn com.google.android.gms.**"
           }
         }
-      ]
+      ],
+      "expo-font"
     ],
     "splash": {
       "image": "./assets/Splash.png",
@@ -92,7 +93,10 @@
               "pathPrefix": "/v"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
