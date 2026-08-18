@@ -29,13 +29,31 @@ export async function submitSupportTicket(
 
   // New RPC returns jsonb { id, public_ref }; older deploys may still return a uuid string.
   if (typeof data === 'string') {
+    const { error: notifyError } = await supabase.functions.invoke('support-inbound', {
+      body: { ticket_id: data }
+    });
+    if (notifyError) {
+      console.warn('[support] Failed to email super admins', notifyError.message);
+    }
     return { ticketId: data, publicRef: data.slice(0, 8).toUpperCase(), error: null };
   }
 
   const payload = data as { id?: string; public_ref?: string } | null;
+  const ticketId = payload?.id ?? null;
+  const publicRef = payload?.public_ref ?? null;
+
+  if (ticketId) {
+    const { error: notifyError } = await supabase.functions.invoke('support-inbound', {
+      body: { ticket_id: ticketId }
+    });
+    if (notifyError) {
+      console.warn('[support] Failed to email super admins', notifyError.message);
+    }
+  }
+
   return {
-    ticketId: payload?.id ?? null,
-    publicRef: payload?.public_ref ?? null,
+    ticketId,
+    publicRef,
     error: null
   };
 }
