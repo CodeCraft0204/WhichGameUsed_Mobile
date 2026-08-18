@@ -39,6 +39,7 @@ function formatMemberSince(iso: string | undefined): string {
 
 function signInMethodLabel(provider: string | undefined): string {
   if (provider === 'google') return 'Google';
+  if (provider === 'apple') return 'Apple';
   if (provider === 'email') return 'Email & password';
   return 'Email';
 }

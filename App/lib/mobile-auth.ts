@@ -59,10 +59,15 @@ async function syncMobileProfile(userId: string, displayName?: string) {
     .eq('id', userId);
 }
 
-/** After Google OAuth, tag the user and profile as mobile. */
-export async function ensureMobileProfile(userId: string) {
-  await supabase.auth.updateUser({ data: MOBILE_META });
-  return syncMobileProfile(userId);
+/** After social OAuth, tag the user and profile as mobile (optional display name on first Apple sign-in). */
+export async function ensureMobileProfile(userId: string, displayName?: string) {
+  await supabase.auth.updateUser({
+    data: {
+      ...MOBILE_META,
+      ...(displayName?.trim() ? { display_name: displayName.trim() } : {})
+    }
+  });
+  return syncMobileProfile(userId, displayName);
 }
 
 /** Verify the email OTP and establish a session. */

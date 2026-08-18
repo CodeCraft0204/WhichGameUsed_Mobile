@@ -15,7 +15,7 @@ function getAuthCallbackUrl(linkingUrl: string | null): string | null {
   return linkingUrl;
 }
 
-/** Handles Google OAuth and email-confirmation deep links. */
+/** Handles Google/Apple OAuth and email-confirmation deep links. */
 export default function AuthCallbackScreen() {
   const linkingUrl = useURL();
   const router = useRouter();

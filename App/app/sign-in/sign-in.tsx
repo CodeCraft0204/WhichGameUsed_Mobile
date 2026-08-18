@@ -19,7 +19,7 @@ import { useFigmaLayout } from '@/hooks/useFigmaLayout';
 export default function SignInScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ email?: string; reauth?: string; error?: string }>();
-  const { requestSignInOtp, verifySignIn, resendOtp, signInWithGoogle, clearOtpChallenge } = useAuth();
+  const { requestSignInOtp, verifySignIn, resendOtp, signInWithGoogle, signInWithApple, clearOtpChallenge } = useAuth();
   const { s, t } = useFigmaLayout(1);
   const styles = useMemo(() => createStyles(s, t), [s, t]);
   const copy = authCopy.signIn;
@@ -42,6 +42,7 @@ export default function SignInScreen() {
   const [loading, setLoading] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
 
   useEffect(() => {
     if (!showPasswordResetMessage) return;
@@ -50,7 +51,7 @@ export default function SignInScreen() {
   }, [showPasswordResetMessage]);
 
   const canSignIn =
-    email.trim().length > 0 && password.length > 0 && !loading && !modalLoading && !googleLoading;
+    email.trim().length > 0 && password.length > 0 && !loading && !modalLoading && !googleLoading && !appleLoading;
 
   const handleSignIn = async () => {
     setError(null);
@@ -102,6 +103,21 @@ export default function SignInScreen() {
     const result = await signInWithGoogle();
     if (result.oauthRedirecting) return;
     setGoogleLoading(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    if (result.profile) {
+      router.replace('/database/database');
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    setError(null);
+    if (Platform.OS !== 'web') setAppleLoading(true);
+    const result = await signInWithApple();
+    if (result.oauthRedirecting) return;
+    setAppleLoading(false);
     if (result.error) {
       setError(result.error);
       return;
@@ -176,7 +192,12 @@ export default function SignInScreen() {
         />
 
         <AuthOrDivider label={copy.orContinue} />
-        <AuthSocialButtons onGoogle={() => void handleGoogleSignIn()} googleLoading={googleLoading} />
+        <AuthSocialButtons
+          onGoogle={() => void handleGoogleSignIn()}
+          onApple={() => void handleAppleSignIn()}
+          googleLoading={googleLoading}
+          appleLoading={appleLoading}
+        />
       </AuthScreen>
 
       <AuthOtpModal

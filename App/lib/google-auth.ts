@@ -1,43 +1,16 @@
-import Constants from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
-import { authRedirectPath } from '@/lib/auth-redirect';
 import { createSessionFromUrl } from '@/lib/auth-session-from-url';
 import { ensureMobileProfile } from '@/lib/mobile-auth';
+import { logOAuthRedirectUri, oauthRedirectUri } from '@/lib/oauth-redirect';
 import { supabase } from '@/lib/supabase';
 
 WebBrowser.maybeCompleteAuthSession();
-
-const NATIVE_OAUTH_CALLBACK = 'whichgameused://auth/callback';
 
 const googleOAuthOptions = {
   queryParams: { access_type: 'offline', prompt: 'select_account' as const },
   scopes: 'email profile'
 };
-
-/**
- * OAuth return URL passed to Supabase as `redirectTo`.
- * Must exactly match an entry in Supabase → Authentication → Redirect URLs.
- */
-export function googleOAuthRedirectUri(): string {
-  if (Platform.OS === 'web') {
-    return authRedirectPath('auth/callback');
-  }
-
-  // EAS / dev-client / store builds: stable deep link from app.json `scheme`.
-  if (Constants.appOwnership !== 'expo') {
-    return NATIVE_OAUTH_CALLBACK;
-  }
-
-  // Expo Go: exp://<lan-ip>:8081/--/auth/callback — allowlist this URL (or exp://**) in Supabase.
-  return authRedirectPath('auth/callback');
-}
-
-function logRedirectUri(redirectTo: string) {
-  if (__DEV__) {
-    console.info('[auth] Google OAuth redirectTo — add to Supabase Redirect URLs:', redirectTo);
-  }
-}
 
 export type GoogleOAuthResult = {
   error: string | null;
@@ -46,8 +19,8 @@ export type GoogleOAuthResult = {
 };
 
 export async function signInWithGoogleOAuth(): Promise<GoogleOAuthResult> {
-  const redirectTo = googleOAuthRedirectUri();
-  logRedirectUri(redirectTo);
+  const redirectTo = oauthRedirectUri();
+  logOAuthRedirectUri('Google', redirectTo);
 
   // Mobile web: hard full-page navigation. skipBrowserRedirect returns the URL
   // without Supabase calling assign — we replace immediately so Expo Router cannot

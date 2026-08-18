@@ -11,6 +11,7 @@ type AuthSocialButtonsProps = {
   onGoogle?: () => void;
   onApple?: () => void;
   googleLoading?: boolean;
+  appleLoading?: boolean;
   disabled?: boolean;
 };
 
@@ -18,19 +19,21 @@ export function AuthSocialButtons({
   onGoogle,
   onApple,
   googleLoading = false,
+  appleLoading = false,
   disabled = false
 }: AuthSocialButtonsProps) {
   const { s, t } = useAuthLayout();
   const styles = useMemo(() => createStyles(s, t), [s, t]);
+  const socialBusy = googleLoading || appleLoading;
 
   return (
     <View style={styles.row}>
       <Pressable
-        style={[styles.btn, (disabled || googleLoading) && styles.btnDisabled]}
+        style={[styles.btn, (disabled || socialBusy) && styles.btnDisabled]}
         onPress={onGoogle}
-        disabled={disabled || googleLoading || !onGoogle}
+        disabled={disabled || socialBusy || !onGoogle}
         accessibilityRole="button"
-        accessibilityState={{ disabled: disabled || googleLoading || !onGoogle }}
+        accessibilityState={{ disabled: disabled || socialBusy || !onGoogle }}
       >
         {googleLoading ? (
           <ActivityIndicator size="small" color={figmaColors.charcoal} />
@@ -39,8 +42,18 @@ export function AuthSocialButtons({
         )}
         <Text style={styles.label}>Google</Text>
       </Pressable>
-      <Pressable style={styles.btn} onPress={onApple} disabled accessibilityRole="button">
-        <Ionicons name="logo-apple" size={s(authLayout.fieldIconSize)} color={figmaColors.sepia} />
+      <Pressable
+        style={[styles.btn, (disabled || socialBusy) && styles.btnDisabled]}
+        onPress={onApple}
+        disabled={disabled || socialBusy || !onApple}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: disabled || socialBusy || !onApple }}
+      >
+        {appleLoading ? (
+          <ActivityIndicator size="small" color={figmaColors.charcoal} />
+        ) : (
+          <Ionicons name="logo-apple" size={s(authLayout.fieldIconSize)} color={figmaColors.sepia} />
+        )}
         <Text style={styles.label}>Apple</Text>
       </Pressable>
     </View>

@@ -10,6 +10,7 @@ import {
 } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { formatAuthError } from '@/lib/auth-errors';
+import { signInWithAppleAuth } from '@/lib/apple-auth';
 import { signInWithGoogleOAuth } from '@/lib/google-auth';
 import {
   completeMobileSetNewPassword,
@@ -28,7 +29,7 @@ type AuthResult = { error: string | null };
 type AuthSessionResult = AuthResult & {
   profile: MyProfile | null;
   isAdmin: boolean;
-  /** Web Google OAuth — browser is leaving the app; skip post-login navigation. */
+  /** Web OAuth — browser is leaving the app; skip post-login navigation. */
   oauthRedirecting?: boolean;
 };
 
@@ -60,6 +61,7 @@ type AuthState = {
   ) => Promise<PasswordResetCompleteResult>;
   resendOtp: (email: string, createUser: boolean, displayName?: string) => Promise<AuthResult>;
   signInWithGoogle: () => Promise<AuthSessionResult>;
+  signInWithApple: () => Promise<AuthSessionResult>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   /** True while password was verified and OTP entry is pending (blocks auth guard redirect). */
@@ -318,6 +320,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return profileAfterSession();
   }, []);
 
+  const signInWithApple = useCallback(async (): Promise<AuthSessionResult> => {
+    const result = await signInWithAppleAuth();
+    if (result.redirecting) {
+      return { error: null, profile: null, isAdmin: false, oauthRedirecting: true };
+    }
+    if (result.error) {
+      return { error: formatAuthError(result.error), profile: null, isAdmin: false };
+    }
+    return profileAfterSession();
+  }, []);
+
   const signOut = useCallback(async () => {
     // Local only — do not revoke portal / other device sessions (default is global).
     await revenueCatLogOut();
@@ -341,6 +354,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       completeSetNewPassword,
       resendOtp,
       signInWithGoogle,
+      signInWithApple,
       signOut,
       refreshProfile,
       otpChallengeActive,
@@ -363,6 +377,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       completeSetNewPassword,
       resendOtp,
       signInWithGoogle,
+      signInWithApple,
       signOut,
       refreshProfile,
       clearOtpChallenge

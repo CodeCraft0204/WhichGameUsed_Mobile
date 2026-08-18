@@ -16,6 +16,7 @@
     "plugins": [
       "expo-router",
       "expo-web-browser",
+      "expo-apple-authentication",
       [
         "expo-camera",
         {
@@ -74,6 +75,7 @@
     "ios": {
       "bundleIdentifier": "com.whichgameused.mobile",
       "icon": "./assets/icon.png",
+      "usesAppleSignIn": true,
       "associatedDomains": [
         "applinks:which-game-used.vercel.app"
       ]

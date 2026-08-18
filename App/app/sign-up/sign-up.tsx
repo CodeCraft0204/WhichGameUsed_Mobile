@@ -20,7 +20,7 @@ import { hasAcceptedCommunityStandards } from '@/lib/community-standards-storage
 
 export default function SignUpScreen() {
   const router = useRouter();
-  const { sendSignUpOtp, completeSignUp, resendOtp, signInWithGoogle } = useAuth();
+  const { sendSignUpOtp, completeSignUp, resendOtp, signInWithGoogle, signInWithApple } = useAuth();
   const { s, t } = useAuthLayout();
   const labelStyles = useMemo(() => createLabelStyles(s, t), [s, t]);
   const copy = authCopy.signUp;
@@ -37,6 +37,7 @@ export default function SignUpScreen() {
   const [loading, setLoading] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
 
   const passwordsMatch = password.length > 0 && password === confirmPassword;
   const canSendCode =
@@ -47,7 +48,8 @@ export default function SignUpScreen() {
     passwordsMatch &&
     !loading &&
     !modalLoading &&
-    !googleLoading;
+    !googleLoading &&
+    !appleLoading;
 
   const handleSendCode = async () => {
     setError(null);
@@ -100,6 +102,25 @@ export default function SignUpScreen() {
     const result = await signInWithGoogle();
     if (result.oauthRedirecting) return;
     setGoogleLoading(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    if (result.profile) {
+      router.replace('/database/database');
+    }
+  };
+
+  const handleAppleSignUp = async () => {
+    if (!agreed) {
+      setError(copy.agreeRequired);
+      return;
+    }
+    setError(null);
+    if (Platform.OS !== 'web') setAppleLoading(true);
+    const result = await signInWithApple();
+    if (result.oauthRedirecting) return;
+    setAppleLoading(false);
     if (result.error) {
       setError(result.error);
       return;
@@ -220,7 +241,12 @@ export default function SignUpScreen() {
         />
 
         <AuthOrDivider label={copy.orContinue} />
-        <AuthSocialButtons onGoogle={() => void handleGoogleSignUp()} googleLoading={googleLoading} />
+        <AuthSocialButtons
+          onGoogle={() => void handleGoogleSignUp()}
+          onApple={() => void handleAppleSignUp()}
+          googleLoading={googleLoading}
+          appleLoading={appleLoading}
+        />
       </AuthScreen>
 
       <AuthOtpModal
